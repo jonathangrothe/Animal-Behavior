@@ -1,6 +1,3 @@
-#goal: Create a simple copy of the ring attractor code for one agent, one target
-#to understand it, then scale it up
-
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -98,7 +95,7 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,rEgo,rEgoTarg
                 dx = xt - xa
                 dy = yt - ya
 
-                #ADD PERIODIC FLAG WHEN I FIGURE OUT WHAT THAT IS
+                #ADD PERIODIC FLAG 
 
                 distAB = np.sqrt(dx**2 + dy**2)
                 if distAB < rEgoTarget:
@@ -123,7 +120,6 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,rEgo,rEgoTarg
         for a in range(nagents):
             uaOld = uArray[:,a,tstep]
             faOld = fAct(uaOld,beta)
-            #look into the J dimensions here (W in original code)
             netRing = (1/N) * (J @ faOld) 
             dU = -uaOld + netRing - h_b + Iextern[:,a]
             uaNew = uaOld + dt * dU
@@ -145,7 +141,7 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,rEgo,rEgoTarg
             #print(f"cx - step c: {cx}")
             #print(f"cy - step c: {cy}")
             newAngle = 0
-            #if the centers are close to zero use old heading (?)
+            #if the centers are close to zero use old heading 
             if (np.abs(cx) < 1e-9) and (np.abs(cy) < 1e-9):
                 newAngle = headings[a,tstep]
             else:
@@ -165,7 +161,7 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,rEgo,rEgoTarg
             oldx = xPos[a,tstep]
             oldy = yPos[a,tstep]
 
-            #calculating the centers again (in a different way??)
+            #calculating the centers again
             cx_d = 0
             cy_d = 0
             for i in range(N):
@@ -258,18 +254,17 @@ L = 100
 T = 5000
 
 #number of targets
-ntargets = 3
+ntargets = 20
 
 #number of agents: 
 nagents = 1
 
-#allocentric flag: will just have it be 0 for now
+#allocentric flag
 allocentricFlag = 1
 
 #rego
 rEgo = 0
 
-#this determines the distance for how close something is to influence the agent
 #in the original code the simulation is run 5 times with [0, 0.5, 1, 2, 4] as values
 rEgoTarget = 0
 
@@ -279,7 +274,6 @@ Egonumber = 1
 #collision avoidance:
 hColl = -10
 
-#idk what this does exactly
 rColl = 0
 
 #this determines the dependence on distance
@@ -290,15 +284,11 @@ distf = 1
 #original code iterates through [1, 1, 2, 4, 8, 16]
 adistf = 1
 
-#attraction, there is longer code to get this 
-#LOOK BACK WHEN WE SCALE TO FURTHER UNDERSTAND HOW TO GET THIS
-#seems lilke there is a possibility to expand h0 to more dimensions?
-#IDK when we need to dive into that more - maybe ask about that
-h0s = [0.39]
+#attraction
+h0s = [0.3,0.3,0.3]
 
-#hbase?? 
-#based on parameter sweeps it seems like this should stay at 0
-h_b = 0.2
+#hbase
+h_b = 0
 
 #dt: step size I believe
 dt = 0.1
@@ -312,11 +302,10 @@ v0t = np.zeros(ntargets)
 for i in range(ntargets):
     v0t[i] = 0.01
 
-#width of the gauss bump (?)
+#width of the gauss bump 
 #seemed most interesting at 0.2?
 sigma = 0.2
 
-#IDK what this stuff is but I'll figure it out
 nu = 0.5
 theta = np.linspace(0,2*np.pi,N+1)
 theta = theta[:-1]
@@ -332,17 +321,20 @@ for i in range(N):
 initialx = np.zeros(nagents)
 initialy = np.zeros(nagents)
 for a in range(nagents):
-    initialx[a] = 5
+    initialx[a] = L/2
     initialy[a] = L/2
 
-#the target's initial positions
+#the target's initial position
 initialxt = np.zeros(ntargets)
 initialyt = np.zeros(ntargets)
-for ti in range(0, ntargets):
-    initialxt[ti] = L-35 #shift this as I play with the sim
-    initialyt[ti] = ti*40 +10
-    if ti == 1:
-        initialxt[ti] = initialxt[ti]+17
+ncols = 4
+targets_percol = ntargets//ncols
+for col in range(ncols):
+    for ti in range(targets_percol):
+        initialxt[targets_percol*col+ti] = col*(L/(ncols+1)) + (L/(ncols+1))
+        #this spreads the targets equally vertically,
+        #for a grid need to do this several times
+        initialyt[targets_percol*col+ti] = ti*(L/(targets_percol+1)) + (L/(targets_percol+1))
 
 #beta: noise parameter
 beta = 80
