@@ -15,7 +15,7 @@ L = 100
 # --- Geometry-based parameters to change ---
 
 #number of targets
-ntargets = 30
+ntargets = 12
 
 #number of agents: 
 nagents = 1
@@ -29,12 +29,12 @@ for a in range(nagents):
 
 #setting up the targets
 radius = 20
-initialxt, initialyt = simulate_ringattractor.create_circle(ntargets, radius, L)
+initialxt, initialyt = simulate_ringattractor.create_grid(ntargets, 4, L)
 
 # --- Setting up the simulation ---
 
 #number of time steps
-T = 5000
+T = 1000
 
 #rego
 rEgo = 0
@@ -84,31 +84,42 @@ for i in range(N):
 # --- Details of the simulation to change ---
 
 #allocentric flag
-allocentricFlag = 0
+allocentricFlag = [0,1]
 
 #attraction
-h0s = [0.4]
+h0s = [0.4,0.45,0.5]
 
 #hbase
-h_b = 0
+h_b = [0,0.1,0.2]
 
 #width of the gauss bump 
-sigma = 0.2
+sigma = [0.1,0.2,0.3]
 
 #noise parameter 
-beta = 80
+beta = [40,60,80,100]
 
 #ego distance? (don't remember exactly which one this is)
 
-for h in range(len(h0s)):
-    h0 = np.zeros(ntargets+nagents)
-    for i in range(ntargets):
-        h0[i] = h0s[h]
-    for a in range(nagents):
-        h0[ntargets+a] = h0s[h]
-    simulate_ringattractor.simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,rEgo,rEgoTarget,Egonumber,
-                            distf,adistf,J,beta,h0,h_b,dt,v0,v0t,sigma,hColl,rColl,
-                            initialx,initialy,initialxt,initialyt)
+# -------- Running the simulation --------
+
+#run it with both allo and ego centric orientations
+for orientation in range(len(allocentricFlag)):
+    #run it with each level of attraction
+    for h in range(len(h0s)):
+        h0 = np.zeros(ntargets+nagents)
+        for i in range(ntargets):
+            h0[i] = h0s[h]
+        for a in range(nagents):
+            h0[ntargets+a] = h0s[h]
+        #run it with each h base level
+        for hb in range(len(h_b)):
+            #run it with each sigma level
+            for s in range(len(sigma)):
+                #run it with each beeta level
+                for b in range(len(beta)):
+                    simulate_ringattractor.simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag[orientation],rEgo,rEgoTarget,Egonumber,
+                                distf,adistf,J,beta[b],h0,h_b[hb],dt,v0,v0t,sigma[s],hColl,rColl,
+                                initialx,initialy,initialxt,initialyt)
 
 
 
@@ -118,12 +129,21 @@ for h in range(len(h0s)):
 #to what extent model behaves like empirical data
 
 #variables to look at:
-#p(decision is made)
-#time to decision making
+#p(decision is made) 
+#time to decision making 
 #time spent close to an option 
 #min distance to option
 #complexity measures: entropy
 #trajectories as functions of parameters
+
+#important: track distance between each (or at least top 2) target and agent, see when agent clearly favors one
+#have a metric to determine if no decision was made (difference in distance between top 2 < cutoff)
+#entropy/complexity of geometry might be harder, look into that more 
+
+#other problems to solve: 
+#if we plot everything this will take a super long time to run 
+#generate uneven geometries efficeintly
+#storing our derived metrics (most importantly for now distance) and plotting them
 
 #parameters
 #hbase
