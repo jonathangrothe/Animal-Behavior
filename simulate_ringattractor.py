@@ -254,7 +254,7 @@ L = 100
 T = 5000
 
 #number of targets
-ntargets = 20
+ntargets = 10
 
 #number of agents: 
 nagents = 1
@@ -285,7 +285,7 @@ distf = 1
 adistf = 1
 
 #attraction
-h0s = [0.3,0.3,0.3]
+h0s = [0.4,0.45]
 
 #hbase
 h_b = 0
@@ -325,16 +325,29 @@ for a in range(nagents):
     initialy[a] = L/2
 
 #the target's initial position
-initialxt = np.zeros(ntargets)
-initialyt = np.zeros(ntargets)
-ncols = 4
-targets_percol = ntargets//ncols
-for col in range(ncols):
-    for ti in range(targets_percol):
-        initialxt[targets_percol*col+ti] = col*(L/(ncols+1)) + (L/(ncols+1))
-        #this spreads the targets equally vertically,
-        #for a grid need to do this several times
-        initialyt[targets_percol*col+ti] = ti*(L/(targets_percol+1)) + (L/(targets_percol+1))
+
+def create_grid(ncols,ntargets):
+    initialxt = np.zeros(ntargets)
+    initialyt = np.zeros(ntargets)  
+    targets_percol = ntargets//ncols
+    for col in range(ncols):
+        for ti in range(targets_percol):
+            initialxt[targets_percol*col+ti] = col*(L/(ncols+1)) + (L/(ncols+1))
+            #this spreads the targets equally vertically,
+            #for a grid need to do this several times
+            initialyt[targets_percol*col+ti] = ti*(L/(targets_percol+1)) + (L/(targets_percol+1))
+    return initialxt, initialyt
+
+def create_circle(ntargets,radius,L):
+    angles = np.linspace(0,2*np.pi,ntargets,endpoint=False)
+    x_coords = radius * np.cos(angles) + L/2
+    y_coords = radius * np.sin(angles) + L/2
+    return x_coords, y_coords
+
+
+initialxt, initialyt = create_circle(ntargets,20,L)
+print(initialxt)
+print(initialyt)
 
 #beta: noise parameter
 beta = 80
@@ -342,6 +355,7 @@ beta = 80
 #activation function
 def fAct(u,beta):
     return ((1+np.tanh(beta * u))/2)
+
 
 for h in range(len(h0s)):
     h0 = np.zeros(ntargets+nagents)
