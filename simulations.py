@@ -92,7 +92,7 @@ allocentricFlag = [0]
 h0s = [0.4]
 
 #hbase
-h_b = [0]
+h_b = [0.2]
 
 #width of the gauss bump 
 sigma = [0.2]
@@ -123,6 +123,20 @@ for orientation in range(len(allocentricFlag)):
                                 distf,adistf,J,beta[b],h0,h_b[hb],dt,v0,v0t,sigma[s],hColl,rColl,
                                 initialx,initialy,initialxt,initialyt)
                     print(distances)
+
+#now we can go through the distances and find when the "decision" happens
+prev_diff = 0
+for dist in range(len(distances)):
+    dist_diff = np.abs(distances[dist,0]-distances[dist,1])
+    if prev_diff * 4 < dist_diff:
+        print(dist*100)
+    prev_diff = dist_diff
+    #this looks like it might approximately work, but is still pretty rough
+    #could of course just find the max index of the difference as well, 
+    #would be interesting to see how "sharp" decision is (and how often distances are measured) affects this
+
+
+
 
 
 
