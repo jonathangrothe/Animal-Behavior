@@ -15,7 +15,7 @@ L = 100
 # --- Geometry-based parameters to change ---
 
 #number of targets
-ntargets = 12
+ntargets = 2
 
 #number of agents: 
 nagents = 1
@@ -28,13 +28,15 @@ for a in range(nagents):
     initialy[a] = L/2
 
 #setting up the targets
-radius = 20
-initialxt, initialyt = simulate_ringattractor.create_grid(ntargets, 4, L)
+#radius = 20
+#initialxt, initialyt = simulate_ringattractor.create_grid(ntargets, 4, L)
+initialxt = [L-20, L-20]
+initialyt = [L/2 +20, L/2-20]
 
 # --- Setting up the simulation ---
 
 #number of time steps
-T = 1000
+T = 5000
 
 #rego
 rEgo = 0
@@ -84,19 +86,19 @@ for i in range(N):
 # --- Details of the simulation to change ---
 
 #allocentric flag
-allocentricFlag = [0,1]
+allocentricFlag = [0]
 
 #attraction
-h0s = [0.4,0.45,0.5]
+h0s = [0.4]
 
 #hbase
-h_b = [0,0.1,0.2]
+h_b = [0]
 
 #width of the gauss bump 
-sigma = [0.1,0.2,0.3]
+sigma = [0.2]
 
 #noise parameter 
-beta = [40,60,80,100]
+beta = [80]
 
 #ego distance? (don't remember exactly which one this is)
 
@@ -117,9 +119,10 @@ for orientation in range(len(allocentricFlag)):
             for s in range(len(sigma)):
                 #run it with each beeta level
                 for b in range(len(beta)):
-                    simulate_ringattractor.simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag[orientation],rEgo,rEgoTarget,Egonumber,
+                    distances = simulate_ringattractor.simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag[orientation],rEgo,rEgoTarget,Egonumber,
                                 distf,adistf,J,beta[b],h0,h_b[hb],dt,v0,v0t,sigma[s],hColl,rColl,
                                 initialx,initialy,initialxt,initialyt)
+                    print(distances)
 
 
 

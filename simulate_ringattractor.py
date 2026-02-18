@@ -45,6 +45,10 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,rEgo,rEgoTarg
     plt.figure(1)
     plt.gca().set_aspect('equal', adjustable='box')
 
+    #setting up the data structure to store the distances
+    #we're going to have T/100 entries
+    distances = np.empty((T//100,ntargets))
+
     for tstep in range(0,T):
 
         # -------- STEP A --------
@@ -189,7 +193,17 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,rEgo,rEgoTarg
             #print(f"newy: {newy}")
             xPos[a,tstep+1] = newx
             yPos[a,tstep+1] = newy
-        
+
+        # -------- STEP D.5 --------
+        #before targets move, we want to calculate the distance between agents and targets
+        #probably would be helpful to keep targets static for the first trials of this (v0t = 0)
+        if tstep % 100 == 0:
+            step = int(tstep/100)
+            for agent in range(nagents):
+                for targ in range(ntargets):
+                    distance = np.linalg.norm(np.array(xPos[agent,tstep],yPos[agent,tstep])-np.array(targetXPos[targ,tstep],targetYPos[targ,tstep]))
+                    distances[step,targ] = distance
+
         # -------- STEP E --------
 
         for ttarg in range(ntargets):
@@ -241,8 +255,7 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,rEgo,rEgoTarg
             plt.pause(0.001)  
         
     plt.show()
-
-
+    return distances
 
 #function for creating an evenly spaced grid
 def create_grid(ntargets,ncols,L):
