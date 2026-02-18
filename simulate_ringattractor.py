@@ -242,91 +242,16 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,rEgo,rEgoTarg
         
     plt.show()
 
-# --------  PARAMETERS --------
 
-#number of neurons in the alpha ring
-N = 100
 
-#total rectangle?
-L = 100
-
-#number of time steps
-T = 5000
-
-#number of targets
-ntargets = 10
-
-#number of agents: 
-nagents = 1
-
-#allocentric flag
-allocentricFlag = 1
-
-#rego
-rEgo = 0
-
-#in the original code the simulation is run 5 times with [0, 0.5, 1, 2, 4] as values
-rEgoTarget = 0
-
-#egonumber
-Egonumber = 1
-
-#collision avoidance:
-hColl = -10
-
-rColl = 0
-
-#this determines the dependence on distance
-#in the original code the simulation runs it on 0 once and then 1 five times
-distf = 1
-
-#this determines the "characteristic length of signal decay",
-#original code iterates through [1, 1, 2, 4, 8, 16]
-adistf = 1
-
-#attraction
-h0s = [0.4,0.45]
-
-#hbase
-h_b = 0
-
-#dt: step size I believe
-dt = 0.1
-
-#v0: velocity I believe
-v0 = 0.05
-
-#v0t: velocity of targets I believe
-#in the original code it is initialized to zero but that doesn't really make sense to me
-v0t = np.zeros(ntargets)
-for i in range(ntargets):
-    v0t[i] = 0.01
-
-#width of the gauss bump 
-#seemed most interesting at 0.2?
-sigma = 0.2
-
-nu = 0.5
-theta = np.linspace(0,2*np.pi,N+1)
-theta = theta[:-1]
-J = np.zeros((N,N))
-for i in range(N):
-    deltah = np.abs(theta - theta[i])
-    deltah = np.pi-np.abs(np.pi-deltah)
-    J[i,:] = np.cos(np.pi*(deltah/np.pi)**nu)
-    J[i,i] = 0.0
-    J = np.squeeze(J)
-
-#the agent's initial x,y and heading
-initialx = np.zeros(nagents)
-initialy = np.zeros(nagents)
-for a in range(nagents):
-    initialx[a] = L/2
-    initialy[a] = L/2
-
-#the target's initial position
-
-def create_grid(ncols,ntargets):
+#function for creating an evenly spaced grid
+def create_grid(ntargets,ncols,L):
+    '''
+    ntargets: number of targets
+    ncols: number of columns in the grid
+    L: total length of the space
+    returns: 2 lists (one for x one for y) of coordinates arranged in a grid
+    '''
     initialxt = np.zeros(ntargets)
     initialyt = np.zeros(ntargets)  
     targets_percol = ntargets//ncols
@@ -338,35 +263,27 @@ def create_grid(ncols,ntargets):
             initialyt[targets_percol*col+ti] = ti*(L/(targets_percol+1)) + (L/(targets_percol+1))
     return initialxt, initialyt
 
+#function for creating an evenly spaced circle
 def create_circle(ntargets,radius,L):
+    '''
+    ntargets: number of targets
+    radius: radius of the circle
+    L: total length of the space
+    returns: 2 lists (one for x and one for y) of coordinates arranged in a circle
+    '''
     angles = np.linspace(0,2*np.pi,ntargets,endpoint=False)
     x_coords = radius * np.cos(angles) + L/2
     y_coords = radius * np.sin(angles) + L/2
     return x_coords, y_coords
 
-
-initialxt, initialyt = create_circle(ntargets,20,L)
-print(initialxt)
-print(initialyt)
-
-#beta: noise parameter
-beta = 80
-
 #activation function
 def fAct(u,beta):
+    '''
+    u: Value we are activating
+    beta: Noise parameter
+    returns: value put through the activation function
+    '''
     return ((1+np.tanh(beta * u))/2)
-
-
-for h in range(len(h0s)):
-    h0 = np.zeros(ntargets+nagents)
-    for i in range(ntargets):
-        h0[i] = h0s[h]
-    for a in range(nagents):
-        h0[ntargets+a] = h0s[h]
-    simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,rEgo,rEgoTarget,Egonumber,
-                            distf,adistf,J,beta,h0,h_b,dt,v0,v0t,sigma,hColl,rColl,
-                            initialx,initialy,initialxt,initialyt)
-
 
 
 
