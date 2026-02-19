@@ -15,7 +15,7 @@ L = 100
 # --- Geometry-based parameters to change ---
 
 #number of targets
-ntargets = 2
+ntargets = 3
 
 #number of agents: 
 nagents = 1
@@ -30,8 +30,8 @@ for a in range(nagents):
 #setting up the targets
 #radius = 20
 #initialxt, initialyt = simulate_ringattractor.create_grid(ntargets, 4, L)
-initialxt = [L-20, L-20]
-initialyt = [L/2 +20, L/2-20]
+initialxt = [L-30, L-30, L/2-15]
+initialyt = [L/2+15, L/2-15,L/2+8]
 
 # --- Setting up the simulation ---
 
@@ -68,7 +68,7 @@ v0 = 0.05
 #in the original code it is initialized to zero but that doesn't really make sense to me
 v0t = np.zeros(ntargets)
 for i in range(ntargets):
-    v0t[i] = 0.01
+    v0t[i] = 0
 
 nu = 0.5
 theta = np.linspace(0,2*np.pi,N+1)
@@ -86,7 +86,7 @@ for i in range(N):
 # --- Details of the simulation to change ---
 
 #allocentric flag
-allocentricFlag = [0]
+allocentricFlag = [0,1]
 
 #attraction
 h0s = [0.4]
@@ -98,7 +98,7 @@ h_b = [0.2]
 sigma = [0.2]
 
 #noise parameter 
-beta = [80]
+beta = [100]
 
 #ego distance? (don't remember exactly which one this is)
 
@@ -122,18 +122,20 @@ for orientation in range(len(allocentricFlag)):
                     distances = simulate_ringattractor.simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag[orientation],rEgo,rEgoTarget,Egonumber,
                                 distf,adistf,J,beta[b],h0,h_b[hb],dt,v0,v0t,sigma[s],hColl,rColl,
                                 initialx,initialy,initialxt,initialyt)
-                    print(distances)
+                    #now we can go through the distances and find when the "decision" happens
+                    #now we need to extend this to the case of multiple targets
+                    diff_list = []
+                    for dist in range(len(distances)):
+                        dist_meas = min(distances[dist])
+                        #print(f"time step: {dist},distances: {distances[dist]}, difference: {dist_diff}")
+                        diff_list.append(dist_meas)
+                    plt.figure(2)
+                    plt.plot(diff_list)
+                    plt.ylabel("Absolute value of the difference between distance from agent to target A and distance from agent to target B")
+                    plt.xlabel("Time step")
+                    plt.title(f"Difference in distance between agent and each target over time\n allocentric:{allocentricFlag[orientation]}, h0: {h0}, beta : {beta[b]}")
+                    plt.show()
 
-#now we can go through the distances and find when the "decision" happens
-prev_diff = 0
-for dist in range(len(distances)):
-    dist_diff = np.abs(distances[dist,0]-distances[dist,1])
-    if prev_diff * 4 < dist_diff:
-        print(dist*100)
-    prev_diff = dist_diff
-    #this looks like it might approximately work, but is still pretty rough
-    #could of course just find the max index of the difference as well, 
-    #would be interesting to see how "sharp" decision is (and how often distances are measured) affects this
 
 
 

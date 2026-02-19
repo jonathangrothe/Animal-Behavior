@@ -46,8 +46,8 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,rEgo,rEgoTarg
     plt.gca().set_aspect('equal', adjustable='box')
 
     #setting up the data structure to store the distances
-    #we're going to have T/100 entries
-    distances = np.empty((T//100,ntargets))
+    #we're going to have T entries
+    distances = np.empty((T,ntargets))
 
     for tstep in range(0,T):
 
@@ -197,11 +197,11 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,rEgo,rEgoTarg
         # -------- STEP D.5 --------
         #before targets move, we want to calculate the distance between agents and targets
         #probably would be helpful to keep targets static for the first trials of this (v0t = 0)
-        if tstep % 100 == 0:
-            step = int(tstep/100)
+        if tstep % 1 == 0:
+            step = tstep//1
             for agent in range(nagents):
                 for targ in range(ntargets):
-                    distance = np.linalg.norm(np.array(xPos[agent,tstep],yPos[agent,tstep])-np.array(targetXPos[targ,tstep],targetYPos[targ,tstep]))
+                    distance = np.linalg.norm(np.array([xPos[agent,tstep],yPos[agent,tstep]])-np.array([targetXPos[targ,tstep],targetYPos[targ,tstep]]))
                     distances[step,targ] = distance
 
         # -------- STEP E --------
@@ -230,7 +230,7 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,rEgo,rEgoTarg
 
         # -------- STEP F - VIZ --------
 
-        if tstep % 50 == 0:
+        if tstep % 100 == 0:
             # Plot agents
             plt.scatter(
                 xPos[:, tstep + 1],
@@ -251,10 +251,10 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,rEgo,rEgoTarg
 
             plt.xlim(0, L)
             plt.ylim(0, L)
-            plt.title(f"Time step {tstep} (beta={beta:.2f})")
+            plt.title(f"Time step {tstep}, allocentric:{allocentricFlag}, h0:{h0},beta: {beta}")
             plt.pause(0.001)  
         
-    plt.show()
+    plt.show(block=False)
     return distances
 
 #function for creating an evenly spaced grid
