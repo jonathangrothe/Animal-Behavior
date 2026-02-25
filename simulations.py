@@ -58,7 +58,7 @@ distf = 1
 #original code iterates through [1, 1, 2, 4, 8, 16]
 adistf = 1
 
-#dt: step size I believe
+#step size
 dt = 0.1
 
 #v0: velocity I believe
@@ -136,7 +136,50 @@ for orientation in range(len(allocentricFlag)):
                     plt.title(f"Difference in distance between agent and each target over time\n allocentric:{allocentricFlag[orientation]}, h0: {h0}, beta : {beta[b]}")
                     plt.show()
 
+'''
+next steps: 
+-take out plotting each time (for now)
+-run it repeatedly (50 times?) with the same settings
+-record performance metrics for each run 
+-do this again with slight changes to parameters
+-repeat everything with a slight change in geometry 
 
+Overall workflow:
+Even spacing: 
+choose 10 (?) sets of parameters
+run the sim with each set of parameters 50 (?) times
+(~500 sims)
+
+Move a target in one direction: 
+run the same settings again
+(~500 sims)
+
+Move the target in the same direction further 1-2 more times
+
+Move the target in a different direction 3-4 times
+
+Repeat for as many directions as possible
+
+For each sim we will get 5ish performance metrics
+for each set of parameters we will get 50ish datapoints (50x5)
+for each geometry we will have 10 sets of parameters (10x50x5)
+for each directional comparison we will get 4-5 levels (5 levels x 10 parameter sets x 50 simulations x 5 metrics)
+'''
+
+'''
+How do I want to implement this scale? 
+We definitely can easily create a function that repeats the simulate_ringattractor function x times, 
+returns a dataframe or np array with our metrics - like get_metrics or something
+We then can create a different function that does this for over changing parameters 
+(kind of like the nested for loop I have going now) 
+We can then create a different function that runs the previous function over similar geometries
+Maybe we input an initial geometry, a direction to change and a unit to change and a number of sims to run?
+To ensure that we are making as small of a change in geometry at each step?
+
+
+Once we have all of this, we can see which set of parameters at each geometry perform best over the 50 sims we run at that level
+and which parameters produce the biggest changes all else being equal (and maybe interaction of parameters too)
+'''
 
 
 
