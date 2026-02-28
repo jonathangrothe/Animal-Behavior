@@ -15,7 +15,7 @@ L = 100
 # --- Geometry-based parameters to change ---
 
 #number of targets
-ntargets = 3
+ntargets = 2
 
 #number of agents: 
 nagents = 1
@@ -30,8 +30,8 @@ for a in range(nagents):
 #setting up the targets
 #radius = 20
 #initialxt, initialyt = simulate_ringattractor.create_grid(ntargets, 4, L)
-initialxt = [L-30, L-30, L/2-15]
-initialyt = [L/2+15, L/2-15,L/2+8]
+initialxt = [L-30, L-30]
+initialyt = [L/2+15, L/2-15]
 
 # --- Setting up the simulation ---
 
@@ -86,7 +86,7 @@ for i in range(N):
 # --- Details of the simulation to change ---
 
 #allocentric flag
-allocentricFlag = [0,1]
+allocentricFlag = [0]
 
 #attraction
 h0s = [0.4]
@@ -101,6 +101,91 @@ sigma = [0.2]
 beta = [100]
 
 #ego distance? (don't remember exactly which one this is)
+
+# -------- Getting metrics --------
+
+#so with what we returned from running the sim we can define a function to get metrics
+def get_metrics(distances, xPos, yPos, targetsx, targetsy, decision_precision = 1):
+    # first find where the agent ended and if it is 'close' to a target
+    # if yes,
+    # iterate through distances, get index of biggest jump  
+    # have to do this for each comparison between targets 
+    # ie: for 3 targets: when did agent decide between A and B, A and C, and B and C
+    ntargets = len(targetsx[:,0])
+    nagents = len(xPos[:,0])
+    #first we'll find out which target we ended up at
+    final_xpos = xPos[:,-1]
+    final_ypos = yPos[:,-1]
+    final_target_xpos = targetsx[:,-1]
+    final_target_ypos = targetsy[:,-1]
+    final_target = -1
+    for a in range(nagents):
+        for t in range(ntargets):
+            if ((final_xpos[a] - final_target_xpos[t]) < decision_precision) and ((final_ypos[a] - final_target_ypos[t]) < decision_precision):
+                final_target = t
+
+    #at what time does the agent reach the target?
+    time_target_reached = 0
+    for index in range(len(distances)):
+        if distances[index, t] < decision_precision:
+            time_target_reached = index
+            break
+
+            
+    
+    # first we will iterate through and find all the changes in distances (index 0 is change from t0 to t1) 
+    # this will help us check to see when the agent stops moving towards a target or when it accelerates towards a target
+    # important to note that the indcies are NOT evenly spaced - there will be a lot more movement at the beginning     
+    distance_diff = np.zeros((T-1,ntargets))
+    for time in range(len(distances)-1):
+        prev_distances = distances[time-1,:]
+        curr_distances = distances[time,:]
+        for target in range(ntargets):
+            change = curr_distances[target] - prev_distances[target]
+            distance_diff[time,target] = change
+   
+   # finding the time point when the agent never moves towards a target,
+   # this can be considered the elimination point of that target
+   # we will only go up to the time the target is reached, 
+   # as there is a lot of random noisy movement after the agent reaches the target
+    eliminated_indices = np.zeros(ntargets)
+    for index in range(time_target_reached):
+        if index > time_target_reached - 10:
+            print(f"index: {index}, distance differences: {distance_diff[index,:]}, distances: {distances[index-1,:]}")
+        for t in range(ntargets):
+            #need to check if we're within a certain absolute distance of the target
+            #WANT: change the distance cutoff to something else to reduce how this is affected by noise...
+            #Still really hard to define exactly when the decision happens because there are so many time steps close to the 'decision'
+            if (distance_diff[index][t] > 0) and (eliminated_indices[t] == 0):
+                eliminated_indices[t] = index+1
+            if distance_diff[index][t] < 0:
+                eliminated_indices[t] = 0
+
+
+    '''
+    max_towards_target = 0
+    decision_point = -1
+    for index in range(len(distance_diff)):
+        #check if one diff is negative all else are positive
+        #store the distance in the negative direction
+        #check to see if the
+        n_negative = 0
+        negative_index = -1
+        for distance in range(len(distance_diff[index])):
+            if distance_diff[index][distance] < 0:
+                n_negative += 1
+                negative_index = distance
+        if n_negative == 1:
+            if index < 5:
+                print(f"entered at index{index}")
+                print(distance_diff[index])
+            negative_distance = distance_diff[index][negative_index]
+            if negative_distance < max_towards_target:
+                max_towards_target = distance_diff[index][negative_index]
+                decision_point = index+1
+                '''
+    return final_target, time_target_reached, eliminated_indices
+
 
 # -------- Running the simulation --------
 
@@ -117,24 +202,24 @@ for orientation in range(len(allocentricFlag)):
         for hb in range(len(h_b)):
             #run it with each sigma level
             for s in range(len(sigma)):
-                #run it with each beeta level
+                #run it with each beta level
                 for b in range(len(beta)):
-                    distances = simulate_ringattractor.simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag[orientation],rEgo,rEgoTarget,Egonumber,
+                    distances, xPos, yPos, targetsx, targetsy = simulate_ringattractor.simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag[orientation],rEgo,rEgoTarget,Egonumber,
                                 distf,adistf,J,beta[b],h0,h_b[hb],dt,v0,v0t,sigma[s],hColl,rColl,
                                 initialx,initialy,initialxt,initialyt)
-                    #now we can go through the distances and find when the "decision" happens
-                    #now we need to extend this to the case of multiple targets
-                    diff_list = []
-                    for dist in range(len(distances)):
-                        dist_meas = min(distances[dist])
-                        #print(f"time step: {dist},distances: {distances[dist]}, difference: {dist_diff}")
-                        diff_list.append(dist_meas)
                     plt.figure(2)
-                    plt.plot(diff_list)
-                    plt.ylabel("Absolute value of the difference between distance from agent to target A and distance from agent to target B")
+                    plt.plot(distances)
+                    plt.ylabel("Absolute value of the difference between distance agent and each target")
                     plt.xlabel("Time step")
                     plt.title(f"Difference in distance between agent and each target over time\n allocentric:{allocentricFlag[orientation]}, h0: {h0}, beta : {beta[b]}")
                     plt.show()
+                    final_decision, time_reached, eliminated = get_metrics(distances, xPos, yPos, targetsx, targetsy)
+                    print(f"ended at target: {final_decision}")
+                    print(f"the time when the agent reached that target: {time_reached}")
+                    print(f"the time when each target is eliminated: {eliminated}")
+                    
+
+
 
 '''
 next steps: 
