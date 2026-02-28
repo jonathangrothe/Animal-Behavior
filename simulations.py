@@ -113,6 +113,7 @@ def get_metrics(distances, xPos, yPos, targetsx, targetsy, decision_precision = 
     # ie: for 3 targets: when did agent decide between A and B, A and C, and B and C
     ntargets = len(targetsx[:,0])
     nagents = len(xPos[:,0])
+    nsteps = len(xPos[0,:])
     #first we'll find out which target we ended up at
     final_xpos = xPos[:,-1]
     final_ypos = yPos[:,-1]
@@ -131,8 +132,44 @@ def get_metrics(distances, xPos, yPos, targetsx, targetsy, decision_precision = 
             time_target_reached = index
             break
 
-            
+    # now we're going to try to get a vector to represent distance to target
+    deltas = np.zeros((nsteps,(ntargets*2)))
+    directions = np.zeros((nsteps, (ntargets*2)))
+    for time in range(nsteps):
+        for a in range(nagents):
+            for targ in range(ntargets):
+                delta_x = targetsx[targ,time]-xPos[a,time]
+                delta_y = targetsy[targ,time]-yPos[a,time]
+                mag = np.sqrt(delta_x**2+delta_y**2)
+                deltas[time,targ*2] = delta_x
+                deltas[time,targ*2+1] = delta_y
+                directions[time,targ*2] = delta_x/mag
+                directions[time,targ*2+1] = delta_y/mag
     
+    index_eliminated = 0
+    target_eliminated = -1
+    direction_eliminated = 'na'
+    elim = False
+    for time in range(nsteps):
+        if elim == True:
+            break
+        item = directions[time,:]
+        for d in range(len(item)):
+            if item[d] < -0.9:
+                elim = True
+                index_eliminated = time
+                target_eliminated = d//2
+                if d % 2 == 0:
+                    direction_eliminated = 'x'
+                if d % 2 ==1:
+                    direction_eliminated = 'y'
+                
+    elim_info = [target_eliminated, index_eliminated, direction_eliminated]
+    #this indicates that trying to work on the individual time step scale is NOT going to work
+
+
+    
+    '''
     # first we will iterate through and find all the changes in distances (index 0 is change from t0 to t1) 
     # this will help us check to see when the agent stops moving towards a target or when it accelerates towards a target
     # important to note that the indcies are NOT evenly spaced - there will be a lot more movement at the beginning     
@@ -143,7 +180,7 @@ def get_metrics(distances, xPos, yPos, targetsx, targetsy, decision_precision = 
         for target in range(ntargets):
             change = curr_distances[target] - prev_distances[target]
             distance_diff[time,target] = change
-   
+
    # finding the time point when the agent never moves towards a target,
    # this can be considered the elimination point of that target
    # we will only go up to the time the target is reached, 
@@ -161,30 +198,8 @@ def get_metrics(distances, xPos, yPos, targetsx, targetsy, decision_precision = 
             if distance_diff[index][t] < 0:
                 eliminated_indices[t] = 0
 
-
-    '''
-    max_towards_target = 0
-    decision_point = -1
-    for index in range(len(distance_diff)):
-        #check if one diff is negative all else are positive
-        #store the distance in the negative direction
-        #check to see if the
-        n_negative = 0
-        negative_index = -1
-        for distance in range(len(distance_diff[index])):
-            if distance_diff[index][distance] < 0:
-                n_negative += 1
-                negative_index = distance
-        if n_negative == 1:
-            if index < 5:
-                print(f"entered at index{index}")
-                print(distance_diff[index])
-            negative_distance = distance_diff[index][negative_index]
-            if negative_distance < max_towards_target:
-                max_towards_target = distance_diff[index][negative_index]
-                decision_point = index+1
-                '''
-    return final_target, time_target_reached, eliminated_indices
+'''
+    return final_target, time_target_reached, deltas, directions, elim_info
 
 
 # -------- Running the simulation --------
@@ -213,10 +228,10 @@ for orientation in range(len(allocentricFlag)):
                     plt.xlabel("Time step")
                     plt.title(f"Difference in distance between agent and each target over time\n allocentric:{allocentricFlag[orientation]}, h0: {h0}, beta : {beta[b]}")
                     plt.show()
-                    final_decision, time_reached, eliminated = get_metrics(distances, xPos, yPos, targetsx, targetsy)
+                    final_decision, time_reached, deltas, directions, elim_info = get_metrics(distances, xPos, yPos, targetsx, targetsy)
                     print(f"ended at target: {final_decision}")
                     print(f"the time when the agent reached that target: {time_reached}")
-                    print(f"the time when each target is eliminated: {eliminated}")
+                    print(f"first target eliminated: {elim_info[0]}, time eliminated: {elim_info[1]}, direction eliminated: {elim_info[2]}")
                     
 
 
