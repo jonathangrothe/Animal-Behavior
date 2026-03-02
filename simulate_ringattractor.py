@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 # ---------- Simulation code!! ----------
 def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,rEgo,rEgoTarget,Egonumber,
                             distf,adistf,J,beta,h0,h_b,dt,v0,v0t,sigma,hColl,rColl,
-                            initialx,initialy,initialxt,initialyt):
+                            initialx,initialy,initialxt,initialyt, plot=True):
 
     # -------- INITIALIZATIONS WITHIN THE SIMULATION --------
 
@@ -228,32 +228,32 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,rEgo,rEgoTarg
             
 
         # -------- STEP F - VIZ --------
-
-        if tstep % 100 == 0:
-            # Plot agents
-            plt.scatter(
-                xPos[:, tstep + 1],
-                yPos[:, tstep + 1],
-                s = 10,
-                c = [[0, 0.2, 0.8]]
-            )
-
-            # Plot targets
-            if ntargets > 0:
+        if plot == True:
+            if tstep % 100 == 0:
+                # Plot agents
                 plt.scatter(
-                    targetXPos[:, tstep + 1],
-                    targetYPos[:, tstep + 1],
+                    xPos[:, tstep + 1],
+                    yPos[:, tstep + 1],
                     s = 10,
-                    marker = 's',
-                    c = [[0.8, 0, 0.2]]
-                    )
+                    c = [[0, 0.2, 0.8]]
+                )
 
-            plt.xlim(0, L)
-            plt.ylim(0, L)
-            plt.title(f"Time step {tstep}, allocentric:{allocentricFlag}, h0:{h0},beta: {beta}")
-            plt.pause(0.001)  
-        
-    plt.show(block=False)
+                # Plot targets
+                if ntargets > 0:
+                    plt.scatter(
+                        targetXPos[:, tstep + 1],
+                        targetYPos[:, tstep + 1],
+                        s = 10,
+                        marker = 's',
+                        c = [[0.8, 0, 0.2]]
+                        )
+
+                plt.xlim(0, L)
+                plt.ylim(0, L)
+                plt.title(f"Time step {tstep}, allocentric:{allocentricFlag}, h0:{h0},beta: {beta}")
+                plt.pause(0.001)  
+            
+        plt.show(block=False)
     return distances, xPos, yPos, targetXPos, targetYPos
 
 #function for creating an evenly spaced grid
