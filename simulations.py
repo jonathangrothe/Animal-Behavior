@@ -88,22 +88,19 @@ for i in range(N):
 # --- Details of the simulation to change ---
 
 #allocentric flag
-allocentricFlag = [0,1]
+allocentricFlag = 0,1
 
 #attraction
-h0s = [0.4,0.5]
+h0s = 0.4
 
 #hbase
-h_b = [0.2]
+h_b = 0.2
 
 #width of the gauss bump 
-sigma = [0.2]
+sigma = 0.2
 
 #noise parameter 
-beta = [100]
-
-# number of times to run the simulation
-samples = 10
+beta = 100
 
 # data we will collect each time we run the simulation
 targets_reached = []
@@ -111,8 +108,62 @@ time_to_target = []
 allo = []
 attraction = []
 
+# number of times to run the simulation
+n_samples = 10
+
 # -------- Running the simulation --------
-for sim in range(samples):
+
+# first we will sweep the parameter space to at least get an interesting set of parameters to work with
+
+adequate = False
+iterations = 0
+while adequate == False:
+    for sample in range(n_samples):
+        h0 = np.zeros(ntargets+nagents)
+        for i in range(ntargets):
+            h0[i] = h0s
+        distances, xPos, yPos, targetsx, targetsy = simulate_ringattractor.simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,rEgo,rEgoTarget,Egonumber,
+                                    distf,adistf,J,beta,h0,h_b,dt,v0,v0t,sigma,hColl,rColl,
+                                    initialx,initialy,initialxt,initialyt,True)
+        final_decision, time_reached = simulation_metrics.get_destination_metrics(distances)
+        print(final_decision)
+        print(time_reached)
+        targets_reached.append(final_decision)
+        time_to_target.append(time_reached)
+        notreached = 0
+    for item in targets_reached:
+        if item == -1:
+            notreached += 1
+    print(notreached)
+    if notreached <= 2:
+        adequate = True
+    else:
+        #can increase h0 - attraction - mean of gaussian
+        #and adjust hb correspondingly - base
+        #can adjust sigma - variance of gaussian
+        #can adjust beta - noise but we're already pretty high so I think we're good here
+        #we'll try just alternating by slightly increasing h0 and slightly decreasing sigma
+        if iterations % 2 == 0:
+            for i in range(ntargets):
+                h0[i] = h0[i] + 0.02
+        else:
+            sigma = sigma -0.02
+
+print(f"h0: {h0}")
+print(f"sigma: {sigma}")
+
+#ok now it just only goes up IDK why, 
+# kinda want stronger attraction because even though it's reaching a target,
+# the bifuraction is really late
+# to get this to work I will find the angle of the agent relative to targets.
+# hopefully this will give me moment of decision. 
+# while doing this I will make the data the simulation code collects more efficient.
+
+
+#this is running the sim with a bunch of changes in variables - 
+# we'll do this later and I imagine we will focus more on geometry than on changing parameters
+'''
+for sim in range(n_samples):
     #run it with both allo and ego centric orientations
     for orientation in range(len(allocentricFlag)):
         #run it with each level of attraction
@@ -131,15 +182,15 @@ for sim in range(samples):
                         distances, xPos, yPos, targetsx, targetsy = simulate_ringattractor.simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag[orientation],rEgo,rEgoTarget,Egonumber,
                                     distf,adistf,J,beta[b],h0,h_b[hb],dt,v0,v0t,sigma[s],hColl,rColl,
                                     initialx,initialy,initialxt,initialyt,False)
-                        '''
+                        
                         plt.figure(2)
                         plt.plot(distances)
                         plt.ylabel("Distance between agent and each target")
                         plt.xlabel("Time step")
                         plt.title(f"Difference in distance between agent and each target over time\n allocentric:{allocentricFlag[orientation]}, h0: {h0}, beta : {beta[b]}")
                         plt.show(block=False)
-                        '''
-                        final_decision, time_reached = simulation_metrics.get_metrics(distances)
+                        
+                        final_decision, time_reached = simulation_metrics.get_destination_metrics(distances)
                         targets_reached.append(final_decision)
                         time_to_target.append(time_reached)
                         allo.append(allocentricFlag[orientation])
@@ -147,58 +198,12 @@ for sim in range(samples):
     
 sim_data = {'Final target': targets_reached,'Time to target': time_to_target, 'Allocentric or egocentric': allo, 'Attraction': attraction}  
 sim_df = pd.DataFrame(sim_data)
-print(sim_df)      
+print(sim_df)   
+'''   
 
 
-
-'''
-next steps: 
--take out plotting each time (for now)
--run it repeatedly (50 times?) with the same settings
--record performance metrics for each run 
--do this again with slight changes to parameters
--repeat everything with a slight change in geometry 
-
-Overall workflow:
-Even spacing: 
-choose 10 (?) sets of parameters
-run the sim with each set of parameters 50 (?) times
-(~500 sims)
-
-Move a target in one direction: 
-run the same settings again
-(~500 sims)
-
-Move the target in the same direction further 1-2 more times
-
-Move the target in a different direction 3-4 times
-
-Repeat for as many directions as possible
-
-For each sim we will get 5ish performance metrics
-for each set of parameters we will get 50ish datapoints (50x5)
-for each geometry we will have 10 sets of parameters (10x50x5)
-for each directional comparison we will get 4-5 levels (5 levels x 10 parameter sets x 50 simulations x 5 metrics)
-'''
-
-'''
-How do I want to implement this scale? 
-We definitely can easily create a function that repeats the simulate_ringattractor function x times, 
-returns a dataframe or np array with our metrics - like get_metrics or something
-We then can create a different function that does this for over changing parameters 
-(kind of like the nested for loop I have going now) 
-We can then create a different function that runs the previous function over similar geometries
-Maybe we input an initial geometry, a direction to change and a unit to change and a number of sims to run?
-To ensure that we are making as small of a change in geometry at each step?
-
-
-Once we have all of this, we can see which set of parameters at each geometry perform best over the 50 sims we run at that level
-and which parameters produce the biggest changes all else being equal (and maybe interaction of parameters too)
-'''
-
-
-
-
+# goals: rework distances so that we are only getting raw data, getting distances in a different step
+# sweep the parameter space based on the metrics: ie: if we're not getting close to a target, update the parameters so that we do
 
 #produce unequal positions, see how often it chooses the "best option"
 #proportion of time going to the right option

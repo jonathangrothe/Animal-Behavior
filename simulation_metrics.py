@@ -3,29 +3,20 @@ import numpy as np
 # -------- Getting metrics --------
 
 #so with what we returned from running the sim we can define a function to get metrics
-def get_metrics(distances, decision_precision = 1):
+def get_destination_metrics(distances, decision_precision = 1):
     '''
     A function which takes the outputs from the simulate_ringattractor code and gets a few metrics to quantify what happened in the simulation
     Inputs:
     distances: numpy array of distances at each point from the simulate_ringattractor code
-    xPos,yPos: numpy arrays of size nagents x T which holds the agent's x and y positions at each time step in the simulation
-    targetsx, targetsy, numpy arrays of size ntargets x T which holds the target's x and y positions at each time step in the simulation
     decision_precision: the distance cutoff for an agent to have considered "arrived" at a target
     Returns:
     final_target: the final target the agent ends up at (will expand to be a list for multiple agents), -1 if the agent doesn't end up at a target
     time_target_reached: the time the agent (expand to multiple) got within the decision_precision of the final target
-    deltas: a numpy array of size T x 2*ntargets which for each timestep, holds the difference in x and y between the agent and each target
-            in a given row, index 0 is x diff between agent and target 0, index 1 is y diff between agent and target 0, etc. 
-    directions: a numpy array of size T x 2*ntargets which holds the same information of the deltas but normalized over both directions, 
-            for each target the 2d array of deltas for that target is divided by the magnitude of that array, 
-            so each pair starting with an even index will sum to 1
     '''
     # find which target the agent ends at
     final_distances = distances[-1,:]
     final_target = -1
     for index in range(len(final_distances)):
-        print(f"final distance: {final_distances[index]}")
-        print(f"target: {index}")
         if final_distances[index] < decision_precision:
             final_target = index
 
@@ -34,8 +25,6 @@ def get_metrics(distances, decision_precision = 1):
     time_target_reached = 0
     for index in range(len(distances)):
         if distances[index, final_target] < decision_precision:
-            print(f"entered at time: {index}")
-            print(f"distance: {distances[index,final_target]}")
             time_target_reached = index
             break
 
