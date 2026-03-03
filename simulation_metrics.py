@@ -13,13 +13,13 @@ def get_destination_metrics(distances, decision_precision = 1):
     final_target: the final target the agent ends up at (will expand to be a list for multiple agents), -1 if the agent doesn't end up at a target
     time_target_reached: the time the agent (expand to multiple) got within the decision_precision of the final target
     '''
+    # TO DO: also return a starts moving time when the distance from the initial position is greater than decision precision
     # find which target the agent ends at
     final_distances = distances[-1,:]
     final_target = -1
     for index in range(len(final_distances)):
         if final_distances[index] < decision_precision:
             final_target = index
-
 
     # find the first time the agent gets within the decision boundary for the target it ends up at
     time_target_reached = 0
@@ -28,29 +28,30 @@ def get_destination_metrics(distances, decision_precision = 1):
             time_target_reached = index
             break
 
-   
     return final_target, time_target_reached
 
-def get_distance_info(distances,xPos,yPos,targetsx,targetsy):
+def get_direction_info(headings, delta_cutoff = 0.1):
+    '''
+    A function which takes the agent's heading at each time step and determines when it turns towards one target
+    This will depend on the initial geometry, so we might need to take that as a parameter
+    First we'll try to just detect changes and see if that's adequate
+    '''
+    #need to add multiple agent functionality, 
+    #FILLER STATEMENT to get around that for now
+    headings = headings[0,:]
+    tsteps = len(headings)
+    init_heading = headings[0]
+    prev_angle = init_heading
+    print(f"init angle: {prev_angle}")
+    #before we mess with this too much we probably need to check two things:
+    #A: the agent has actually started to move - we should get this in get_destination_metrics
+    #B: the agent has not yet arrived at the target 
+    for i in range(1,tsteps):
+        angle = headings[i]
+        if np.abs(angle-prev_angle) > delta_cutoff:
+            print("change in angle flagged")
+        
 
-    nsteps = len(xPos[0,:])
-    ntargets = len(targetsx[:,0])
-    nagents = len(xPos[:,0])
-    # using the positional information to quantify how the agent is moving relative to each target
-    # still a work in progress to make this meaningful
 
-    deltas = np.zeros((nsteps,(ntargets*2)))
-    directions = np.zeros((nsteps, (ntargets*2)))
-    for time in range(nsteps):
-        for a in range(nagents):
-            for targ in range(ntargets):
-                delta_x = targetsx[targ,time]-xPos[a,time]
-                delta_y = targetsy[targ,time]-yPos[a,time]
-                mag = np.sqrt(delta_x**2+delta_y**2)
-                deltas[time,targ*2] = delta_x
-                deltas[time,targ*2+1] = delta_y
-                directions[time,targ*2] = delta_x/mag
-                directions[time,targ*2+1] = delta_y/mag
-    return deltas, directions
-
+    return "test"
 

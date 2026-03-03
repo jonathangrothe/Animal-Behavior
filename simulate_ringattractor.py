@@ -195,7 +195,9 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,rEgo,rEgoTarg
             yPos[a,tstep+1] = newy
 
         # -------- STEP D.5 --------
-        #calculate the distance between each agent and each target
+        # storing the data we might be interested in later on
+        # calculate the distance between each agent and each target
+        # the if statement at the top allows us to modify this if we want less data
         if tstep % 1 == 0:
             step = tstep//1
             for agent in range(nagents):
@@ -254,7 +256,7 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,rEgo,rEgoTarg
                 plt.pause(0.001)  
             
         plt.show(block=False)
-    return distances, xPos, yPos, targetXPos, targetYPos
+    return distances, headings, xPos, yPos, targetXPos, targetYPos
 
 #function for creating an evenly spaced grid
 def create_grid(ntargets,ncols,L):

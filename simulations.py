@@ -109,7 +109,7 @@ allo = []
 attraction = []
 
 # number of times to run the simulation
-n_samples = 10
+n_samples = 1
 
 # -------- Running the simulation --------
 
@@ -122,19 +122,20 @@ while adequate == False:
         h0 = np.zeros(ntargets+nagents)
         for i in range(ntargets):
             h0[i] = h0s
-        distances, xPos, yPos, targetsx, targetsy = simulate_ringattractor.simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,rEgo,rEgoTarget,Egonumber,
+        distances, headings, xPos, yPos, targetsx, targetsy = simulate_ringattractor.simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,rEgo,rEgoTarget,Egonumber,
                                     distf,adistf,J,beta,h0,h_b,dt,v0,v0t,sigma,hColl,rColl,
                                     initialx,initialy,initialxt,initialyt,True)
+        print(simulation_metrics.get_direction_info(headings))
         final_decision, time_reached = simulation_metrics.get_destination_metrics(distances)
-        print(final_decision)
-        print(time_reached)
+        print(f"final decision: {final_decision}")
+        print(f"time reached: {time_reached}")
         targets_reached.append(final_decision)
         time_to_target.append(time_reached)
         notreached = 0
     for item in targets_reached:
         if item == -1:
             notreached += 1
-    print(notreached)
+    print(f"number of times not reaching a target: {notreached}")
     if notreached <= 2:
         adequate = True
     else:
