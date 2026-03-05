@@ -122,11 +122,12 @@ while adequate == False:
         h0 = np.zeros(ntargets+nagents)
         for i in range(ntargets):
             h0[i] = h0s
-        distances, headings, xPos, yPos, targetsx, targetsy = simulate_ringattractor.simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,rEgo,rEgoTarget,Egonumber,
+        headings, xPos, yPos, targetsx, targetsy = simulate_ringattractor.simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,rEgo,rEgoTarget,Egonumber,
                                     distf,adistf,J,beta,h0,h_b,dt,v0,v0t,sigma,hColl,rColl,
                                     initialx,initialy,initialxt,initialyt,True)
         print(simulation_metrics.get_direction_info(headings))
-        final_decision, time_reached = simulation_metrics.get_destination_metrics(distances)
+        final_decision, time_reached, movement_start = simulation_metrics.get_destination_metrics(xPos,yPos,targetsx,targetsy)
+        print(f"movement starts: {movement_start}")
         print(f"final decision: {final_decision}")
         print(f"time reached: {time_reached}")
         targets_reached.append(final_decision)
