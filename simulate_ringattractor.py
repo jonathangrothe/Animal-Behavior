@@ -216,14 +216,20 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,rEgo,rEgoTarg
             
 
         # -------- STEP F - VIZ --------
+        plot_col = 'blue'
         if plot == True:
             if tstep % 100 == 0:
+                if 0.01 < headings[0,tstep] <= 0.5:
+                    plot_col = 'green' 
+                if 0.5 < headings[0,tstep] < 1.6:
+                    plot_col = 'red'
                 # Plot agents
                 plt.scatter(
                     xPos[:, tstep + 1],
                     yPos[:, tstep + 1],
                     s = 10,
-                    c = [[0, 0.2, 0.8]]
+                    #c = [[0, 0.2, 0.8]],
+                    color = plot_col
                 )
 
                 # Plot targets
@@ -233,7 +239,7 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,rEgo,rEgoTarg
                         targetYPos[:, tstep + 1],
                         s = 10,
                         marker = 's',
-                        c = [[0.8, 0, 0.2]]
+                        c = [[0.8, 0, 0.2]], 
                         )
 
                 plt.xlim(0, L)

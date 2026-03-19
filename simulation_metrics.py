@@ -22,7 +22,7 @@ def get_destination_metrics(xPos, yPos, targetsx, targetsy , decision_precision 
     final_target = -1
     ntargets = len(targetsx[:,0])
     for index in range(ntargets):
-        print(f"distance y: {np.abs(final_y - final_targets_y[index])}")
+        print(f"distance y target {index}: {np.abs(final_y - final_targets_y[index])}")
         if (np.abs(final_x - final_targets_x[index])) < decision_precision and (np.abs(final_y - final_targets_y[index]) < decision_precision):
             final_target = index
 
@@ -76,14 +76,14 @@ def get_direction_info(headings, delta_cutoff = 0.1):
     init_heading = headings[0]
     prev_angle = init_heading
     print(f"init angle: {prev_angle}")
-    #before we mess with this too much we probably need to check two things:
-    #A: the agent has actually started to move - we should get this in get_destination_metrics
-    #B: the agent has not yet arrived at the target 
+
     for i in range(1,tsteps):
+        # checks to add: reached target? this should make that somewhat redundant - 
+        # once it reaches the target it will do weird stuff like flip 180 degrees
         angle = headings[i]
-        if np.abs(angle-prev_angle) > delta_cutoff:
-            x=1
-        
+        #if np.abs(angle-prev_angle) > delta_cutoff:
+        if i % 10 == 0:
+            print(f"heading at time step {i}: {angle}")   
 
 
     return "test"
