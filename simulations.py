@@ -40,6 +40,9 @@ initialyt = [L/2+15, L/2-15]
 #number of time steps
 T = 5000
 
+#periodic flag
+periodicflag = 0
+
 #rego
 rEgo = 0
 
@@ -88,83 +91,34 @@ for i in range(N):
 # --- Details of the simulation to change ---
 
 #allocentric flag
-allocentricFlag = 0,1
+allocentricFlag = [0,1]
 
 #attraction
-h0s = 0.4
+h0s = [0.4,0.42]
 
 #hbase
-h_b = 0.2
+h_b = [0.05,0.2]
 
 #width of the gauss bump 
-sigma = 0.2
+sigma = [0.1,0.4]
 
 #noise parameter 
-beta = 100
+beta = [100]
 
 # data we will collect each time we run the simulation
 targets_reached = []
 time_to_target = []
+movement_starts = []
 allo = []
 attraction = []
 
 # number of times to run the simulation
-n_samples = 1
+n_samples = 5
 
 # -------- Running the simulation --------
 
-# first we will sweep the parameter space to at least get an interesting set of parameters to work with
-
-adequate = False
-iterations = 0
-while adequate == False:
-    for sample in range(n_samples):
-        h0 = np.zeros(ntargets+nagents)
-        for i in range(ntargets):
-            h0[i] = h0s
-        headings, xPos, yPos, targetsx, targetsy = simulate_ringattractor.simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,rEgo,rEgoTarget,Egonumber,
-                                    distf,adistf,J,beta,h0,h_b,dt,v0,v0t,sigma,hColl,rColl,
-                                    initialx,initialy,initialxt,initialyt,True)
-        print(simulation_metrics.get_direction_info(headings))
-        final_decision, time_reached, movement_start = simulation_metrics.get_destination_metrics(xPos,yPos,targetsx,targetsy)
-        print(f"movement starts: {movement_start}")
-        print(f"final decision: {final_decision}")
-        print(f"time reached: {time_reached}")
-        targets_reached.append(final_decision)
-        time_to_target.append(time_reached)
-        notreached = 0
-    for item in targets_reached:
-        if item == -1:
-            notreached += 1
-    print(f"number of times not reaching a target: {notreached}")
-    if notreached <= 2:
-        adequate = True
-    else:
-        #can increase h0 - attraction - mean of gaussian
-        #and adjust hb correspondingly - base
-        #can adjust sigma - variance of gaussian
-        #can adjust beta - noise but we're already pretty high so I think we're good here
-        #we'll try just alternating by slightly increasing h0 and slightly decreasing sigma
-        if iterations % 2 == 0:
-            for i in range(ntargets):
-                h0[i] = h0[i] + 0.02
-        else:
-            sigma = sigma -0.02
-
-print(f"h0: {h0}")
-print(f"sigma: {sigma}")
-
-#ok now it just only goes up IDK why, 
-# kinda want stronger attraction because even though it's reaching a target,
-# the bifuraction is really late
-# to get this to work I will find the angle of the agent relative to targets.
-# hopefully this will give me moment of decision. 
-# while doing this I will make the data the simulation code collects more efficient.
-
-
 #this is running the sim with a bunch of changes in variables - 
-# we'll do this later and I imagine we will focus more on geometry than on changing parameters
-'''
+
 for sim in range(n_samples):
     #run it with both allo and ego centric orientations
     for orientation in range(len(allocentricFlag)):
@@ -181,18 +135,14 @@ for sim in range(n_samples):
                 for s in range(len(sigma)):
                     #run it with each beta level
                     for b in range(len(beta)):
-                        distances, xPos, yPos, targetsx, targetsy = simulate_ringattractor.simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag[orientation],rEgo,rEgoTarget,Egonumber,
+                        headings, xPos, yPos, targetsx, targetsy = simulate_ringattractor.simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag[orientation],periodicflag,rEgo,rEgoTarget,Egonumber,
                                     distf,adistf,J,beta[b],h0,h_b[hb],dt,v0,v0t,sigma[s],hColl,rColl,
-                                    initialx,initialy,initialxt,initialyt,False)
+                                    initialx,initialy,initialxt,initialyt,True)
                         
-                        plt.figure(2)
-                        plt.plot(distances)
-                        plt.ylabel("Distance between agent and each target")
-                        plt.xlabel("Time step")
-                        plt.title(f"Difference in distance between agent and each target over time\n allocentric:{allocentricFlag[orientation]}, h0: {h0}, beta : {beta[b]}")
-                        plt.show(block=False)
                         
-                        final_decision, time_reached = simulation_metrics.get_destination_metrics(distances)
+                        final_decision, time_reached, movement_start = simulation_metrics.get_destination_metrics(xPos,yPos, targetsx,targetsy)
+                        print(simulation_metrics.get_direction_info(headings))
+                        movement_starts.append(movement_start)
                         targets_reached.append(final_decision)
                         time_to_target.append(time_reached)
                         allo.append(allocentricFlag[orientation])
@@ -200,8 +150,9 @@ for sim in range(n_samples):
     
 sim_data = {'Final target': targets_reached,'Time to target': time_to_target, 'Allocentric or egocentric': allo, 'Attraction': attraction}  
 sim_df = pd.DataFrame(sim_data)
+pd.set_option('display.max_columns', None)
 print(sim_df)   
-'''   
+
 
 
 # goals: rework distances so that we are only getting raw data, getting distances in a different step

@@ -1,8 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import math
 
 # ---------- Simulation code!! ----------
-def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,rEgo,rEgoTarget,Egonumber,
+def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag,rEgo,rEgoTarget,Egonumber,
                             distf,adistf,J,beta,h0,h_b,dt,v0,v0t,sigma,hColl,rColl,
                             initialx,initialy,initialxt,initialyt, plot=True):
 
@@ -17,14 +18,7 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,rEgo,rEgoTarg
 
     #setting up array to hold ring states at different times
     uArray = np.zeros((N, nagents, T+1))
-    #u0 = np.zeros((N,nagents))
     u0 = 0.05*np.random.randn(N,nagents) #initialize randomly
-    for i in range(len(u0)):
-        if (i < len(u0)/8) or (3*len(u0)/8 < i < len(u0)/2 ):
-            u0[i] = 0.05
-        if len(u0)/8 < i < 3*len(u0)/8:
-            u0[i] = 0.1
-    #print(f"u0: {u0}")
     uArray[:,:,0] = u0
 
     xPos = np.zeros((nagents,T+1))
@@ -67,6 +61,13 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,rEgo,rEgoTarg
                 dx = xb - xa
                 dy = yb - ya
                 #Periodic flag add (not yet)
+
+                if periodic_flag == 1:
+                    if abs(dx) > L / 2:
+                        dx -= math.copysign(L, dx)
+                    if abs(dy) > L / 2:
+                        dy -= math.copysign(L, dy)
+
                 distAB = np.sqrt(dx**2 + dy**2)
                 ampl = h0[ntargets+b]
                 if distf != 0: 
@@ -95,7 +96,11 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,rEgo,rEgoTarg
                 dx = xt - xa
                 dy = yt - ya
 
-                #ADD PERIODIC FLAG 
+                if periodic_flag == 1:
+                    if abs(dx) > L / 2:
+                        dx -= math.copysign(L, dx)
+                    if abs(dy) > L / 2:
+                        dy -= math.copysign(L, dy)
 
                 distAB = np.sqrt(dx**2 + dy**2)
                 if distAB < rEgoTarget:
@@ -129,7 +134,7 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,rEgo,rEgoTarg
         for a in range(nagents):
             uaNow = uArray[:,a,tstep+1]
             faNow = fAct(uaNow,beta)
-            faPos = faNow
+            faPos = faNow.copy()
             faPos[faPos < 0] = 0
 
             #calculate centers
@@ -175,7 +180,10 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,rEgo,rEgoTarg
             newx = oldx + dt * v0 * cx_d
             newy = oldy + dt * v0 * cy_d
 
-            #add periodicflag later (maybe?)
+            if periodic_flag == 1:
+                newx = np.mod(newx,L)
+                newy = np.mod(newy,L)
+
             if newx < 0:
                 newx = 0
             elif newx > L:
@@ -200,7 +208,9 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,rEgo,rEgoTarg
             newXT = oldXT + v0t[ttarg] * np.sign(np.random.randn())
             newYT = oldYT + v0t[ttarg] * np.sign(np.random.randn())
 
-            #add periodic flag here
+            if periodic_flag == 1:
+                newx = np.mod(newXT,L)
+                newy = np.mod(newYT,L)
 
             if newXT < 0:
                 newXT = 0
