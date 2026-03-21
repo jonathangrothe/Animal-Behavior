@@ -229,9 +229,7 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
         plot_col = 'blue'
         if plot == True:
             if tstep % 100 == 0:
-                if 0.01 < headings[0,tstep] <= 0.5:
-                    plot_col = 'green' 
-                if 0.5 < headings[0,tstep] < 1.6:
+                if 0.78 < headings[0,tstep] < 5.49:
                     plot_col = 'red'
                 # Plot agents
                 plt.scatter(

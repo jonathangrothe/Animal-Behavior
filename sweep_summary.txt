@@ -1,0 +1,30 @@
+RING ATTRACTOR PARAMETER SWEEP — SUMMARY
+=======================================================
+
+Scoring weights:
+  straightness : 0.9
+  time score   : 0.1
+  arrival_radius: 8.0
+
+TOP 10 PARAMETER COMBOS (Phase 2):
+ h0_val  h_b_val  sigma_val  allocentric_val  composite_score  straightness  reached_pct  avg_time
+ 0.7000   0.0693     0.3884                1          0.91716       0.97850          1.0    3175.4
+ 0.4034   0.0693     0.2884                1          0.90552       0.96244          1.0    3031.8
+ 0.6011   0.1693     0.3884                1          0.90396       0.98130          1.0    3960.8
+ 0.6011   0.0693     0.1884                1          0.89630       0.95678          1.0    3241.2
+ 0.6011   0.0693     0.3884                1          0.87300       0.93858          1.0    3586.8
+ 0.7000   0.2693     0.2884                1          0.86646       0.91846          1.0    3008.6
+ 0.6011   0.1693     0.1884                1          0.84940       0.88786          1.0    2482.8
+ 0.7000   0.3693     0.2884                0          0.84202       0.91532          1.0    4088.8
+ 0.6011   0.0693     0.2884                1          0.82344       0.85136          1.0    2139.2
+ 0.6011   0.1693     0.2884                1          0.81972       0.85466          1.0    2472.2
+
+BEST SINGLE COMBO:
+  h0_val           = 0.7
+  h_b_val          = 0.0693
+  sigma_val        = 0.3884
+  allocentric_val  = 1
+  composite_score  = 0.9172
+  straightness     = 0.9785
+  reached_pct      = 100.00%
+  avg_time         = 3175.4

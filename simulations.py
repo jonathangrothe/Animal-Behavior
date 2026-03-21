@@ -26,7 +26,7 @@ nagents = 1
 initialx = np.zeros(nagents)
 initialy = np.zeros(nagents)
 for a in range(nagents):
-    initialx[a] = L/2 
+    initialx[a] = L/2 -30
     initialy[a] = L/2
 
 #setting up the targets
@@ -91,16 +91,16 @@ for i in range(N):
 # --- Details of the simulation to change ---
 
 #allocentric flag
-allocentricFlag = [0,1]
+allocentricFlag = [1]
 
 #attraction
-h0s = [0.4,0.42]
+h0s = [0.7]
 
 #hbase
-h_b = [0.05,0.2]
+h_b = [0.0693]
 
 #width of the gauss bump 
-sigma = [0.1,0.4]
+sigma = [0.3884]
 
 #noise parameter 
 beta = [100]
@@ -111,6 +111,8 @@ time_to_target = []
 movement_starts = []
 allo = []
 attraction = []
+h_bs = []
+sigmas = []
 
 # number of times to run the simulation
 n_samples = 5
@@ -120,20 +122,15 @@ n_samples = 5
 #this is running the sim with a bunch of changes in variables - 
 
 for sim in range(n_samples):
-    #run it with both allo and ego centric orientations
     for orientation in range(len(allocentricFlag)):
-        #run it with each level of attraction
         for h in range(len(h0s)):
             h0 = np.zeros(ntargets+nagents)
             for i in range(ntargets):
                 h0[i] = h0s[h]
             for a in range(nagents):
                 h0[ntargets+a] = h0s[h]
-            #run it with each h base level
             for hb in range(len(h_b)):
-                #run it with each sigma level
                 for s in range(len(sigma)):
-                    #run it with each beta level
                     for b in range(len(beta)):
                         headings, xPos, yPos, targetsx, targetsy = simulate_ringattractor.simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag[orientation],periodicflag,rEgo,rEgoTarget,Egonumber,
                                     distf,adistf,J,beta[b],h0,h_b[hb],dt,v0,v0t,sigma[s],hColl,rColl,
@@ -141,14 +138,16 @@ for sim in range(n_samples):
                         
                         
                         final_decision, time_reached, movement_start = simulation_metrics.get_destination_metrics(xPos,yPos, targetsx,targetsy)
-                        print(simulation_metrics.get_direction_info(headings))
+                        #print(simulation_metrics.get_direction_info(headings))
                         movement_starts.append(movement_start)
                         targets_reached.append(final_decision)
                         time_to_target.append(time_reached)
                         allo.append(allocentricFlag[orientation])
                         attraction.append(h0s[h])
-    
-sim_data = {'Final target': targets_reached,'Time to target': time_to_target, 'Allocentric or egocentric': allo, 'Attraction': attraction}  
+                        h_bs.append(h_b[hb])
+                        sigmas.append(sigma[s])
+
+sim_data = {'Final target': targets_reached,'Time to target': time_to_target, 'Movement_starts': movement_starts, 'Allocentric or egocentric': allo, 'Attraction': attraction, 'H_b': h_bs, 'sigma': sigmas}  
 sim_df = pd.DataFrame(sim_data)
 pd.set_option('display.max_columns', None)
 print(sim_df)   
