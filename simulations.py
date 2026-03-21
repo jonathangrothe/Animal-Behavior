@@ -17,7 +17,7 @@ L = 100
 # --- Geometry-based parameters to change ---
 
 #number of targets
-ntargets = 2
+ntargets = 3
 
 #number of agents: 
 nagents = 1
@@ -26,14 +26,14 @@ nagents = 1
 initialx = np.zeros(nagents)
 initialy = np.zeros(nagents)
 for a in range(nagents):
-    initialx[a] = L/2 -30
+    initialx[a] = L/2 - 30
     initialy[a] = L/2
 
 #setting up the targets
 #radius = 20
 #initialxt, initialyt = simulate_ringattractor.create_grid(ntargets, 4, L)
-initialxt = [L-30, L-30]
-initialyt = [L/2+15, L/2-15]
+initialxt = [L-15, L-15, L-5]
+initialyt = [L/2+34, L/2-35, L/2 +10]
 
 # --- Setting up the simulation ---
 
@@ -94,16 +94,16 @@ for i in range(N):
 allocentricFlag = [1]
 
 #attraction
-h0s = [0.7]
+h0s = [0.4742]
 
 #hbase
-h_b = [0.0693]
+h_b = [0.0781]
 
 #width of the gauss bump 
-sigma = [0.3884]
+sigma = [0.5843]
 
 #noise parameter 
-beta = [100]
+beta = [40]
 
 # data we will collect each time we run the simulation
 targets_reached = []
@@ -115,7 +115,7 @@ h_bs = []
 sigmas = []
 
 # number of times to run the simulation
-n_samples = 5
+n_samples = 2
 
 # -------- Running the simulation --------
 
