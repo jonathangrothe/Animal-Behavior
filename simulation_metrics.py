@@ -22,7 +22,6 @@ def get_destination_metrics(xPos, yPos, targetsx, targetsy , decision_precision 
     final_target = -1
     ntargets = len(targetsx[:,0])
     for index in range(ntargets):
-        print(f"distance y target {index}: {np.abs(final_y - final_targets_y[index])}")
         if (np.abs(final_x - final_targets_x[index])) < decision_precision and (np.abs(final_y - final_targets_y[index]) < decision_precision):
             final_target = index
 
@@ -59,11 +58,10 @@ def get_destination_metrics(xPos, yPos, targetsx, targetsy , decision_precision 
         if distance_fromstart > init_distance*0.1:
             movement_start = index
             break
-
-
+        
     return final_target, time_target_reached, movement_start
 
-def get_direction_info(headings, delta_cutoff = 0.1):
+def get_direction_info(headings, start_step=200, dest_step=5000):
     '''
     A function which takes the agent's heading at each time step and determines when it turns towards one target
     This will depend on the initial geometry, so we might need to take that as a parameter
@@ -72,19 +70,11 @@ def get_direction_info(headings, delta_cutoff = 0.1):
     #need to add multiple agent functionality, 
     #FILLER STATEMENT to get around that for now
     headings = headings[0,:]
-    tsteps = len(headings)
-    init_heading = headings[0]
-    prev_angle = init_heading
-    print(f"init angle: {prev_angle}")
-
-    for i in range(1,tsteps):
-        # checks to add: reached target? this should make that somewhat redundant - 
-        # once it reaches the target it will do weird stuff like flip 180 degrees
-        angle = headings[i]
-        #if np.abs(angle-prev_angle) > delta_cutoff:
-        if i % 10 == 0:
-            print(f"heading at time step {i}: {angle}")   
-
-
-    return "test"
-
+    headings_diff = np.diff(headings)
+    max_angle_diff = 0
+    dec_ind = 0
+    for i in range(start_step,dest_step): 
+        if headings_diff[i] > max_angle_diff:
+            max_angle_diff = headings_diff[i]
+            dec_ind = i
+    return dec_ind

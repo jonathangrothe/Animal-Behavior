@@ -17,7 +17,7 @@ L = 100
 # --- Geometry-based parameters to change ---
 
 #number of targets
-ntargets = 3
+ntargets = 2
 
 #number of agents: 
 nagents = 1
@@ -32,8 +32,8 @@ for a in range(nagents):
 #setting up the targets
 #radius = 20
 #initialxt, initialyt = simulate_ringattractor.create_grid(ntargets, 4, L)
-initialxt = [L-15, L-15, L-5]
-initialyt = [L/2+34, L/2-35, L/2 +10]
+initialxt = [L-22, L-10]
+initialyt = [L/2+30, L/2 -15]
 
 # --- Setting up the simulation ---
 
@@ -103,12 +103,15 @@ h_b = [0.0781]
 sigma = [0.5843]
 
 #noise parameter 
-beta = [40]
+beta = [100]
 
 # data we will collect each time we run the simulation
 targets_reached = []
 time_to_target = []
 movement_starts = []
+
+decision_time = []
+
 allo = []
 attraction = []
 h_bs = []
@@ -138,16 +141,17 @@ for sim in range(n_samples):
                         
                         
                         final_decision, time_reached, movement_start = simulation_metrics.get_destination_metrics(xPos,yPos, targetsx,targetsy)
-                        #print(simulation_metrics.get_direction_info(headings))
+                        decision_index = simulation_metrics.get_direction_info(headings, movement_start,time_reached)
                         movement_starts.append(movement_start)
                         targets_reached.append(final_decision)
                         time_to_target.append(time_reached)
+                        decision_time.append(decision_index)
                         allo.append(allocentricFlag[orientation])
                         attraction.append(h0s[h])
                         h_bs.append(h_b[hb])
                         sigmas.append(sigma[s])
 
-sim_data = {'Final target': targets_reached,'Time to target': time_to_target, 'Movement_starts': movement_starts, 'Allocentric or egocentric': allo, 'Attraction': attraction, 'H_b': h_bs, 'sigma': sigmas}  
+sim_data = {'Final target': targets_reached,'Time to target': time_to_target, 'Movement_starts': movement_starts, 'Decision time': decision_index, 'Allocentric or egocentric': allo, 'Attraction': attraction, 'H_b': h_bs, 'sigma': sigmas}
 sim_df = pd.DataFrame(sim_data)
 pd.set_option('display.max_columns', None)
 print(sim_df)   
@@ -163,8 +167,6 @@ print(sim_df)
 #to what extent model behaves like empirical data
 
 #variables to look at:
-#p(decision is made) 
-#time to decision making 
 #time spent close to an option 
 #min distance to option
 #complexity measures: entropy
