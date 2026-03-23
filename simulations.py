@@ -94,7 +94,7 @@ for i in range(N):
 allocentricFlag = [0,1]
 
 #attraction
-h0s = [[0.47,0.47,-0.05,0.01,0]]
+h0s = [[0.47,0.47,-0.05,0.01,0], [0.47,0.47,-0.2,0.01,0]]
 
 #hbase
 h_b = [0.2]
@@ -118,7 +118,7 @@ h_bs = []
 sigmas = []
 
 # number of times to run the simulation
-n_samples = 4
+n_samples = 10
 
 # -------- Running the simulation --------
 
