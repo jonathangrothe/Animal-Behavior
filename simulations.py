@@ -17,7 +17,7 @@ L = 100
 # --- Geometry-based parameters to change ---
 
 #number of targets
-ntargets = 2
+ntargets = 4
 
 #number of agents: 
 nagents = 1
@@ -32,8 +32,8 @@ for a in range(nagents):
 #setting up the targets
 #radius = 20
 #initialxt, initialyt = simulate_ringattractor.create_grid(ntargets, 4, L)
-initialxt = [L-15, L-15]
-initialyt = [L/2+30, L/2 -30]
+initialxt = [L-15, L-15, L-15, L-15]
+initialyt = [L/2+30, L/2-30, L/2+20, L/2-20]
 
 # --- Setting up the simulation ---
 
@@ -94,7 +94,7 @@ for i in range(N):
 allocentricFlag = [0,1]
 
 #attraction
-h0s = [[0.48,0.47,0],[0.47,0.51,0]]
+h0s = [[0.47,0.47,-0.05,0.01,0]]
 
 #hbase
 h_b = [0.2]
@@ -118,11 +118,11 @@ h_bs = []
 sigmas = []
 
 # number of times to run the simulation
-n_samples = 1
+n_samples = 4
 
 # -------- Running the simulation --------
 
-#this is running the sim with a bunch of changes in variables - 
+#this is running the sim with a bunch of changes in variables
 
 for sim in range(n_samples):
     for orientation in range(len(allocentricFlag)):
@@ -134,7 +134,6 @@ for sim in range(n_samples):
                         headings, xPos, yPos, targetsx, targetsy = simulate_ringattractor.simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag[orientation],periodicflag,rEgo,rEgoTarget,Egonumber,
                                     distf,adistf,J,beta[b],h0,h_b[hb],dt,v0,v0t,sigma[s],hColl,rColl,
                                     initialx,initialy,initialxt,initialyt,True,True)
-                        
                         
                         final_decision, time_reached, movement_start = simulation_metrics.get_destination_metrics(xPos,yPos,targetsx,targetsy)
                         decision_index = simulation_metrics.get_direction_info(headings,movement_start,time_reached)

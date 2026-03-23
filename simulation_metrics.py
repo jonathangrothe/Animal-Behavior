@@ -3,7 +3,7 @@ import numpy as np
 # -------- Getting metrics --------
 
 #so with what we returned from running the sim we can define a function to get metrics
-def get_destination_metrics(xPos, yPos, targetsx, targetsy , decision_precision = 0.1):
+def get_destination_metrics(xPos, yPos, targetsx, targetsy , stopping_distance = 0.1):
     '''
     A function which takes the outputs from the simulate_ringattractor code and gets a few metrics to quantify what happened in the simulation
     Inputs:
@@ -17,17 +17,21 @@ def get_destination_metrics(xPos, yPos, targetsx, targetsy , decision_precision 
     # find which target the agent ends at
     final_x = xPos[0,-1]
     final_y = yPos[0,-1]
-    final_targets_x = targetsx[:,-1]
-    final_targets_y = targetsy[:,-1]
     final_target = -1
     ntargets = len(targetsx[:,0])
-    for index in range(ntargets):
-        if (np.abs(final_x - final_targets_x[index])) < decision_precision and (np.abs(final_y - final_targets_y[index]) < decision_precision):
-            final_target = index
-
+    for targ in range(ntargets):
+        targ_x = targetsx[targ,-1]
+        targ_y = targetsy[targ,-1]
+        x_dist = np.abs(final_x - targ_x)
+        y_dist = np.abs(final_y - targ_y)
+        total_dist = np.sqrt((x_dist**2)+(y_dist**2))
+        print(f"total_dist to target {targ}: {total_dist}")
+        if total_dist <= stopping_distance:
+            final_target = targ
 
     # find the first time the agent gets within the decision boundary for the target it ends up at
-
+    # made a bit unnecessary if stop == True, but we'll keep it in for if stop == False
+    
     time_target_reached = 0
     for index in range(len(xPos[0,:])):
         if final_target == -1:
@@ -37,7 +41,7 @@ def get_destination_metrics(xPos, yPos, targetsx, targetsy , decision_precision 
         target_x = targetsx[final_target,index]
         target_y = targetsy[final_target,index]
         distance = np.sqrt((agent_x - target_x)**2 + (agent_y-target_y)**2)
-        if distance < decision_precision:
+        if distance < stopping_distance:
             time_target_reached = index
             break
 

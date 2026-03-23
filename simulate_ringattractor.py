@@ -265,6 +265,11 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
                 total_dist = np.sqrt((x_dist**2)+(y_dist**2))
                 if total_dist <= stopping_dist:
                     print(f"target reached at: {tstep}")
+                    headings = headings[:,:tstep+1]
+                    xPos = xPos[:,:tstep+1]
+                    yPos = yPos[:,:tstep+1]
+                    targetXPos = targetXPos[:,:tstep+1]
+                    targetYPos = targetYPos[:,:tstep+1]
                     return headings, xPos, yPos, targetXPos, targetYPos
 
 
