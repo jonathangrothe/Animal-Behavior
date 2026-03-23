@@ -68,7 +68,6 @@ def get_direction_info(headings, start_step=200, dest_step=5000):
     First we'll try to just detect changes and see if that's adequate
     '''
     #need to add multiple agent functionality, 
-    #FILLER STATEMENT to get around that for now
     headings = headings[0,:]
     headings_diff = np.diff(headings)
     max_angle_diff = 0

@@ -32,8 +32,8 @@ for a in range(nagents):
 #setting up the targets
 #radius = 20
 #initialxt, initialyt = simulate_ringattractor.create_grid(ntargets, 4, L)
-initialxt = [L-22, L-10]
-initialyt = [L/2+30, L/2 -15]
+initialxt = [L-15, L-15]
+initialyt = [L/2+30, L/2 -30]
 
 # --- Setting up the simulation ---
 
@@ -91,16 +91,16 @@ for i in range(N):
 # --- Details of the simulation to change ---
 
 #allocentric flag
-allocentricFlag = [1]
+allocentricFlag = [0,1]
 
 #attraction
-h0s = [0.4742]
+h0s = [[0.48,0.47,0],[0.47,0.51,0]]
 
 #hbase
-h_b = [0.0781]
+h_b = [0.2]
 
 #width of the gauss bump 
-sigma = [0.5843]
+sigma = [0.5]
 
 #noise parameter 
 beta = [100]
@@ -127,11 +127,7 @@ n_samples = 2
 for sim in range(n_samples):
     for orientation in range(len(allocentricFlag)):
         for h in range(len(h0s)):
-            h0 = np.zeros(ntargets+nagents)
-            for i in range(ntargets):
-                h0[i] = h0s[h]
-            for a in range(nagents):
-                h0[ntargets+a] = h0s[h]
+            h0 = h0s[h]
             for hb in range(len(h_b)):
                 for s in range(len(sigma)):
                     for b in range(len(beta)):
@@ -140,8 +136,8 @@ for sim in range(n_samples):
                                     initialx,initialy,initialxt,initialyt,True)
                         
                         
-                        final_decision, time_reached, movement_start = simulation_metrics.get_destination_metrics(xPos,yPos, targetsx,targetsy)
-                        decision_index = simulation_metrics.get_direction_info(headings, movement_start,time_reached)
+                        final_decision, time_reached, movement_start = simulation_metrics.get_destination_metrics(xPos,yPos,targetsx,targetsy)
+                        decision_index = simulation_metrics.get_direction_info(headings,movement_start,time_reached)
                         movement_starts.append(movement_start)
                         targets_reached.append(final_decision)
                         time_to_target.append(time_reached)
@@ -151,10 +147,10 @@ for sim in range(n_samples):
                         h_bs.append(h_b[hb])
                         sigmas.append(sigma[s])
 
-sim_data = {'Final target': targets_reached,'Time to target': time_to_target, 'Movement_starts': movement_starts, 'Decision time': decision_index, 'Allocentric or egocentric': allo, 'Attraction': attraction, 'H_b': h_bs, 'sigma': sigmas}
+sim_data = {'Final target': targets_reached,'Time to target': time_to_target, 'Movement starts': movement_starts, 'Decision time': decision_time, 'Allocentric or egocentric': allo, 'Attraction': attraction, 'H_b': h_bs, 'sigma': sigmas}
 sim_df = pd.DataFrame(sim_data)
 pd.set_option('display.max_columns', None)
-print(sim_df)   
+sim_df.to_csv("simulation_resuts.csv") 
 
 
 
