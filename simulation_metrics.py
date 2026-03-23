@@ -3,7 +3,7 @@ import numpy as np
 # -------- Getting metrics --------
 
 #so with what we returned from running the sim we can define a function to get metrics
-def get_destination_metrics(xPos, yPos, targetsx, targetsy , decision_precision = 1):
+def get_destination_metrics(xPos, yPos, targetsx, targetsy , decision_precision = 0.1):
     '''
     A function which takes the outputs from the simulate_ringattractor code and gets a few metrics to quantify what happened in the simulation
     Inputs:

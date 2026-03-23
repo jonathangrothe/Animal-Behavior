@@ -5,7 +5,7 @@ import math
 # ---------- Simulation code!! ----------
 def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag,rEgo,rEgoTarget,Egonumber,
                             distf,adistf,J,beta,h0,h_b,dt,v0,v0t,sigma,hColl,rColl,
-                            initialx,initialy,initialxt,initialyt, plot=True):
+                            initialx,initialy,initialxt,initialyt,plot=True,stop=False,stopping_dist=0.1):
 
     # -------- INITIALIZATIONS WITHIN THE SIMULATION --------
 
@@ -254,7 +254,20 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
                 plt.ylim(0, L)
                 plt.title(f"Time step {tstep}, allocentric:{allocentricFlag}, h0:{h0},beta: {beta}")
                 plt.pause(0.001)  
-            
+
+        # -------- STEP G - STOP --------
+        if stop == True:
+            for targ in range(ntargets):
+                targ_x = targetXPos[targ,tstep]
+                targ_y = targetYPos[targ,tstep]
+                x_dist = np.abs(xPos[0,tstep] - targ_x)
+                y_dist = np.abs(yPos[0,tstep] - targ_y)
+                total_dist = np.sqrt((x_dist**2)+(y_dist**2))
+                if total_dist <= stopping_dist:
+                    print(f"target reached at: {tstep}")
+                    return headings, xPos, yPos, targetXPos, targetYPos
+
+
         plt.show(block=False)
     return headings, xPos, yPos, targetXPos, targetYPos
 

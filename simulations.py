@@ -118,7 +118,7 @@ h_bs = []
 sigmas = []
 
 # number of times to run the simulation
-n_samples = 2
+n_samples = 1
 
 # -------- Running the simulation --------
 
@@ -133,7 +133,7 @@ for sim in range(n_samples):
                     for b in range(len(beta)):
                         headings, xPos, yPos, targetsx, targetsy = simulate_ringattractor.simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag[orientation],periodicflag,rEgo,rEgoTarget,Egonumber,
                                     distf,adistf,J,beta[b],h0,h_b[hb],dt,v0,v0t,sigma[s],hColl,rColl,
-                                    initialx,initialy,initialxt,initialyt,True)
+                                    initialx,initialy,initialxt,initialyt,True,True)
                         
                         
                         final_decision, time_reached, movement_start = simulation_metrics.get_destination_metrics(xPos,yPos,targetsx,targetsy)
@@ -146,6 +146,8 @@ for sim in range(n_samples):
                         attraction.append(h0s[h])
                         h_bs.append(h_b[hb])
                         sigmas.append(sigma[s])
+
+          
 
 sim_data = {'Final target': targets_reached,'Time to target': time_to_target, 'Movement starts': movement_starts, 'Decision time': decision_time, 'Allocentric or egocentric': allo, 'Attraction': attraction, 'H_b': h_bs, 'sigma': sigmas}
 sim_df = pd.DataFrame(sim_data)
