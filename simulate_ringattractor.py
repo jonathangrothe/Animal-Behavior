@@ -228,7 +228,7 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
         # -------- STEP F - VIZ --------
         plot_col= 'blue'
         if allocentricFlag == 0:
-            plot_col = 'red'
+            plot_col = 'green'
         if plot == True:
             if tstep % 100 == 0:
                 # Plot agents
