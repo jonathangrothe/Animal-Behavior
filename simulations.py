@@ -17,7 +17,7 @@ L = 100
 # --- Geometry-based parameters to change ---
 
 #number of targets
-ntargets = 4
+ntargets = 5
 
 #number of agents: 
 nagents = 1
@@ -26,14 +26,14 @@ nagents = 1
 initialx = np.zeros(nagents)
 initialy = np.zeros(nagents)
 for a in range(nagents):
-    initialx[a] = L/2 - 30
-    initialy[a] = L/2
+    initialx[a] = 5
+    initialy[a] = 5
 
 #setting up the targets
 #radius = 20
 #initialxt, initialyt = simulate_ringattractor.create_grid(ntargets, 4, L)
-initialxt = [L-15, L-15, L-15, L-15]
-initialyt = [L/2+30, L/2-30, L/2+20, L/2-20]
+initialxt = [10, 45, 75, 70, 95]
+initialyt = [70, 75, 45, 10, 85]
 
 # --- Setting up the simulation ---
 
@@ -94,7 +94,7 @@ for i in range(N):
 allocentricFlag = [0,1]
 
 #attraction
-h0s = [[0.47,0.47,-0.05,0.01,0], [0.47,0.47,-0.2,0.01,0]]
+h0s = [[0.95,0.75,0.75,0.95,0.15]]
 
 #hbase
 h_b = [0.2]
@@ -110,7 +110,8 @@ targets_reached = []
 time_to_target = []
 movement_starts = []
 
-decision_time = []
+decision1_time = []
+decision2_time = []
 
 allo = []
 attraction = []
@@ -118,7 +119,7 @@ h_bs = []
 sigmas = []
 
 # number of times to run the simulation
-n_samples = 10
+n_samples = 3
 
 # -------- Running the simulation --------
 
@@ -136,11 +137,18 @@ for sim in range(n_samples):
                                     initialx,initialy,initialxt,initialyt,True,True)
                         
                         final_decision, time_reached, movement_start = simulation_metrics.get_destination_metrics(xPos,yPos,targetsx,targetsy)
-                        decision_index = simulation_metrics.get_direction_info(headings,movement_start,time_reached)
+                        decision_indices = simulation_metrics.get_direction_info(headings,movement_start,time_reached,2)
                         movement_starts.append(movement_start)
                         targets_reached.append(final_decision)
                         time_to_target.append(time_reached)
-                        decision_time.append(decision_index)
+                        if len(decision_indices) > 0:
+                            decision1_time.append(decision_indices[0])
+                        else:
+                            decision1_time.append(-1)
+                        if len(decision_indices) > 1:
+                            decision2_time.append(decision_indices[1])
+                        else:
+                            decision2_time.append(-1)
                         allo.append(allocentricFlag[orientation])
                         attraction.append(h0s[h])
                         h_bs.append(h_b[hb])
@@ -148,7 +156,7 @@ for sim in range(n_samples):
 
           
 
-sim_data = {'Final target': targets_reached,'Time to target': time_to_target, 'Movement starts': movement_starts, 'Decision time': decision_time, 'Allocentric or egocentric': allo, 'Attraction': attraction, 'H_b': h_bs, 'sigma': sigmas}
+sim_data = {'Final target': targets_reached,'Time to target': time_to_target, 'Movement starts': movement_starts, 'First decision time': decision1_time, 'Second decision time': decision2_time, 'Allocentric or egocentric': allo, 'Attraction': attraction, 'H_b': h_bs, 'sigma': sigmas}
 sim_df = pd.DataFrame(sim_data)
 pd.set_option('display.max_columns', None)
 sim_df.to_csv("simulation_resuts.csv") 

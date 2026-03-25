@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.signal import find_peaks
 
 # -------- Getting metrics --------
 
@@ -31,7 +32,7 @@ def get_destination_metrics(xPos, yPos, targetsx, targetsy , stopping_distance =
 
     # find the first time the agent gets within the decision boundary for the target it ends up at
     # made a bit unnecessary if stop == True, but we'll keep it in for if stop == False
-    
+
     time_target_reached = 0
     for index in range(len(xPos[0,:])):
         if final_target == -1:
@@ -65,19 +66,28 @@ def get_destination_metrics(xPos, yPos, targetsx, targetsy , stopping_distance =
         
     return final_target, time_target_reached, movement_start
 
-def get_direction_info(headings, start_step=200, dest_step=5000):
+def get_direction_info(headings, n_peaks, start_step=200, dest_step=5000):
     '''
     A function which takes the agent's heading at each time step and determines when it turns towards one target
     This will depend on the initial geometry, so we might need to take that as a parameter
     First we'll try to just detect changes and see if that's adequate
     '''
-    #need to add multiple agent functionality, 
+    #need to add multiple agent functionality
+    # need to find a way to handle multiple decisions
+    # problem is that because there is some noise we can't just take the first time it turns
+    # as the decision
     headings = headings[0,:]
-    headings_diff = np.diff(headings)
+    peaks, properties = find_peaks(headings, prominence=0)
+    prominences = properties['prominences']
+    top_n_indices = np.argsort(prominences)[-n_peaks:]
+    top_n_peaks = peaks[top_n_indices]
+    '''
     max_angle_diff = 0
     dec_ind = 0
     for i in range(start_step,dest_step): 
         if headings_diff[i] > max_angle_diff:
             max_angle_diff = headings_diff[i]
             dec_ind = i
-    return dec_ind
+    '''
+    print(top_n_peaks)
+    return top_n_peaks

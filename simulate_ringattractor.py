@@ -226,11 +226,11 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
             
 
         # -------- STEP F - VIZ --------
-        plot_col = 'blue'
+        plot_col= 'blue'
+        if allocentricFlag == 0:
+            plot_col = 'red'
         if plot == True:
             if tstep % 100 == 0:
-                if 0.78 < headings[0,tstep] < 5.49:
-                    plot_col = 'red'
                 # Plot agents
                 plt.scatter(
                     xPos[:, tstep + 1],
@@ -272,8 +272,7 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
                     targetYPos = targetYPos[:,:tstep+1]
                     return headings, xPos, yPos, targetXPos, targetYPos
 
-
-        plt.show(block=False)
+        plt.show(block = False)
     return headings, xPos, yPos, targetXPos, targetYPos
 
 #function for creating an evenly spaced grid
