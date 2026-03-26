@@ -26,7 +26,6 @@ def get_destination_metrics(xPos, yPos, targetsx, targetsy , stopping_distance =
         x_dist = np.abs(final_x - targ_x)
         y_dist = np.abs(final_y - targ_y)
         total_dist = np.sqrt((x_dist**2)+(y_dist**2))
-        print(f"total_dist to target {targ}: {total_dist}")
         if total_dist <= stopping_distance:
             final_target = targ
 
@@ -89,5 +88,25 @@ def get_direction_info(headings, n_peaks, start_step=200, dest_step=5000):
             max_angle_diff = headings_diff[i]
             dec_ind = i
     '''
-    print(top_n_peaks)
     return top_n_peaks
+
+def get_min_distance(xPos, yPos, targetXpos, targetYpos):
+    '''
+    a function which takes the positions of the agent and targets
+    and computes the distance to each target at each step
+    and finds the minimum over all time steps of the minimum distance/sum of the distances
+    '''
+    ntargets = len(targetXpos[:,0])
+    tsteps = len(xPos[0,:])
+    min_over_sum = []
+    for i in range(tsteps):
+        dists = []
+        for t in range(ntargets):
+            # calc dist
+            dist = np.sqrt((xPos[0,i]-targetXpos[t,i])**2 + (yPos[0,i]-targetYpos[t,i])**2)
+            dists.append(dist)
+        min_dist = min(dists)
+        sum_dists = sum(dists)
+        min_over_sum.append(min_dist/sum_dists)
+    total_min = min(min_over_sum)
+    return total_min
