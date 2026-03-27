@@ -90,7 +90,7 @@ def get_direction_info(headings, n_peaks, start_step=200, dest_step=5000):
     '''
     return top_n_peaks
 
-def get_min_distance(xPos, yPos, targetXpos, targetYpos):
+def get_min_distance(xPos, yPos, targetXpos, targetYpos, uneven=False, better_ind=-1):
     '''
     a function which takes the positions of the agent and targets
     and computes the distance to each target at each step
@@ -104,9 +104,12 @@ def get_min_distance(xPos, yPos, targetXpos, targetYpos):
         for t in range(ntargets):
             # calc dist
             dist = np.sqrt((xPos[0,i]-targetXpos[t,i])**2 + (yPos[0,i]-targetYpos[t,i])**2)
-            dists.append(dist)
-        min_dist = min(dists)
+            dists.append(dist)  
         sum_dists = sum(dists)
+        # now either find min distance or distance to better target
+        min_dist = min(dists)
+        if uneven == True:
+            min_dist = dists[better_ind]
         min_over_sum.append(min_dist/sum_dists)
     total_min = min(min_over_sum)
     return total_min

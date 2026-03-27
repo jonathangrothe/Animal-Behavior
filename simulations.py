@@ -93,16 +93,16 @@ for i in range(N):
 # --- Details of the simulation to change ---
 
 #allocentric flag
-allocentricFlag = [1]
+allocentricFlag = [0]
 
 #attraction
-h0s = [[0.45,0.45]]
+h0s = [[0.45,0.46]]
 
 #hbase
-h_b = np.linspace(0,0.5,num=100)
+h_b = [0.2]
 
 #width of the gauss bump 
-sigma = [0.5]
+sigma = np.linspace(0.1,0.7,num=100)
 
 #noise parameter 
 beta = [100]
@@ -141,7 +141,7 @@ for sim in range(n_samples):
                         
                         final_decision, time_reached, movement_start = simulation_metrics.get_destination_metrics(xPos,yPos,targetsx,targetsy)
                         decision_indices = simulation_metrics.get_direction_info(headings,movement_start,time_reached,1)
-                        success_measure = simulation_metrics.get_min_distance(xPos, yPos, targetsx, targetsy)
+                        success_measure = simulation_metrics.get_min_distance(xPos, yPos, targetsx, targetsy, True, 1)
                         movement_starts.append(movement_start)
                         targets_reached.append(final_decision)
                         time_to_target.append(time_reached)
@@ -154,7 +154,7 @@ for sim in range(n_samples):
                             decision1_time.append(decision_indices[0])
                         else:
                             decision1_time.append(-1)
-                        print(f"time: {hb}")
+                        print(f"time: {s}")
 
 sim_data = {'Distance to closest target over sum of distances': min_distance,'Final target': targets_reached,'Time to target': time_to_target, 'Movement starts': movement_starts, 'First decision time': decision1_time, 'Allocentric or egocentric': allo, 'Attraction': attraction, 'Base attraction': h_bs, 'sigma': sigmas}
 sim_df = pd.DataFrame(sim_data)
@@ -163,8 +163,8 @@ sim_df.to_csv("simulation_resuts.csv")
 
 # plot x axis as param of interest, plot y axis as success measure
 plt.figure(1)
-plt.plot(h_bs, min_distance)
-plt.title("Success over different base attraction values (even attraction, allocentric)")
-plt.xlabel("Base attraction")
-plt.ylabel("Smallest distance to closer target (over sum of distances)")
+plt.plot(sigma, min_distance)
+plt.title("Success over different sigma values (uneven attraction, egocentric)")
+plt.xlabel("Sigma")
+plt.ylabel("Smallest distance to better target (over sum of distances)")
 plt.show()

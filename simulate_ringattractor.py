@@ -252,7 +252,7 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
 
                 plt.xlim(0, L)
                 plt.ylim(0, L)
-                plt.title(f"Time step {tstep}, allocentric:{allocentricFlag}, h0:{h0},beta: {beta}")
+                plt.title(f"Time step {tstep}, allocentric:{allocentricFlag}, h0:{h0}, hb: {h_b}, beta: {beta}, sigma: {sigma}")
                 plt.pause(0.001)  
 
         # -------- STEP G - STOP --------
