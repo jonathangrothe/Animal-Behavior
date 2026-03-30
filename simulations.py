@@ -82,7 +82,7 @@ for i in range(N):
 allocentricFlag = [1]
 
 # attraction vector, first are attraction for targets, then agents
-h0s = [[0.45,0.45]]
+h0s = [[0.45,0.46]]
 
 h_b = np.linspace(0,0.5,num=20)
 
@@ -122,7 +122,7 @@ for orientation in range(len(allocentricFlag)):
                         headings, xPos, yPos, targetsx, targetsy = simulate_ringattractor.simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag[orientation],periodicflag,rEgo,rEgoTarget,Egonumber,
                                     distf,adistf,J,beta[b],h0,h_b[hb],dt,v0,v0t,sigma[s],hColl,rColl,
                                     initialx,initialy,initialxt,initialyt,False,False)
-                        success_measure = simulation_metrics.get_min_distance(xPos, yPos, targetsx, targetsy, False)
+                        success_measure = simulation_metrics.get_min_distance(xPos, yPos, targetsx, targetsy, True, 1)
                         min_distance.append(success_measure)
                     mean_distance.append(np.mean(min_distance))
 
@@ -130,7 +130,7 @@ for orientation in range(len(allocentricFlag)):
 # plot x axis as param of interest, plot y axis as success measure
 plt.figure(1)
 plt.plot(h_b, mean_distance)
-plt.title("Success over different base attraction values (even attraction, allocentric)")
+plt.title("Success over different base attraction values (uneven attraction, allocentric)")
 plt.xlabel("Base attraction")
-plt.ylabel("Smallest distance to closer target (over sum of distances)")
+plt.ylabel("Smallest distance to better target (over sum of distances)")
 plt.show()
