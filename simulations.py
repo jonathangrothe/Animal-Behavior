@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import simulate_ringattractor
 import simulation_metrics
+import time
 
 # --------  PARAMETERS --------
 
@@ -83,10 +84,10 @@ allocentricFlag = [1]
 # attraction vector, first are attraction for targets, then agents
 h0s = [[0.45,0.45]]
 
-h_b = [0.2]
+h_b = np.linspace(0,0.5,num=20)
 
 # width of the gauss bump 
-sigma = np.linspace(0.1,0.6,num=20)
+sigma = [0.5]
 
 # noise parameter 
 beta = [100]
@@ -113,8 +114,8 @@ for orientation in range(len(allocentricFlag)):
     for h in range(len(h0s)):
         h0 = h0s[h]
         for hb in range(len(h_b)):
+            print(f"hb: {hb}")
             for s in range(len(sigma)):
-                print(f"sigma: {s}")
                 for b in range(len(beta)):
                     for sim in range(n_samples):
                         min_distance = []
@@ -128,8 +129,8 @@ for orientation in range(len(allocentricFlag)):
 
 # plot x axis as param of interest, plot y axis as success measure
 plt.figure(1)
-plt.plot(sigma, mean_distance)
-plt.title("Success over different sigma values (even attraction, allocentric)")
-plt.xlabel("Sigma")
+plt.plot(h_b, mean_distance)
+plt.title("Success over different base attraction values (even attraction, allocentric)")
+plt.xlabel("Base attraction")
 plt.ylabel("Smallest distance to closer target (over sum of distances)")
 plt.show()
