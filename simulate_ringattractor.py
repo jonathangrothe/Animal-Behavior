@@ -9,14 +9,12 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
 
     # -------- INITIALIZATIONS WITHIN THE SIMULATION --------
 
-    #setting up the alpharing
     alpharing0 = np.linspace(0,2*np.pi, N+1)
     alpharing0 = alpharing0[:-1]
     alpharing = np.zeros((nagents,N))
     for a in range (nagents):
         alpharing[a,:] = alpharing0
 
-    #setting up array to hold ring states at different times
     uArray = np.zeros((N, nagents, T+1))
     u0 = 0.05*np.random.randn(N,nagents) #initialize randomly
     uArray[:,:,0] = u0
@@ -47,7 +45,6 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
         Egocentric = np.zeros(nagents)
         
         #contribution of other agents
-
         for a in range(nagents):
             xa = xPos[a,tstep]
             ya = yPos[a,tstep]
@@ -60,7 +57,6 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
 
                 dx = xb - xa
                 dy = yb - ya
-                #Periodic flag add (not yet)
 
                 if periodic_flag == 1:
                     if abs(dx) > L / 2:
@@ -71,7 +67,6 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
                 distAB = np.sqrt(dx**2 + dy**2)
                 ampl = h0[ntargets+b]
                 if distf != 0: 
-                    #don't technically need this, but original code runs one sim with distf =0
                     ampl = ampl*(np.exp(-adistf*distAB/L))
                 if distAB < rColl:
                     ampl = hColl
@@ -108,7 +103,6 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
                 
                 ampl = h0[ttarg]
                 if distf != 0: 
-                    #don't technically need this, but original code runs one sim with distf =0
                     ampl = ampl*(np.exp(-adistf*distAB/L))
                 
                 angleAB = np.atan2(dy,dx)
@@ -143,8 +137,6 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
             for i in range(N):
                 cx = cx + (faPos[i] * np.cos(alpharing[a,i]))
                 cy = cy + (faPos[i] * np.sin(alpharing[a,i]))
-            #print(f"cx - step c: {cx}")
-            #print(f"cy - step c: {cy}")
             newAngle = 0
             #if the centers are close to zero use old heading 
             if (np.abs(cx) < 1e-9) and (np.abs(cy) < 1e-9):
@@ -157,7 +149,6 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
 
             if allocentricFlag == 0:
                 alpharing[a,:] = np.mod(alpharing[a,:] - headings[a,tstep] + newAngle,2*np.pi)
-                #print(f"Ego update - step C: {alpharing[a,:]}")
             elif Egocentric[a] >= Egonumber:
                 alpharing[a,:] = np.mod(alpharing[a,:]-headings[a,tstep] + newAngle, 2*np.pi)
 
@@ -175,8 +166,6 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
                     val = 0
                 cx_d = cx_d + val * np.cos(alpharing[a,i])
                 cy_d = cy_d + val * np.sin(alpharing[a,i])
-            #print(f"cx - step D: {cx_d}")
-            #print(f"cy - step D: {cy_d}")
             newx = oldx + dt * v0 * cx_d
             newy = oldy + dt * v0 * cy_d
 
@@ -192,9 +181,6 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
                 newy = 0
             elif newy > L:
                 newy = L
-
-            #print(f"newx: {newx}")
-            #print(f"newy: {newy}")
             xPos[a,tstep+1] = newx
             yPos[a,tstep+1] = newy
 
@@ -226,17 +212,17 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
             
 
         # -------- STEP F - VIZ --------
-        plot_col= 'blue'
-        if allocentricFlag == 0:
-            plot_col = 'green'
         if plot == True:
+            plot_col= 'blue'
+            if allocentricFlag == 0:
+                plot_col = 'green'
+
             if tstep % 100 == 0:
                 # Plot agents
                 plt.scatter(
                     xPos[:, tstep + 1],
                     yPos[:, tstep + 1],
                     s = 10,
-                    #c = [[0, 0.2, 0.8]],
                     color = plot_col
                 )
 
@@ -271,8 +257,10 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
                     targetXPos = targetXPos[:,:tstep+1]
                     targetYPos = targetYPos[:,:tstep+1]
                     return headings, xPos, yPos, targetXPos, targetYPos
+                
+        if plot == True:
+            plt.show(block = False)
 
-        plt.show(block = False)
     return headings, xPos, yPos, targetXPos, targetYPos
 
 #function for creating an evenly spaced grid

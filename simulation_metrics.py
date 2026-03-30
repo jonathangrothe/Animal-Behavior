@@ -45,7 +45,7 @@ def get_destination_metrics(xPos, yPos, targetsx, targetsy , stopping_distance =
             time_target_reached = index
             break
 
-    # finding the time the agent starts moving. 
+    # finding the time the agent starts moving
     # first calculate the initial closest distance and use that as decision boundary?
     init_distance = 10000
     for i in range(ntargets):
