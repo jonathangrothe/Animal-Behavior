@@ -122,7 +122,7 @@ for orientation in range(len(allocentricFlag)):
                         headings, xPos, yPos, targetsx, targetsy = simulate_ringattractor.simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag[orientation],periodicflag,rEgo,rEgoTarget,Egonumber,
                                     distf,adistf,J,beta[b],h0,h_b[hb],dt,v0,v0t,sigma[s],hColl,rColl,
                                     initialx,initialy,initialxt,initialyt,False,False)
-                        success_measure = simulation_metrics.get_min_distance(xPos, yPos, targetsx, targetsy, True, 1)
+                        success_measure = simulation_metrics.better_min_distance(xPos, yPos, targetsx, targetsy, True, 1)
                         min_distance.append(success_measure)
                     mean_distance.append(np.mean(min_distance))
 

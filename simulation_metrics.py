@@ -113,3 +113,16 @@ def get_min_distance(xPos, yPos, targetXpos, targetYpos, uneven=False, better_in
         min_over_sum.append(min_dist/sum_dists)
     total_min = min(min_over_sum)
     return total_min
+
+def better_min_distance(xPos, yPos, targetXpos, targetYpos, uneven=False, better_ind=-1):
+    tsteps = len(xPos[0,:])
+    dists = np.sqrt((xPos[0, :] - targetXpos[:, :tsteps])**2 + 
+                (yPos[0, :] - targetYpos[:, :tsteps])**2)
+    sum_dists = dists.sum(axis=0)
+
+    min_dists = dists[better_ind] if uneven else dists.min(axis=0)
+
+    min_over_sum = min_dists / sum_dists
+
+    total_min = min_over_sum.min()
+    return total_min
