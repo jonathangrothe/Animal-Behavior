@@ -84,7 +84,7 @@ allocentricFlag = [0]
 # attraction vector, first are attraction for targets, then agents
 h0s = [[0.45,0.46]]
 
-h_b = [0.2,0.21,0.22,0.23,0.24,0.25]
+h_b = [0.27,0.29,0.31,0.33,0.35,0.37]
 
 # width of the gauss bump 
 sigma = [0.5]
@@ -105,62 +105,46 @@ decision2_time = []
 # number of times to run the simulation
 n_samples = 20
 
+# controls whether or not we plot trajectories
+plot_traj = True
 # -------- Running the simulation --------
 
 # this is running the sim with a bunch of changes in variables
-
-plt.figure(1)
-plt.xlim(0, L)
-plt.ylim(0, L)
+x_trajs = np.zeros((6,51))
+y_trajs = np.zeros((6,51))
 for orientation in range(len(allocentricFlag)):
     for h in range(len(h0s)):
         h0 = h0s[h]
         for hb in range(len(h_b)):
-            plot_col = 'powderblue'
-            if hb == 1:
-                plot_col = 'deepskyblue'
-            if hb == 2:
-                plot_col = 'blue'
-            if hb == 3:
-                plot_col = 'navy'
-            if hb == 4:
-                plot_col = 'slateblue'
-            if hb == 5: 
-                plot_col = 'darkviolet'
             for s in range(len(sigma)):
                 for b in range(len(beta)):
-                    x_sums = np.zeros((1,51))
-                    y_sums = np.zeros((1,51))
+                    if plot_traj == True:
+                        x_sums = np.zeros((1,51))
+                        y_sums = np.zeros((1,51))
                     min_distance = []
                     for sim in range(n_samples):
-                        print(sim)
+                        print(f"sample number: {sim}")
                         headings, xPos, yPos, targetsx, targetsy = simulate_ringattractor.simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag[orientation],periodicflag,rEgo,rEgoTarget,Egonumber,
                                     distf,adistf,J,beta[b],h0,h_b[hb],dt,v0,v0t,sigma[s],hColl,rColl,
                                     initialx,initialy,initialxt,initialyt,False,False)
-                        success_measure = simulation_metrics.better_min_distance(xPos, yPos, targetsx, targetsy, True, 1)
-                        x_sliced = xPos[:,::100]
-                        y_sliced = yPos[:,::100]
-                        x_sums = x_sums + x_sliced
-                        y_sums = y_sums + y_sliced
+                        success_measure = simulation_metrics.get_min_distance(xPos, yPos, targetsx, targetsy, True, 1)
+                        if plot_traj == True:
+                            x_sliced = xPos[:,::100]
+                            y_sliced = yPos[:,::100]
+                            x_sums = x_sums + x_sliced
+                            y_sums = y_sums + y_sliced
                         min_distance.append(success_measure)
                     mean_distance.append(np.mean(min_distance))
-                    plt.scatter(
-                        x_sums/n_samples,
-                        y_sums/n_samples,
-                        s = 10,
-                        color = plot_col
-                    )
+            if plot_traj == True:
+                x_trajs[hb,:] = x_sums/n_samples
+                y_trajs[hb,:] = y_sums/n_samples
 
-                    plt.scatter(
-                        targetsx[:, 0],
-                        targetsy[:, 0],
-                        s = 10,
-                        marker = 's',
-                        c = [[0.8, 0, 0.2]], 
-                    )
-                    plt.title(f"Average trajectories: Allocentric:{allocentricFlag}, h0:{h0}, hb: {h_b}, beta: {beta}, sigma: {sigma}")
-                    plt.show(block=False)
-                    plt.pause(0.001)  
+# plotting the trajectories over a certain number of samples
+if plot_traj == True:
+    plt.figure(1)
+    simulation_metrics.plot_trajectories(x_trajs,y_trajs,initialxt,initialyt,
+                                     ['powderblue','deepskyblue','blue','navy','slateblue','darkviolet'],L,
+                                     "Average trajectories across hb values from 0.27 to 0.37 from 20 samples")
 
 
 # plot x axis as param of interest, plot y axis as success measure

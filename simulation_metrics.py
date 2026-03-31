@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.signal import find_peaks
+import matplotlib.pyplot as plt
 
 # -------- Getting metrics --------
 
@@ -90,39 +91,42 @@ def get_direction_info(headings, n_peaks, start_step=200, dest_step=5000):
     '''
     return top_n_peaks
 
-def get_min_distance(xPos, yPos, targetXpos, targetYpos, uneven=False, better_ind=-1):
-    '''
-    a function which takes the positions of the agent and targets
-    and computes the distance to each target at each step
-    and finds the minimum over all time steps of the minimum distance/sum of the distances
-    '''
-    ntargets = len(targetXpos[:,0])
-    tsteps = len(xPos[0,:])
-    min_over_sum = []
-    for i in range(tsteps):
-        dists = []
-        for t in range(ntargets):
-            # calc dist
-            dist = np.sqrt((xPos[0,i]-targetXpos[t,i])**2 + (yPos[0,i]-targetYpos[t,i])**2)
-            dists.append(dist)  
-        sum_dists = sum(dists)
-        # now either find min distance or distance to better target
-        min_dist = min(dists)
-        if uneven == True:
-            min_dist = dists[better_ind]
-        min_over_sum.append(min_dist/sum_dists)
-    total_min = min(min_over_sum)
-    return total_min
 
-def better_min_distance(xPos, yPos, targetXpos, targetYpos, uneven=False, better_ind=-1):
+def get_min_distance(xPos, yPos, targetXpos, targetYpos, uneven=False, better_ind=-1):
     tsteps = len(xPos[0,:])
     dists = np.sqrt((xPos[0, :] - targetXpos[:, :tsteps])**2 + 
                 (yPos[0, :] - targetYpos[:, :tsteps])**2)
     sum_dists = dists.sum(axis=0)
-
     min_dists = dists[better_ind] if uneven else dists.min(axis=0)
-
     min_over_sum = min_dists / sum_dists
-
     total_min = min_over_sum.min()
     return total_min
+
+def plot_trajectories(xtraj, ytraj, targetsx, targetsy, colors, L, title):
+    '''
+    plots n different trajectories in n different colors
+    xtraj: a n x t numpy array of x positions
+    ytraj a n x t numpy array of y positions
+    colors: a length n list of colors
+    L: length of the grid
+    '''
+    plt.xlim(0, L)
+    plt.ylim(0, L)
+    plt.scatter(
+            targetsx,
+            targetsy,
+            s = 10,
+            marker = 's',
+            c = [[0.8, 0, 0.2]], 
+        )
+    for traj in range(len(xtraj[:,0])):
+        plt.scatter(
+            xtraj[traj,:],
+            ytraj[traj,:],
+            s = 10,
+            color = colors[traj]
+        )
+    plt.title(title)
+    plt.show(block=False)
+    plt.pause(0.001)  
+
