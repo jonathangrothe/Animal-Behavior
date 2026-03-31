@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import simulate_ringattractor
 import simulation_metrics
-import time
+import timeit
 
 # --------  PARAMETERS --------
 
@@ -79,12 +79,12 @@ for i in range(N):
 # --- Details of the simulation to change ---
 
 # 1 is allo, 0 is ego
-allocentricFlag = [1]
+allocentricFlag = [0]
 
 # attraction vector, first are attraction for targets, then agents
 h0s = [[0.45,0.46]]
 
-h_b = np.linspace(0,0.5,num=20)
+h_b = [0.2,0.21,0.22,0.23,0.24,0.25]
 
 # width of the gauss bump 
 sigma = [0.5]
@@ -103,34 +103,72 @@ decision1_time = []
 decision2_time = []
 
 # number of times to run the simulation
-n_samples = 50
+n_samples = 20
 
 # -------- Running the simulation --------
 
 # this is running the sim with a bunch of changes in variables
 
-
+plt.figure(1)
+plt.xlim(0, L)
+plt.ylim(0, L)
 for orientation in range(len(allocentricFlag)):
     for h in range(len(h0s)):
         h0 = h0s[h]
         for hb in range(len(h_b)):
-            print(f"hb: {hb}")
+            plot_col = 'powderblue'
+            if hb == 1:
+                plot_col = 'deepskyblue'
+            if hb == 2:
+                plot_col = 'blue'
+            if hb == 3:
+                plot_col = 'navy'
+            if hb == 4:
+                plot_col = 'slateblue'
+            if hb == 5: 
+                plot_col = 'darkviolet'
             for s in range(len(sigma)):
                 for b in range(len(beta)):
+                    x_sums = np.zeros((1,51))
+                    y_sums = np.zeros((1,51))
+                    min_distance = []
                     for sim in range(n_samples):
-                        min_distance = []
+                        print(sim)
                         headings, xPos, yPos, targetsx, targetsy = simulate_ringattractor.simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag[orientation],periodicflag,rEgo,rEgoTarget,Egonumber,
                                     distf,adistf,J,beta[b],h0,h_b[hb],dt,v0,v0t,sigma[s],hColl,rColl,
                                     initialx,initialy,initialxt,initialyt,False,False)
                         success_measure = simulation_metrics.better_min_distance(xPos, yPos, targetsx, targetsy, True, 1)
+                        x_sliced = xPos[:,::100]
+                        y_sliced = yPos[:,::100]
+                        x_sums = x_sums + x_sliced
+                        y_sums = y_sums + y_sliced
                         min_distance.append(success_measure)
                     mean_distance.append(np.mean(min_distance))
+                    plt.scatter(
+                        x_sums/n_samples,
+                        y_sums/n_samples,
+                        s = 10,
+                        color = plot_col
+                    )
+
+                    plt.scatter(
+                        targetsx[:, 0],
+                        targetsy[:, 0],
+                        s = 10,
+                        marker = 's',
+                        c = [[0.8, 0, 0.2]], 
+                    )
+                    plt.title(f"Average trajectories: Allocentric:{allocentricFlag}, h0:{h0}, hb: {h_b}, beta: {beta}, sigma: {sigma}")
+                    plt.show(block=False)
+                    plt.pause(0.001)  
 
 
 # plot x axis as param of interest, plot y axis as success measure
-plt.figure(1)
+plt.figure(2)
 plt.plot(h_b, mean_distance)
-plt.title("Success over different base attraction values (uneven attraction, allocentric)")
+plt.title("Success over different base attraction values (uneven attraction, egocentric)")
 plt.xlabel("Base attraction")
 plt.ylabel("Smallest distance to better target (over sum of distances)")
 plt.show()
+
+
