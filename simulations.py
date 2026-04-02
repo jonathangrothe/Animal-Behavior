@@ -82,12 +82,18 @@ for i in range(N):
 allocentricFlag = [1]
 
 # attraction vector, first are attraction for targets, then agents
-h0s = [[0.45,0.45]]
+h0s = []
+attrac_for_plot = []
+for x in range(30):
+    attrac = [0.1+x*0.03,0.11+x*0.03]
+    h0s.append(attrac)
+    attrac_for_plot.append(attrac[0])
+
 
 h_b = [0.2]
 
 # width of the gauss bump 
-sigma = np.linspace(0.1,0.6, num=20)
+sigma = [0.5]
 
 # noise parameter 
 beta = [100]
@@ -117,8 +123,8 @@ for orientation in range(len(allocentricFlag)):
         h0 = h0s[h]
         for hb in range(len(h_b)):
             for s in range(len(sigma)):
-                print(f"sigma number: {s}")
                 for b in range(len(beta)):
+                    print(f"attraction number: {h}")
                     if plot_traj == True:
                         x_sums = np.zeros((1,51))
                         y_sums = np.zeros((1,51))
@@ -128,7 +134,7 @@ for orientation in range(len(allocentricFlag)):
                         headings, xPos, yPos, targetsx, targetsy = simulate_ringattractor.simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag[orientation],periodicflag,rEgo,rEgoTarget,Egonumber,
                                     distf,adistf,J,beta[b],h0,h_b[hb],dt,v0,v0t,sigma[s],hColl,rColl,
                                     initialx,initialy,initialxt,initialyt,False,False)
-                        success_measure = simulation_metrics.get_min_distance(xPos, yPos, targetsx, targetsy, False, 1)
+                        success_measure = simulation_metrics.get_min_distance(xPos, yPos, targetsx, targetsy, True, 1)
                         if plot_traj == True:
                             x_sliced = xPos[:,::100]
                             y_sliced = yPos[:,::100]
@@ -136,24 +142,24 @@ for orientation in range(len(allocentricFlag)):
                             y_sums = y_sums + y_sliced
                         min_distance.append(success_measure)
                     mean_distance.append(np.mean(min_distance))
-            if plot_traj == True:
-                x_trajs[hb,:] = x_sums/n_samples
-                y_trajs[hb,:] = y_sums/n_samples
+                    if plot_traj == True:
+                        x_trajs[b,:] = x_sums/n_samples
+                        y_trajs[b,:] = y_sums/n_samples
 
 # plotting the trajectories over a certain number of samples
 if plot_traj == True:
     plt.figure(1)
     simulation_metrics.plot_trajectories(x_trajs,y_trajs,initialxt,initialyt,
                                      ['powderblue','deepskyblue','blue','navy','slateblue','darkviolet'],L,
-                                     "Average trajectories across hb values from 0 to 0.05 from 20 samples")
+                                     "Average trajectories across beta values from 20 to 120 from 1 samples")
 
 
 # plot x axis as param of interest, plot y axis as success measure
 plt.figure(2)
-plt.plot(sigma, mean_distance)
-plt.title("Success over different sigma values (even attraction, allocentric)")
-plt.xlabel("Sigma")
-plt.ylabel("Smallest distance to closer target (over sum of distances)")
+plt.plot(attrac_for_plot, mean_distance)
+plt.title("Success over different attraction values (uneven attraction, allocentric)")
+plt.xlabel("Attraction of both targets")
+plt.ylabel("Smallest distance to better target (over sum of distances)")
 plt.show()
 
 

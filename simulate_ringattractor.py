@@ -72,6 +72,7 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
                     ampl = hColl
                 if distAB < rEgo:
                     Egocentric[a] = Egocentric[a]+1
+                    print("entered switch")
                 angleAB = np.atan2(dy,dx)
                 if angleAB < 0:
                     angleAB = angleAB + 2*np.pi
@@ -100,6 +101,7 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
                 distAB = np.sqrt(dx**2 + dy**2)
                 if distAB < rEgoTarget:
                     Egocentric[a] = Egocentric[a] + 1
+                    print("entered switch")
                 
                 ampl = h0[ttarg]
                 if distf != 0: 
