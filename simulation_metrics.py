@@ -100,6 +100,10 @@ def get_min_distance(xPos, yPos, targetXpos, targetYpos, uneven=False, better_in
     min_dists = dists[better_ind] if uneven else dists.min(axis=0)
     min_over_sum = min_dists / sum_dists
     total_min = min_over_sum.min()
+    print(f"min_dists: {min_dists}")
+    print(f"sum_dists: {sum_dists}")
+    print(f"min_over_sum: {min_over_sum}")
+    print(f"total_min: {total_min}")
     return total_min
 
 def plot_trajectories(xtraj, ytraj, targetsx, targetsy, colors, L, title):
@@ -110,6 +114,9 @@ def plot_trajectories(xtraj, ytraj, targetsx, targetsy, colors, L, title):
     colors: a length n list of colors
     L: length of the grid
     '''
+    # this works alright for getting an idea of how uneven geometries are failing if they're in between, but doesn't do great for even trajectories where
+    # success should actually be somewhere in the middle most of the time
+    # maybe instead want to plot 'maximum' trajectory (largest endpoint in y), 'minimum' trajectory (smallest endpoint in y) and 'median' trajectory (median endpoint in y)
     plt.xlim(0, L)
     plt.ylim(0, L)
     plt.scatter(
