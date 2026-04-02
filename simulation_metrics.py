@@ -92,18 +92,14 @@ def get_direction_info(headings, n_peaks, start_step=200, dest_step=5000):
     return top_n_peaks
 
 
-def get_min_distance(xPos, yPos, targetXpos, targetYpos, uneven=False, better_ind=-1):
+def get_min_distance(xPos, yPos, targetXpos, targetYpos, even=True, better_ind=-1):
     tsteps = len(xPos[0,:])
     dists = np.sqrt((xPos[0, :] - targetXpos[:, :tsteps])**2 + 
                 (yPos[0, :] - targetYpos[:, :tsteps])**2)
     sum_dists = dists.sum(axis=0)
-    min_dists = dists[better_ind] if uneven else dists.min(axis=0)
+    min_dists = dists[better_ind] if not even else dists.min(axis=0)
     min_over_sum = min_dists / sum_dists
     total_min = min_over_sum.min()
-    print(f"min_dists: {min_dists}")
-    print(f"sum_dists: {sum_dists}")
-    print(f"min_over_sum: {min_over_sum}")
-    print(f"total_min: {total_min}")
     return total_min
 
 def plot_trajectories(xtraj, ytraj, targetsx, targetsy, colors, L, title):
