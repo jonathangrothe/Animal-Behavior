@@ -52,7 +52,7 @@ for i in range(N):
     J[i,i] = 0.0
     J = np.squeeze(J)
 
-allocentricFlag = 0 # 1 is allo, 0 is ego
+allocentricFlag = 1 # 1 is allo, 0 is ego
 h0s = [0.45,0.45] # attraction vector, first are attraction for targets, then agents
 h_b = 0.2
 sigma = 0.5
@@ -91,7 +91,7 @@ base = {'N':N,
         'sigma':sigma,
         'beta':beta}
 
-change = {'h_b':np.linspace(0.05,0.25,num=5)}
+change = {'h0':[[0.68,0.68],[0.71,0.71],[0.74,0.74],[0.77,0.77],[0.8,0.8]]}
 
 n_samples = 30
 
@@ -100,25 +100,25 @@ success, x_trajs, y_trajs = repeated_sims.sample_sims(base,change,n_samples)
 plt.figure(1)
 simulation_metrics.plot_trajectories(x_trajs,y_trajs,initialxt,initialyt,
                                      plt.cm.coolwarm(np.linspace(0, 1, 5)),L,
-                                     'Mean trajectories for egocentric, even attraction. hb:0.05(blue)->0.25(red)',5, 'mean')
+                                     'Mean trajectories for allocentric, even attraction. h0:0.68(blue)->0.8(red)',5, 'mean')
 
 plt.figure(2)
 simulation_metrics.plot_trajectories(x_trajs,y_trajs,initialxt,initialyt,
                                      plt.cm.coolwarm(np.linspace(0, 1, 5)),L,
-                                     'Min trajectories for egocentric, even attraction. beta:0.05(blue)->0.25(red)',5, 'min')
+                                     'Min trajectories for allocentric, even attraction. h0:0.68(blue)->0.8(red)',5, 'min')
 
 plt.figure(3)
 simulation_metrics.plot_trajectories(x_trajs,y_trajs,initialxt,initialyt,
                                      plt.cm.coolwarm(np.linspace(0, 1, 5)),L,
-                                     'Max trajectories for egocentric, even attraction. beta:0.05(blue)->0.25(red)',5, 'max')
+                                     'Max trajectories for allocentric, even attraction. h0:0.68(blue)->0.8(red)',5, 'max')
 plt.show(block=False)
 
 # plot x axis as param of interest, plot y axis as success measure
-x_label = "h_b"
+x_label = "h0"
 y_label = "Smallest distance to closer target (over sum of distances)"
-success_title = "Success over different h_b values, egocentric, even attraction"
+success_title = "Success over different h0 values, allocentric, even attraction"
 plt.figure(4)
-simulation_metrics.plot_metric(success,change['h_b'],success_title,x_label,y_label)
+simulation_metrics.plot_metric(success,[0.68,0.71,0.74,0.77,0.8],success_title,x_label,y_label)
 plt.show()
 
 
