@@ -2,6 +2,7 @@
 # and returns data on 'success' and trajectories
 
 import numpy as np
+import pandas as pd
 import simulate_ringattractor as sim_ra
 import simulation_metrics as sim_met
 
@@ -17,7 +18,8 @@ def sample_sims(bp, changing_params, n_samples, slice=100):
     track_trajectories: boolean that if True collects data on all the trajectories
     returns:
     metrics: dictionary of metrics?
-    trajectories: probably just return all the trajectories from every sample so that we can fiddle with what ones we want to show after the fact
+    trajectories: returns all the trajectories in two dataframes, x_trajs_df and y_trajs_df for easy indexable access to both rows and columns going forward
+                (we need to be able to split samples based on rows, and aggregate the position over each time)
     '''
     # initialize all the stuff I want to collect
     success_list = []
@@ -32,15 +34,19 @@ def sample_sims(bp, changing_params, n_samples, slice=100):
                                                                                  bp['periodicFlag'],bp['rEgo'],bp['rEgoTarget'],bp['Egonumber'],bp['distf'],
                                                                                  bp['adistf'],bp['J'],bp['beta'],bp['h0'],bp['h_b'],bp['dt'],bp['v0'],bp['v0t'],
                                                                                  bp['sigma'],bp['hColl'],bp['rColl'],bp['initialx'],bp['initialy'],bp['initialxt'],bp['initialyt'],
-                                                                                 True,False)
+                                                                                 False,False)
                 even = all(x == bp['h0'][0] for x in bp['h0'])
+                print(even)
                 best_index = -1
                 if not even: 
                     best_index = bp['h0'].index(max(bp['h0']))
+                print(best_index)
                 success_measure = sim_met.get_min_distance(xPos, yPos, targetsx, targetsy, even, best_index)
                 success_list.append(success_measure)
                 x_sliced = xPos[:,::slice]
                 y_sliced = yPos[:,::slice]
-                x_trajs.append(x_sliced)
-                y_trajs.append(y_sliced)
-    return success_list, x_trajs, y_trajs
+                x_trajs.append(x_sliced.ravel())
+                y_trajs.append(y_sliced.ravel())
+    x_trajs_df = pd.DataFrame(x_trajs)
+    y_trajs_df = pd.DataFrame(y_trajs)
+    return success_list, x_trajs_df, y_trajs_df

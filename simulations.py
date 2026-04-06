@@ -91,30 +91,37 @@ base = {'N':N,
         'sigma':sigma,
         'beta':beta}
 
-change = {'h0': [[0.45,0.45],[0.45,0.46]]}
+change = {'h0':[[0.56,0.56],[0.58,0.58],[0.6,0.6],[0.62,0.62],[0.64,0.64],[0.66,0.66],[0.68,0.68]]}
 
-n_samples = 3
+n_samples = 30
 
 success, x_trajs, y_trajs = repeated_sims.sample_sims(base,change,n_samples)
-print(f"success: {success}")
 
-
-# plotting the trajectories over a certain number of samples - NEEDS WORK
-'''
 plt.figure(1)
 simulation_metrics.plot_trajectories(x_trajs,y_trajs,initialxt,initialyt,
-                                     plt.cm.viridis(np.linspace(0, 1, 5)),L,
-                                     "Average trajectories across attraction values from 0.64 to 1 from 25 samples, even attraction, allocentric")
-'''
+                                     plt.cm.coolwarm(np.linspace(0, 1, 7)),L,
+                                     'Mean trajectories for egocentric, even attraction. h0:0.56(blue)->0.68(red)',7, 'mean')
+
+plt.figure(2)
+simulation_metrics.plot_trajectories(x_trajs,y_trajs,initialxt,initialyt,
+                                     plt.cm.coolwarm(np.linspace(0, 1, 7)), L, 'Median trajectories for egocentric, even attraction, h0:0.56(blue)->0.68(red)', 7, 'median')
+
+plt.figure(3)
+simulation_metrics.plot_trajectories(x_trajs,y_trajs,initialxt,initialyt,
+                                     plt.cm.coolwarm(np.linspace(0, 1, 7)), L, 'Minimum trajectories for egocentric, even attraction, h0:0.56(blue)->0.68(red)', 7, 'min')
+
+plt.figure(4)
+simulation_metrics.plot_trajectories(x_trajs,y_trajs,initialxt,initialyt,
+                                     plt.cm.coolwarm(np.linspace(0, 1, 7)), L, 'Maximum trajectories for egocentric, even attraction, h0:0.56(blue)->0.68(red)', 7, 'max')
+plt.show(block=False)
 
 # plot x axis as param of interest, plot y axis as success measure
-# this should be its own function in simulation_metrics (That file def needs to be looked over)
-'''
-plt.figure(2)
-plt.plot(attrac_for_plot, success)
-plt.title("Success over different attraction values (even attraction, allocentric)")
-plt.xlabel("Attraction of both targets")
-plt.ylabel("Smallest distance to closer target (over sum of distances)")
+x_label = "Attraction of both targets"
+y_label = "Smallest distance to closer target (over sum of distances)"
+success_title = "Success over different h0 values"
+h0_forplot = [0.56,0.58,0.6,0.62,0.64,0.66,0.68]
+plt.figure(5)
+simulation_metrics.plot_metric(success,h0_forplot,success_title,x_label,y_label)
 plt.show()
-'''
+
 
