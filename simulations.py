@@ -53,7 +53,7 @@ for i in range(N):
     J = np.squeeze(J)
 
 allocentricFlag = 0 # 1 is allo, 0 is ego
-h0s = [0.45,0.45,0] # attraction vector, first are attraction for targets, then agents
+h0s = [0.45,0.45] # attraction vector, first are attraction for targets, then agents
 h_b = 0.2
 sigma = 0.5
 beta = 100
@@ -91,7 +91,7 @@ base = {'N':N,
         'sigma':sigma,
         'beta':beta}
 
-change = {'h0':[[0.56,0.56],[0.58,0.58],[0.6,0.6],[0.62,0.62],[0.64,0.64],[0.66,0.66],[0.68,0.68]]}
+change = {'h_b':np.linspace(0.05,0.25,num=5)}
 
 n_samples = 30
 
@@ -99,29 +99,26 @@ success, x_trajs, y_trajs = repeated_sims.sample_sims(base,change,n_samples)
 
 plt.figure(1)
 simulation_metrics.plot_trajectories(x_trajs,y_trajs,initialxt,initialyt,
-                                     plt.cm.coolwarm(np.linspace(0, 1, 7)),L,
-                                     'Mean trajectories for egocentric, even attraction. h0:0.56(blue)->0.68(red)',7, 'mean')
+                                     plt.cm.coolwarm(np.linspace(0, 1, 5)),L,
+                                     'Mean trajectories for egocentric, even attraction. hb:0.05(blue)->0.25(red)',5, 'mean')
 
 plt.figure(2)
 simulation_metrics.plot_trajectories(x_trajs,y_trajs,initialxt,initialyt,
-                                     plt.cm.coolwarm(np.linspace(0, 1, 7)), L, 'Median trajectories for egocentric, even attraction, h0:0.56(blue)->0.68(red)', 7, 'median')
+                                     plt.cm.coolwarm(np.linspace(0, 1, 5)),L,
+                                     'Min trajectories for egocentric, even attraction. beta:0.05(blue)->0.25(red)',5, 'min')
 
 plt.figure(3)
 simulation_metrics.plot_trajectories(x_trajs,y_trajs,initialxt,initialyt,
-                                     plt.cm.coolwarm(np.linspace(0, 1, 7)), L, 'Minimum trajectories for egocentric, even attraction, h0:0.56(blue)->0.68(red)', 7, 'min')
-
-plt.figure(4)
-simulation_metrics.plot_trajectories(x_trajs,y_trajs,initialxt,initialyt,
-                                     plt.cm.coolwarm(np.linspace(0, 1, 7)), L, 'Maximum trajectories for egocentric, even attraction, h0:0.56(blue)->0.68(red)', 7, 'max')
+                                     plt.cm.coolwarm(np.linspace(0, 1, 5)),L,
+                                     'Max trajectories for egocentric, even attraction. beta:0.05(blue)->0.25(red)',5, 'max')
 plt.show(block=False)
 
 # plot x axis as param of interest, plot y axis as success measure
-x_label = "Attraction of both targets"
+x_label = "h_b"
 y_label = "Smallest distance to closer target (over sum of distances)"
-success_title = "Success over different h0 values"
-h0_forplot = [0.56,0.58,0.6,0.62,0.64,0.66,0.68]
-plt.figure(5)
-simulation_metrics.plot_metric(success,h0_forplot,success_title,x_label,y_label)
+success_title = "Success over different h_b values, egocentric, even attraction"
+plt.figure(4)
+simulation_metrics.plot_metric(success,change['h_b'],success_title,x_label,y_label)
 plt.show()
 
 

@@ -35,14 +35,13 @@ def sample_sims(bp, changing_params, n_samples, slice=100):
                                                                                  bp['adistf'],bp['J'],bp['beta'],bp['h0'],bp['h_b'],bp['dt'],bp['v0'],bp['v0t'],
                                                                                  bp['sigma'],bp['hColl'],bp['rColl'],bp['initialx'],bp['initialy'],bp['initialxt'],bp['initialyt'],
                                                                                  False,False)
-                even = all(x == bp['h0'][0] for x in bp['h0'])
-                print(even)
+                even = all(x == bp['h0'][0] for x in bp['h0']) # REWORK THIS WHEN WE ADD AGENT ATTRACTIONS
                 best_index = -1
                 if not even: 
-                    best_index = bp['h0'].index(max(bp['h0']))
-                print(best_index)
+                    best_index = bp['h0'].index(max(bp['h0'])) # REWORK THIS FOR UNEVEN GEOMETRIES
                 success_measure = sim_met.get_min_distance(xPos, yPos, targetsx, targetsy, even, best_index)
                 success_list.append(success_measure)
+                print(f'success measure: {success_measure}')
                 x_sliced = xPos[:,::slice]
                 y_sliced = yPos[:,::slice]
                 x_trajs.append(x_sliced.ravel())

@@ -68,6 +68,25 @@ def get_direction_info(headings, n_peaks, start_step=200, dest_step=5000):
     top_n_peaks = peaks[top_n_indices]
     return top_n_peaks
 
+def plot_success_rate(target_list, n_samples, x):
+    '''
+    A function that plots the probability of the agent reaching a target
+    TO DO: expand to have option to include probabliity of the agent reaching a specified target
+    inputs: target_list: list of all the targets the agent got to (the same samples are entered consecutively)
+    n_samples: the number of samples
+    x: the values we are sampling over
+    returns:
+    A list of the probabilities of success at each point
+    '''
+    sample_size = len(target_list)//n_samples
+    success_prob = []
+    for s in range(n_samples):
+        sample_list = target_list[s*sample_size:(s+1)*sample_size]
+        failures = sample_list.count(-1)
+        success_prob.append(1-failures/sample_size)
+    plt.plot(x, success_prob)
+    return success_prob
+
 
 def get_min_distance(xPos, yPos, targetXpos, targetYpos, even=True, better_ind=-1):
     '''
@@ -86,14 +105,9 @@ def get_min_distance(xPos, yPos, targetXpos, targetYpos, even=True, better_ind=-
     dists = np.sqrt((xPos[0, :] - targetXpos[:, :tsteps])**2 + 
                 (yPos[0, :] - targetYpos[:, :tsteps])**2)
     sum_dists = dists.sum(axis=0)
-    print(f"dists: {dists}")
-    print(f"sum dists: {sum_dists}")
     min_dists = dists[better_ind] if not even else dists.min(axis=0)
     min_over_sum = min_dists / sum_dists
-    print(f"min_dists: {min_dists}")
-    print(f"min_over_sum: {min_over_sum}")
     total_min = min_over_sum.min()
-    print(f"total_min: {total_min}")
     return total_min
 
 def plot_trajectories(xtraj, ytraj, targetsx, targetsy, colors, L, title, n_groups, agg = 'mean'):
@@ -123,7 +137,6 @@ def plot_trajectories(xtraj, ytraj, targetsx, targetsy, colors, L, title, n_grou
     if agg == 'max':
         marker = '^'
     for group in range(n_groups):
-        # index
         x_split = xtraj.iloc[group*group_size:(group+1)*group_size,:]
         y_split = ytraj.iloc[group*group_size:(group+1)*group_size,:]
         x_points = []
@@ -135,21 +148,23 @@ def plot_trajectories(xtraj, ytraj, targetsx, targetsy, colors, L, title, n_grou
                 x_points.append(xloc_mean)
                 y_points.append(yloc_mean)
             if agg == 'median':
-                xloc_median = np.median(x_split.iloc[:,point])
-                yloc_median = np.median(y_split.iloc[:,point])
+                y_median = np.argpartition(y_split.iloc[:,point], group_size // 2)[group_size // 2]
+                xloc_median = x_split.iloc[y_median,point]
+                yloc_median = y_split.iloc[y_median,point]
                 x_points.append(xloc_median)
                 y_points.append(yloc_median)
             if agg == 'max':
-                xloc_max = np.max(x_split.iloc[:,point])
-                yloc_max = np.max(y_split.iloc[:,point])
+                y_max = np.argmax(y_split.iloc[:, point])
+                xloc_max = x_split.iloc[y_max,point]
+                yloc_max = y_split.iloc[y_max,point]
                 x_points.append(xloc_max)
                 y_points.append(yloc_max)
             if agg == 'min':
-                xloc_min = np.min(x_split.iloc[:,point])
-                yloc_min = np.min(y_split.iloc[:,point])
+                y_min = np.argmin(y_split.iloc[:,point])
+                xloc_min = x_split.iloc[y_min,point]
+                yloc_min = y_split.iloc[y_min,point]
                 x_points.append(xloc_min)
                 y_points.append(yloc_min)
-        # plot x_points and y_points
         plt.scatter(
             x_points,
             y_points,
@@ -190,7 +205,7 @@ def plot_metric(metric,x,title,xlabel,ylabel):
     plt.ylabel(ylabel)
     plt.title(title)
  
- # maybe add a plot over samples of simply probability of reaching a target?
- # and time
-    
+# maybe add a plot over samples of simply probability of reaching a target?
+# and time
+# and maybe seperate plots for failure trajectories?
 
