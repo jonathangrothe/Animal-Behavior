@@ -22,7 +22,8 @@ def get_destination_metrics(xPos, yPos, targetsx, targetsy , stopping_distance =
     # finds the first target the agent reaches (if the agent reaches a target)
     # and what time it reaches that target at
     ntargets = len(targetsx[:,0])
-    time_target_reached = 0
+    tsteps = len(xPos[0,:])
+    time_target_reached = tsteps
     target_reached = -1
     for index in range(len(xPos[0,:])):
         agent_x = xPos[0,index]
@@ -68,24 +69,30 @@ def get_direction_info(headings, n_peaks, start_step=200, dest_step=5000):
     top_n_peaks = peaks[top_n_indices]
     return top_n_peaks
 
-def plot_success_rate(target_list, n_samples, x):
+def get_success_rate(target_list, sample_size):
     '''
-    A function that plots the probability of the agent reaching a target
-    TO DO: expand to have option to include probabliity of the agent reaching a specified target
-    inputs: target_list: list of all the targets the agent got to (the same samples are entered consecutively)
+    A function which takes a list of targets over a number of samples, 
+    and returns the probability of reaching a target for each sample
+    Parameters:
+    target_list: a list of targets reached by the agent in each simulation, arranged consecutively by sample
     n_samples: the number of samples
-    x: the values we are sampling over
-    returns:
-    A list of the probabilities of success at each point
+    Returns:
+    success_prob: a list of size n_samples with each entry being the probability of success for that sample
     '''
-    sample_size = len(target_list)//n_samples
+    n_samples = len(target_list)//sample_size
     success_prob = []
     for s in range(n_samples):
         sample_list = target_list[s*sample_size:(s+1)*sample_size]
         failures = sample_list.count(-1)
         success_prob.append(1-failures/sample_size)
-    plt.plot(x, success_prob)
     return success_prob
+
+def get_avg_distance(xPos, yPos, targetXpos, targetYpos, stop_time):
+    tsteps = len(xPos[0,:])
+    dists = np.sqrt((xPos[0, :] - targetXpos[:, :tsteps])**2 + 
+                (yPos[0, :] - targetYpos[:, :tsteps])**2)
+    return(np.mean(dists,axis=1))
+
 
 
 def get_min_distance(xPos, yPos, targetXpos, targetYpos, even=True, better_ind=-1):
@@ -187,25 +194,19 @@ def plot_metric(metric,x,title,xlabel,ylabel):
     n_values = len(x)
     sample_size = len(metric)//n_values
     mean_metric = []
-    median_metric = []
-    min_metric = []
-    max_metric = []
+    se_metric = []
     for value in range(n_values):
         sample_metric = metric[value*sample_size:(value+1)*sample_size]
         mean_metric.append(np.mean(sample_metric))
-        median_metric.append(np.median(sample_metric))
-        min_metric.append(np.min(sample_metric))
-        max_metric.append(np.max(sample_metric))
-    plt.plot(x, mean_metric, color = 'green', label = 'Mean')
-    plt.plot(x, median_metric, color = 'purple', label = 'Median')
-    plt.plot(x, min_metric, color = 'blue', label = 'Min')
-    plt.plot(x, max_metric, color = 'red', label = 'Max')
+        se_metric.append(np.std(sample_metric)/np.sqrt(sample_size))
+    print(f"mean list: {mean_metric}")
+    print(f"se list: {se_metric}")
+    plt.plot(x, mean_metric, color = 'blue', label = 'Mean')
+    plt.plot(x, np.add(mean_metric,se_metric), color = 'red', label = 'standard error', linestyle = ':')
+    plt.plot(x, np.subtract(mean_metric,se_metric), color = 'red', linestyle = ':')
     plt.legend()
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     plt.title(title)
  
-# maybe add a plot over samples of simply probability of reaching a target?
-# and time
-# and maybe seperate plots for failure trajectories?
 

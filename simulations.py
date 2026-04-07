@@ -1,8 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
-import simulate_ringattractor
-import simulation_metrics
+import simulate_ringattractor as sim_ra
+import simulation_metrics as sim_met
 import repeated_sims
 
 # --------  PARAMETERS --------
@@ -30,7 +30,7 @@ hColl = -10
 rColl = 0
 
 # signal decay
-distf = 1
+distf = 0
 adistf = 1
 
 dt = 0.1
@@ -52,8 +52,8 @@ for i in range(N):
     J[i,i] = 0.0
     J = np.squeeze(J)
 
-allocentricFlag = 1 # 1 is allo, 0 is ego
-h0s = [0.45,0.45] # attraction vector, first are attraction for targets, then agents
+allocentricFlag = 0 # 1 is allo, 0 is ego
+h0s = [0.25,0.25] # attraction vector, first are attraction for targets, then agents
 h_b = 0.2
 sigma = 0.5
 beta = 100
@@ -90,13 +90,41 @@ base = {'N':N,
         'h_b':h_b,
         'sigma':sigma,
         'beta':beta}
+h0_for_plot = np.linspace(0.12,0.35,num=80)
+h0_for_sim = []
+for item in h0_for_plot:
+    h0_for_sim.append([item,item])
+change = {'h0':h0_for_sim}
 
-change = {'h0':[[0.68,0.68],[0.71,0.71],[0.74,0.74],[0.77,0.77],[0.8,0.8]]}
+sample_size = 50
 
-n_samples = 30
+success_list, target_list, time_list  = repeated_sims.sample_sims(base,change,sample_size)
+p_success = sim_met.get_success_rate(target_list, sample_size)
 
-success, x_trajs, y_trajs = repeated_sims.sample_sims(base,change,n_samples)
+x_label = "h0"
+dist_y_label = "Average distance to target"
+dist_title = "Success over different h0 values, egocentric, even attraction"
+plt.figure(figsize=(10,5))
+plt.figure(2)
+sim_met.plot_metric(success_list,h0_for_plot,dist_title,x_label,dist_y_label)
+plt.show(block=False)
 
+time_y_label = "Average time to target"
+time_title = "Time to target over different h0 values, egocentric, even attraction"
+plt.figure(figsize=(10,5))
+plt.figure(3)
+sim_met.plot_metric(time_list,h0_for_plot,time_title,x_label,time_y_label)
+plt.show(block=False)
+
+p_success_y = "Probability of reaching a target"
+p_success_title = "Probability of reaching a target over different h0 values, egocentric, even attraction"
+plt.figure(4)
+plt.plot(h0_for_plot,p_success,color='Blue')
+plt.xlabel(x_label)
+plt.ylabel(p_success_y)
+plt.title(p_success_title)
+plt.show()
+'''
 plt.figure(1)
 simulation_metrics.plot_trajectories(x_trajs,y_trajs,initialxt,initialyt,
                                      plt.cm.coolwarm(np.linspace(0, 1, 5)),L,
@@ -112,13 +140,10 @@ simulation_metrics.plot_trajectories(x_trajs,y_trajs,initialxt,initialyt,
                                      plt.cm.coolwarm(np.linspace(0, 1, 5)),L,
                                      'Max trajectories for allocentric, even attraction. h0:0.68(blue)->0.8(red)',5, 'max')
 plt.show(block=False)
-
+'''
 # plot x axis as param of interest, plot y axis as success measure
-x_label = "h0"
-y_label = "Smallest distance to closer target (over sum of distances)"
-success_title = "Success over different h0 values, allocentric, even attraction"
-plt.figure(4)
-simulation_metrics.plot_metric(success,[0.68,0.71,0.74,0.77,0.8],success_title,x_label,y_label)
-plt.show()
+
+
+
 
 
