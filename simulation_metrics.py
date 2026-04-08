@@ -69,7 +69,7 @@ def get_direction_info(headings, n_peaks, start_step=200, dest_step=5000):
     top_n_peaks = peaks[top_n_indices]
     return top_n_peaks
 
-def get_success_rate(target_list, sample_size):
+def get_success_rate(target_list, sample_size, uneven=False, best_index=-1):
     '''
     A function which takes a list of targets over a number of samples, 
     and returns the probability of reaching a target for each sample
@@ -81,16 +81,25 @@ def get_success_rate(target_list, sample_size):
     '''
     n_samples = len(target_list)//sample_size
     success_prob = []
+    correct_prob = []
     for s in range(n_samples):
         sample_list = target_list[s*sample_size:(s+1)*sample_size]
         failures = sample_list.count(-1)
+        if uneven:
+            successes = sample_list.count(best_index)
+            correct_prob.append(successes/sample_size)
         success_prob.append(1-failures/sample_size)
-    return success_prob
+    return success_prob, correct_prob
 
 def get_avg_distance(xPos, yPos, targetXpos, targetYpos, stop_time):
     tsteps = len(xPos[0,:])
-    dists = np.sqrt((xPos[0, :] - targetXpos[:, :tsteps])**2 + 
-                (yPos[0, :] - targetYpos[:, :tsteps])**2)
+    quarter = int(tsteps*0.25)
+    x_last_quarter = xPos[0,-quarter:]
+    y_last_quarter = yPos[0,-quarter:]
+    targetsx_last_quarter = targetXpos[:, :quarter]
+    targetsy_last_quarter = targetYpos[:,:quarter]
+    dists = np.sqrt((x_last_quarter - targetsx_last_quarter)**2 + 
+                    (y_last_quarter - targetsy_last_quarter)**2)
     return(np.mean(dists,axis=1))
 
 

@@ -44,7 +44,7 @@ def sample_sims(bp, changing_params, n_samples, slice=100, include_trajs=False):
                 target_list.append(target_reached)
                 time_list.append(time_reached)
                 avg_dists_timereached = sim_met.get_avg_distance(xPos, yPos, targetsx, targetsy, time_reached)
-                dist = avg_dists_timereached[target_reached]
+                dist = min(avg_dists_timereached)
                 even = all(x == bp['h0'][0] for x in bp['h0']) # REWORK THIS WHEN WE ADD AGENT ATTRACTIONS
                 best_index = -1
                 if not even: 
