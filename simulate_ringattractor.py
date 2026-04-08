@@ -34,8 +34,13 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
         targetXPos[targ,0] = initialxt[targ]
         targetYPos[targ,0] = initialyt[targ]
 
-    plt.figure(1)
-    plt.gca().set_aspect('equal', adjustable='box')
+    if plot == True:
+        plt.figure(1)
+        plt.gca().set_aspect('equal', adjustable='box')
+
+    # if stop is true, we will let it go 100 tsteps before ending
+    stopped = False
+    stopping_time = 0
 
     for tstep in range(0,T):
 
@@ -244,7 +249,7 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
                 plt.pause(0.001)  
 
         # -------- STEP G - STOP --------
-        if stop == True:
+        if stop == True and stopped == False:
             for targ in range(ntargets):
                 targ_x = targetXPos[targ,tstep]
                 targ_y = targetYPos[targ,tstep]
@@ -252,13 +257,17 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
                 y_dist = np.abs(yPos[0,tstep] - targ_y)
                 total_dist = np.sqrt((x_dist**2)+(y_dist**2))
                 if total_dist <= stopping_dist:
-                    print(f"target reached at: {tstep}")
-                    headings = headings[:,:tstep+1]
-                    xPos = xPos[:,:tstep+1]
-                    yPos = yPos[:,:tstep+1]
-                    targetXPos = targetXPos[:,:tstep+1]
-                    targetYPos = targetYPos[:,:tstep+1]
-                    return headings, xPos, yPos, targetXPos, targetYPos
+                    stopped = True
+                    stopping_time = tstep + 100
+
+        if stop == True and stopped == True:
+            if tstep >= stopping_time:
+                headings = headings[:,:tstep+1]
+                xPos = xPos[:,:tstep+1]
+                yPos = yPos[:,:tstep+1]
+                targetXPos = targetXPos[:,:tstep+1]
+                targetYPos = targetYPos[:,:tstep+1]
+                return headings, xPos, yPos, targetXPos, targetYPos
                 
         if plot == True:
             plt.show(block = False)

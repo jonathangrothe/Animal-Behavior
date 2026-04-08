@@ -90,20 +90,21 @@ base = {'N':N,
         'h_b':h_b,
         'sigma':sigma,
         'beta':beta}
-h0_for_plot = np.linspace(0.12,0.35,num=80)
+h0_for_plot = np.linspace(0.12,0.4,num=120)
 h0_for_sim = []
 for item in h0_for_plot:
     h0_for_sim.append([item,item])
 change = {'h0':h0_for_sim}
 
-sample_size = 50
+sample_size = 150
 
 success_list, target_list, time_list  = repeated_sims.sample_sims(base,change,sample_size)
+print(success_list)
 p_success = sim_met.get_success_rate(target_list, sample_size)
 
 x_label = "h0"
 dist_y_label = "Average distance to target"
-dist_title = "Success over different h0 values, egocentric, even attraction"
+dist_title = "Average distance to target over different h0 values, egocentric, even attraction"
 plt.figure(figsize=(10,5))
 plt.figure(2)
 sim_met.plot_metric(success_list,h0_for_plot,dist_title,x_label,dist_y_label)
