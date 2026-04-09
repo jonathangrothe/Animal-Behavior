@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 # -------- Getting metrics --------
 
 #so with what we returned from running the sim we can define a function to get metrics
-def get_destination_metrics(xPos, yPos, targetsx, targetsy , stopping_distance = 0.1):
+def get_destination_metrics(xPos, yPos, targetsx, targetsy , stopping_distance = 0.5):
     '''
     A function which takes the outputs from the simulate_ringattractor code and gets a few metrics to quantify what happened in the simulation
     Inputs:
@@ -53,7 +53,6 @@ def get_destination_metrics(xPos, yPos, targetsx, targetsy , stopping_distance =
         if distance_fromstart > init_distance*0.1:
             movement_start = index
             break
-        
     return target_reached, time_target_reached, movement_start
 
 def get_direction_info(headings, n_peaks, start_step=200, dest_step=5000):
@@ -75,29 +74,53 @@ def get_success_rate(target_list, sample_size, uneven=False, best_index=-1):
     and returns the probability of reaching a target for each sample
     Parameters:
     target_list: a list of targets reached by the agent in each simulation, arranged consecutively by sample
-    n_samples: the number of samples
+    sample_size: the number of samples of exactly the same settings run
     Returns:
-    success_prob: a list of size n_samples with each entry being the probability of success for that sample
+    success_prob: a list of size sample_size with the probability of reaching a target for each sample
+    correct_prob: a list of size sample_size with the probability of reaching the correct target for each sample
+                  if the attraction is even, an empty list is returned
+    success_se: the standard error of the probability of reaching a target
+    correct_se: the standard error of the probability of reaching the correct target,
+                if the attraction is even, and empty list is returned
     '''
     n_samples = len(target_list)//sample_size
     success_prob = []
+    success_se = []
     correct_prob = []
+    correct_se = []
     for s in range(n_samples):
         sample_list = target_list[s*sample_size:(s+1)*sample_size]
         failures = sample_list.count(-1)
         if uneven:
             successes = sample_list.count(best_index)
-            correct_prob.append(successes/sample_size)
-        success_prob.append(1-failures/sample_size)
-    return success_prob, correct_prob
+            cor_prob = successes/sample_size
+            cor_se = np.sqrt((cor_prob*(1-cor_prob))/sample_size)
+            correct_prob.append(cor_prob)
+            correct_se.append(cor_se)
+        suc_prob = 1-failures/sample_size
+        suc_se = np.sqrt((suc_prob*(1-suc_prob))/sample_size)
+        success_prob.append(suc_prob)
+        success_se.append(suc_se)
+    return success_prob, success_se, correct_prob, correct_se
 
-def get_avg_distance(xPos, yPos, targetXpos, targetYpos, stop_time):
+def get_avg_distance(xPos, yPos, targetsx, targetsy, last_p=0.25):
+    '''
+    A function that returns a 1d numpy array of length ntargets with the average distance to each target
+    over a certain proportion of the simulation
+    Parameters:
+    xPos: all the x positions of the agent(s)
+    yPos: all the y positions of the agent(s)
+    targetsx: all the x positions of the targets
+    targetsy: all the y positions of the targets
+    last_p: the proportion of timesteps of the simulation we will consider, counting backward 
+            default is 0.25, which means we will consider the last quarter of the simulation
+    '''
     tsteps = len(xPos[0,:])
-    quarter = int(tsteps*0.25)
+    quarter = int(tsteps*last_p)
     x_last_quarter = xPos[0,-quarter:]
     y_last_quarter = yPos[0,-quarter:]
-    targetsx_last_quarter = targetXpos[:, :quarter]
-    targetsy_last_quarter = targetYpos[:,:quarter]
+    targetsx_last_quarter = targetsx[:, :quarter]
+    targetsy_last_quarter = targetsy[:,:quarter]
     dists = np.sqrt((x_last_quarter - targetsx_last_quarter)**2 + 
                     (y_last_quarter - targetsy_last_quarter)**2)
     return(np.mean(dists,axis=1))
@@ -126,6 +149,7 @@ def get_min_distance(xPos, yPos, targetXpos, targetYpos, even=True, better_ind=-
     total_min = min_over_sum.min()
     return total_min
 
+# THIS NEEDS REWORKING
 def plot_trajectories(xtraj, ytraj, targetsx, targetsy, colors, L, title, n_groups, agg = 'mean'):
     '''
     plots n different trajectories in n different colors
@@ -195,8 +219,14 @@ def plot_trajectories(xtraj, ytraj, targetsx, targetsy, colors, L, title, n_grou
 def plot_metric(metric,x,title,xlabel,ylabel):
     '''
     A function which plots an aggregated metric over changing values of a parameter
+    Parameters:
     metric: a list of metrics with n samples per each value of the parameter we are measuring (the y axis)
     x: the values of the parameter we are measuring success over (the x axis)
+    title: the title of the plot
+    xlabel: the label of the x-axis
+    ylabel: the label of the y-axis
+    Expected output: 
+    A line plot of the metric (y-axis) with standard error lines over x (x-axis)
     '''
     # first step: get the dimesions to line up
     # second step: plot it
@@ -208,8 +238,6 @@ def plot_metric(metric,x,title,xlabel,ylabel):
         sample_metric = metric[value*sample_size:(value+1)*sample_size]
         mean_metric.append(np.mean(sample_metric))
         se_metric.append(np.std(sample_metric)/np.sqrt(sample_size))
-    print(f"mean list: {mean_metric}")
-    print(f"se list: {se_metric}")
     plt.plot(x, mean_metric, color = 'blue', label = 'Mean')
     plt.plot(x, np.add(mean_metric,se_metric), color = 'red', label = 'standard error', linestyle = ':')
     plt.plot(x, np.subtract(mean_metric,se_metric), color = 'red', linestyle = ':')

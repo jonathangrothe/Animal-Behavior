@@ -45,11 +45,15 @@ def sample_sims(bp, changing_params, n_samples, slice=100, include_trajs=False):
                 time_list.append(time_reached)
                 avg_dists_timereached = sim_met.get_avg_distance(xPos, yPos, targetsx, targetsy, time_reached)
                 dist = min(avg_dists_timereached)
+                # for now I think we're just interested in distance to a target, 
+                # because we have success contained elsewhere
+                '''
                 even = all(x == bp['h0'][0] for x in bp['h0']) # REWORK THIS WHEN WE ADD AGENT ATTRACTIONS
                 best_index = -1
                 if not even: 
                     best_index = bp['h0'].index(max(bp['h0'])) # REWORK THIS FOR UNEVEN GEOMETRIES
                     dist = avg_dists_timereached[best_index]
+                '''
                 success_list.append(dist)
                 if include_trajs == True:
                     x_sliced = xPos[:,::slice] # probably won't need once we implement heat maps

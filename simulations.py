@@ -52,7 +52,6 @@ for i in range(N):
     J[i,i] = 0.0
     J = np.squeeze(J)
 
-uneven = True # flag for whether or not the attractions are even
 allocentricFlag = 0 # 1 is allo, 0 is ego
 h0s = [0.25,0.25] # attraction vector, first are attraction for targets, then agents
 h_b = 0.2
@@ -91,41 +90,50 @@ base = {'N':N,
         'h_b':h_b,
         'sigma':sigma,
         'beta':beta}
-h0_for_plot = np.linspace(0.12,0.42,num=150) #0.12 to 0.4 for even case
+
+uneven = True # flag for whether or not the attractions are even
+h0_for_plot = np.linspace(0.35,0.42,num=140) #0.12 to 0.4 for even case
 h0_for_sim = []
 for item in h0_for_plot:
-    h0_for_sim.append([item,item])
+    h0_for_sim.append([item,item+0.01])
 change = {'h0':h0_for_sim}
 
-sample_size = 50
+sample_size = 25
 
 success_list, target_list, time_list  = repeated_sims.sample_sims(base,change,sample_size)
-p_success, p_correct = sim_met.get_success_rate(target_list, sample_size, True, 1)
+p_success, se_success, p_correct, se_correct = sim_met.get_success_rate(target_list, sample_size, True, 1)
 
 x_label = "h0"
 dist_y_label = "Average distance to target"
-dist_title = "Average distance to target over different h0 values, egocentric, uneven attraction"
+dist_title = "Average distance to target over last quarter of simulation, egocentric, uneven attraction"
 plt.figure(figsize=(10,5))
 plt.figure(2)
 sim_met.plot_metric(success_list,h0_for_plot,dist_title,x_label,dist_y_label)
 plt.show(block=False)
 
 time_y_label = "Average time to target"
-time_title = "Time to target over different h0 values, egocentric, uneven attraction"
+time_title = "Time to target, egocentric, uneven attraction, stopping distance = 0.5"
 plt.figure(figsize=(10,5))
 plt.figure(3)
 sim_met.plot_metric(time_list,h0_for_plot,time_title,x_label,time_y_label)
 plt.show(block=False)
 
 p_success_y = "Probability of reaching a target"
-p_success_title = "Probability of reaching a target over different h0 values, egocentric, uneven attraction"
+p_success_title = "Probability of getting within 0.5 units of a target, egocentric, uneven attraction"
+plt.figure(figsize=(10,5))
 plt.figure(4)
 if uneven: 
     plt.plot(h0_for_plot,p_correct,color='Green', label="Correct target")
+    plt.plot(h0_for_plot, np.add(p_correct,se_correct), color = 'green', label = 'standard error for correct', linestyle = ':')
+    plt.plot(h0_for_plot, np.subtract(p_correct,se_correct), color = 'green', linestyle = ':')
     plt.plot(h0_for_plot,p_success,color='Blue', label="Any target")
+    plt.plot(h0_for_plot, np.add(p_success,se_success), color = 'blue', label = 'standard error for any target', linestyle = ':')
+    plt.plot(h0_for_plot, np.subtract(p_success,se_success), color = 'blue', linestyle = ':')
     plt.legend()
 if not uneven:
     plt.plot(h0_for_plot,p_success,color='Blue')
+    plt.plot(h0_for_plot, np.add(p_success,se_success), color = 'blue', label = 'standard error', linestyle = ':')
+    plt.plot(h0_for_plot, np.subtract(p_success,se_success), color = 'blue', linestyle = ':')
 plt.xlabel(x_label)
 plt.ylabel(p_success_y)
 plt.title(p_success_title)
@@ -148,9 +156,3 @@ simulation_metrics.plot_trajectories(x_trajs,y_trajs,initialxt,initialyt,
                                      'Max trajectories for allocentric, even attraction. h0:0.68(blue)->0.8(red)',5, 'max')
 plt.show(block=False)
 '''
-# plot x axis as param of interest, plot y axis as success measure
-
-
-
-
-

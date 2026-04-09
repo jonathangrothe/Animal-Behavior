@@ -5,7 +5,7 @@ import math
 # ---------- Simulation code!! ----------
 def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag,rEgo,rEgoTarget,Egonumber,
                             distf,adistf,J,beta,h0,h_b,dt,v0,v0t,sigma,hColl,rColl,
-                            initialx,initialy,initialxt,initialyt,plot=True,stop=False,stopping_dist=0.1):
+                            initialx,initialy,initialxt,initialyt,plot=True,stop=False,stopping_dist=0.5):
 
     # -------- INITIALIZATIONS WITHIN THE SIMULATION --------
 
