@@ -91,13 +91,13 @@ base = {'N':N,
         'h_b':h_b,
         'sigma':sigma,
         'beta':beta}
-h0_for_plot = np.linspace(0.28,0.34,num=6) #0.12 to 0.4 for even case
+h0_for_plot = np.linspace(0.12,0.42,num=150) #0.12 to 0.4 for even case
 h0_for_sim = []
 for item in h0_for_plot:
     h0_for_sim.append([item,item])
 change = {'h0':h0_for_sim}
 
-sample_size = 10
+sample_size = 50
 
 success_list, target_list, time_list  = repeated_sims.sample_sims(base,change,sample_size)
 p_success, p_correct = sim_met.get_success_rate(target_list, sample_size, True, 1)
