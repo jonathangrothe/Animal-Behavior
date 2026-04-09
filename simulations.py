@@ -92,7 +92,7 @@ base = {'N':N,
         'beta':beta}
 
 uneven = True # flag for whether or not the attractions are even
-h0_for_plot = np.linspace(0.35,0.42,num=140) #0.12 to 0.4 for even case
+h0_for_plot = np.linspace(0.367,0.413,num=230) #0.12 to 0.4 for even case
 h0_for_sim = []
 for item in h0_for_plot:
     h0_for_sim.append([item,item+0.01])
