@@ -126,29 +126,6 @@ def get_avg_distance(xPos, yPos, targetsx, targetsy, last_p=0.25):
     return(np.mean(dists,axis=1))
 
 
-
-def get_min_distance(xPos, yPos, targetXpos, targetYpos, even=True, better_ind=-1):
-    '''
-    A function that returns the minimum distance over the course of the simulation to the closer/better target over the sum of the distances to the targets
-    If the geometry/attraction is uneven, we will designate one of the targets as the best target
-    Designed for the two target case, but probably can be expanded to more targets
-    Inputs: 
-    xPos: the x positions of the agent throughout the simulation
-    yPos: the y positions of the agent throughout the simulation
-    targetXpos: the x positions of the targets throughout the simulation
-    targetYpos: the y positions of the targets throughout the simulation
-    even: a boolean which is either true (even geometry and attraction), or false, which implies that one of the targets is better than others
-    better_ind: an integer which designates the best target
-    '''
-    tsteps = len(xPos[0,:])
-    dists = np.sqrt((xPos[0, :] - targetXpos[:, :tsteps])**2 + 
-                (yPos[0, :] - targetYpos[:, :tsteps])**2)
-    sum_dists = dists.sum(axis=0)
-    min_dists = dists[better_ind] if not even else dists.min(axis=0)
-    min_over_sum = min_dists / sum_dists
-    total_min = min_over_sum.min()
-    return total_min
-
 # THIS NEEDS REWORKING
 def plot_trajectories(xtraj, ytraj, targetsx, targetsy, colors, L, title, n_groups, agg = 'mean'):
     '''
@@ -245,5 +222,33 @@ def plot_metric(metric,x,title,xlabel,ylabel):
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     plt.title(title)
+
+    
+def plot_neurons(activity_df):
+    # implementation right now: iterates through the mean contributions and finds the maximum mean contribution of any one neuron
+    # then plots the activity of all neurons that contribute more than half as much as the mean neuron
+    # this could be functionalized, but it is also a good tool to help show when decisions are made
+    # this can really clearly illustrate the differences between ego and allocentric in this context
+    # next: look at the bad decisions and see if anything is different (look at what the mean contributions actually are as well)
+    # and look at the noisy data and see if this sheds any light
+    # also to do: extend this to mean neuron activity over multiple samples?
+    '''
+    A function which takes the activity of all the neurons in the ring attractor for one agent and plots them
+    parameters: 
+    activity_df: a Nxt dataframe where N is the number of neurons and t is the number of timesteps in the simulation
+    '''
+    n_neurons = activity_df.shape[0]
+    mean_max = -100
+    for neuron in range(n_neurons):
+        mean_activity = np.mean(activity_df.iloc[neuron,:])
+        if mean_activity > mean_max:
+            mean_max = mean_activity
+    for neuron in range(n_neurons):
+        mean_activity = np.mean(activity_df.iloc[neuron,:])
+        if mean_activity > mean_max * 0.5:
+            plt.plot(activity_df.iloc[neuron,:])
+            print(neuron)
+        plt.title("plot of neuron activity")
+    return None
  
 

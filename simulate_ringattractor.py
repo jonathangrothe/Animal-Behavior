@@ -267,12 +267,13 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
                 yPos = yPos[:,:tstep+1]
                 targetXPos = targetXPos[:,:tstep+1]
                 targetYPos = targetYPos[:,:tstep+1]
-                return headings, xPos, yPos, targetXPos, targetYPos
+                uArray = uArray[:,:,:tstep+1]
+                return headings, xPos, yPos, targetXPos, targetYPos, uArray
                 
         if plot == True:
             plt.show(block = False)
 
-    return headings, xPos, yPos, targetXPos, targetYPos
+    return headings, xPos, yPos, targetXPos, targetYPos, uArray
 
 #function for creating an evenly spaced grid
 def create_grid(ntargets,ncols,L):

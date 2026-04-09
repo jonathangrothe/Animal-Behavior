@@ -92,17 +92,22 @@ base = {'N':N,
         'beta':beta}
 
 uneven = True # flag for whether or not the attractions are even
-h0_for_plot = np.linspace(0.367,0.413,num=230) #0.12 to 0.4 for even case
+h0_for_plot = [0.27] #0.12 to 0.4 for even case
 h0_for_sim = []
 for item in h0_for_plot:
     h0_for_sim.append([item,item+0.01])
 change = {'h0':h0_for_sim}
 
-sample_size = 25
+sample_size = 1
 
-success_list, target_list, time_list  = repeated_sims.sample_sims(base,change,sample_size)
+success_list, target_list, time_list, activity_df  = repeated_sims.sample_sims(base,change,sample_size,include_activity=True)
 p_success, se_success, p_correct, se_correct = sim_met.get_success_rate(target_list, sample_size, True, 1)
+plt.figure(2)
+sim_met.plot_neurons(activity_df)
+plt.show()
 
+# SAMPLING PLOTS
+'''
 x_label = "h0"
 dist_y_label = "Average distance to target"
 dist_title = "Average distance to target over last quarter of simulation, egocentric, uneven attraction"
@@ -138,7 +143,9 @@ plt.xlabel(x_label)
 plt.ylabel(p_success_y)
 plt.title(p_success_title)
 plt.show()
+'''
 
+#TRAJECTORY PLOTS - NEEDS REWORK
 '''
 plt.figure(1)
 simulation_metrics.plot_trajectories(x_trajs,y_trajs,initialxt,initialyt,

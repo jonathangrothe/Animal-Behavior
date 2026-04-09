@@ -6,7 +6,7 @@ import pandas as pd
 import simulate_ringattractor as sim_ra
 import simulation_metrics as sim_met
 
-def sample_sims(bp, changing_params, n_samples, slice=100, include_trajs=False):
+def sample_sims(bp, changing_params, n_samples, slice=100, include_trajs=False, include_activity=False):
     '''
     bp: (base parameters) a dictionary which contains the base values to run the simulation on. It will contain an entry for every parameter in the simulation
     changing_params: a dictionary which contains the parameters that are going to be changed throughout the simulations as keys, 
@@ -28,6 +28,8 @@ def sample_sims(bp, changing_params, n_samples, slice=100, include_trajs=False):
     if include_trajs == True:
         x_trajs = []
         y_trajs = []
+    if include_activity == True:
+        activity_list = []
     for param in changing_params.keys():
         param_value_list = changing_params[param]
         for value in param_value_list:
@@ -35,11 +37,13 @@ def sample_sims(bp, changing_params, n_samples, slice=100, include_trajs=False):
             print(f"param: {value}")
             for sample in range(n_samples):
                 print(f"sample: {sample}")
-                headings, xPos, yPos, targetsx, targetsy = sim_ra.simulate_ring_attractor(bp['N'],bp['L'],bp['T'],bp['ntargets'],bp['nagents'],bp['allocentricFlag'],
+                headings, xPos, yPos, targetsx, targetsy, activity = sim_ra.simulate_ring_attractor(bp['N'],bp['L'],bp['T'],bp['ntargets'],bp['nagents'],bp['allocentricFlag'],
                                                                                  bp['periodicFlag'],bp['rEgo'],bp['rEgoTarget'],bp['Egonumber'],bp['distf'],
                                                                                  bp['adistf'],bp['J'],bp['beta'],bp['h0'],bp['h_b'],bp['dt'],bp['v0'],bp['v0t'],
                                                                                  bp['sigma'],bp['hColl'],bp['rColl'],bp['initialx'],bp['initialy'],bp['initialxt'],bp['initialyt'],
-                                                                                 False,True)
+                                                                                 True,True)
+                print(f'activity for list shape: {np.shape(activity)}')
+                print(activity)
                 target_reached, time_reached, start = sim_met.get_destination_metrics(xPos,yPos,targetsx,targetsy)
                 target_list.append(target_reached)
                 time_list.append(time_reached)
@@ -60,8 +64,15 @@ def sample_sims(bp, changing_params, n_samples, slice=100, include_trajs=False):
                     y_sliced = yPos[:,::slice]
                     x_trajs.append(x_sliced.ravel())
                     y_trajs.append(y_sliced.ravel())
+                if include_activity == True:
+                    for neuron in range(np.shape(activity)[0]):
+                        activity_list.append(activity[neuron,0,:])
     if include_trajs == True:
         x_trajs_df = pd.DataFrame(x_trajs)
         y_trajs_df = pd.DataFrame(y_trajs)
         return success_list, target_list, time_list, x_trajs_df, y_trajs_df
+    
+    if include_activity == True:
+        activity_df = pd.DataFrame(activity_list)
+        return success_list, target_list, time_list, activity_df
     return success_list, target_list, time_list
