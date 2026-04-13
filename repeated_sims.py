@@ -27,6 +27,8 @@ def sample_sims(bp, changing_params, n_samples, slice=100, include_trajs=False, 
     success_list = []
     time_list = []
     target_list = []
+    inhib_list = []
+    inhib_times_list = []
     if include_trajs == True:
         x_list = []
         y_list = []
@@ -43,22 +45,17 @@ def sample_sims(bp, changing_params, n_samples, slice=100, include_trajs=False, 
                                                                                  bp['periodicFlag'],bp['rEgo'],bp['rEgoTarget'],bp['Egonumber'],bp['distf'],
                                                                                  bp['adistf'],bp['J'],bp['beta'],bp['h0'],bp['h_b'],bp['dt'],bp['v0'],bp['v0t'],
                                                                                  bp['sigma'],bp['hColl'],bp['rColl'],bp['initialx'],bp['initialy'],bp['initialxt'],bp['initialyt'],
-                                                                                 True,True)
+                                                                                 False,True)
                 target_reached, time_reached, start = sim_met.get_destination_metrics(xPos,yPos,targetsx,targetsy)
                 target_list.append(target_reached)
                 time_list.append(time_reached)
                 avg_dists_timereached = sim_met.get_avg_distance(xPos, yPos, targetsx, targetsy, time_reached)
                 dist = min(avg_dists_timereached)
-                # for now I think we're just interested in distance to a target, 
-                # because we have success contained elsewhere
-                '''
-                even = all(x == bp['h0'][0] for x in bp['h0']) # REWORK THIS WHEN WE ADD AGENT ATTRACTIONS
-                best_index = -1
-                if not even: 
-                    best_index = bp['h0'].index(max(bp['h0'])) # REWORK THIS FOR UNEVEN GEOMETRIES
-                    dist = avg_dists_timereached[best_index]
-                '''
                 success_list.append(dist)
+                n_inhib, inhib_times = sim_met.get_neuron_info(activity[:,0,:])
+                print(f"n inhib: {n_inhib}")
+                inhib_list.append(n_inhib)
+                inhib_times_list.append(inhib_times)
                 if include_trajs == True:
                     xpos_1d = xPos.ravel()
                     ypos_1d = yPos.ravel()
@@ -68,7 +65,7 @@ def sample_sims(bp, changing_params, n_samples, slice=100, include_trajs=False, 
                 if include_activity == True:
                     for neuron in range(np.shape(activity)[0]):
                         activity_list.append(activity[neuron,0,:])
-    # ADD IMPLEMENTATION FOR AVERAGING TRAJECTORIES OVER MULTIPLE SAMPLES
+    # ADD IMPLEMENTATION FOR ANALYZING NEURON BEHAVIOR OVER MULTIPLE SAMPLES
     if include_activity == True:
         activity_df = pd.DataFrame(activity_list)
     
@@ -77,4 +74,4 @@ def sample_sims(bp, changing_params, n_samples, slice=100, include_trajs=False, 
         y_list = np.array(y_list)
         img = sim_met.plot_from_density(x_list, y_list, 30)
 
-    return success_list, target_list, time_list, activity_df, img
+    return success_list, target_list, time_list, inhib_list, inhib_times_list, activity_df, img

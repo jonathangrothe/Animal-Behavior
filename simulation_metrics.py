@@ -126,6 +126,46 @@ def get_avg_distance(xPos, yPos, targetsx, targetsy, last_p=0.25):
                     (y_last_quarter - targetsy_last_quarter)**2)
     return(np.mean(dists,axis=1))
 
+def get_neuron_info(activity):
+    # NEXT STEPS: use inhibition to accurately categorize a decision interval,
+    # once we have the decision interval for each sample, we can look at interesting goings on in that time
+    # Since we know that only a few neurons can be activated at a time and the rest are inhibited, 
+    # it might be intersting to look at this contrast as a way of classifying the model's behavior (ie: difference between magnitudes of activated and inhibited)
+    # definitely would be interesting to know if there are moments when more are activated at lower levels and if there are moments when only one or two are activated
+    # or if that depends on simulation settings 
+    '''
+    A function which gets information about neuron activity over the course of the simulation
+    info we want: 
+    at each time step: number of neurons activated, max activation, which neuron is most activated
+    '''
+    n_inhib = 0
+    inhib_index = []
+    tsteps = np.shape(activity)[1] - 100 # I let the sim run for 100 times after reaching the target, but don't want that to impact analysis
+    for t in range(tsteps):
+        max_activation = np.max(activity[:,t], axis=0)
+        if max_activation < 0:
+            n_inhib += 1
+            inhib_index.append(t)
+    return n_inhib, inhib_index
+
+def get_inhibition_rates(inhib_list,sample_size):
+    '''
+    A function that expands the neuron info to more samples
+    parameters:
+    inhib_list: a list of number of times when all neurons were inhibited (each value from get_neuron_info)
+    sample_size: sample size for each run with the exact same settings 
+    returns: 
+    mean_inhib: a list of the mean over each sample of the number of times all neurons were inhibited 
+    '''
+    mean_inhib = []
+    n_samples = len(inhib_list)//sample_size
+    for x in range(n_samples):
+        mean_n_inhib = np.mean(inhib_list[x*sample_size:(x+1)*sample_size])
+        print(f"mean: {mean_n_inhib}")
+        mean_inhib.append(mean_n_inhib)
+    return mean_inhib
+
+
 
 # THIS NEEDS REWORKING
 def plot_trajectories(xtraj, ytraj, targetsx, targetsy, colors, L, title, n_groups, agg = 'mean'):
@@ -266,7 +306,14 @@ def plot_neurons(activity_df, activation_cutoff=0.5, tstart=0, tstop=0):
 # heat map plotting from vivek's code - very computationally intensive right now
 def density_map(x, y):
     '''
-    Takes x and y values and returns 
+    Takes x and y values and returns a 2d array corresponding to a 2d histogram.
+    Designed to be used on a trajectory plot, x and y are both intended to be coordinates
+    Parameters:
+    x: x values to consider in 2d hist
+    y: y values to consider in 2d hist
+    Returns:
+    tmp_img: a 2d array with x and y values bucketed into rows respectively. 
+            Range is pre set to 0,100 in each dimension with 500 bins
     '''
     blur = (11, 11)
     h, xedge, yedge, image = plt.hist2d(x, y, bins = 500, density=True, range = [[0,100],[0,100]])
@@ -275,13 +322,19 @@ def density_map(x, y):
     return tmp_img
 
 def plot_from_density(xPos, yPos, window_size):
-    tmax = len(xPos)-100
-
+    '''
+    A function which takes x positions, y positions, and window size and plots a heat map of the trajectory
+    Parameters: 
+    xPos: an array of x positions. Can include multiple runs as long as x indices are aligned with y indices
+    yPos: an array of y positions
+    window_size: how many positions to aggregate over at a time. 
+                Does not affect how many times we call density_map, just the width of each range of densities
+    '''
+    tmax = len(xPos)
     for i in range((tmax-window_size)//10):
         # calculate the window
         window_min = i*10
         window_max = i*10 + window_size
-
         # get the x positions and y positions in the window and map them
         x = xPos[window_min:window_max+1]
         y = yPos[window_min:window_max+1]
@@ -290,7 +343,6 @@ def plot_from_density(xPos, yPos, window_size):
             img = tmp_img
         else:
             img = np.fmax(tmp_img, img)
-
     return img
     
 

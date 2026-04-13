@@ -92,18 +92,19 @@ base = {'N':N,
         'beta':beta}
 
 uneven = True # flag for whether or not the attractions are even
-plot_neurons = True
+plot_neurons = False
 plot_trajs = False
-h0_for_plot = [0.215] #0.12 to 0.4 for even case
+h0_for_plot = np.linspace(0.2,0.29,num=15) #0.12 to 0.4 for even case
 h0_for_sim = []
 for item in h0_for_plot:
     h0_for_sim.append([item,item+0.01])
 change = {'h0':h0_for_sim}
 
-sample_size = 1
+sample_size = 10
 
-success_list, target_list, time_list, activity_df, img  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
+success_list, target_list, time_list, inhib_list, inhib_times_list, activity_df, img  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
 p_success, se_success, p_correct, se_correct = sim_met.get_success_rate(target_list, sample_size, True, 1)
+mean_inhib = sim_met.get_inhibition_rates(inhib_list, sample_size)
 
 if plot_neurons == True:
     plt.figure(2)
@@ -112,7 +113,7 @@ if plot_neurons == True:
     plt.show()
 
 # SAMPLING PLOTS
-'''
+
 x_label = "h0"
 dist_y_label = "Average distance to target"
 dist_title = "Average distance to target over last quarter of simulation, egocentric, uneven attraction"
@@ -147,8 +148,19 @@ if not uneven:
 plt.xlabel(x_label)
 plt.ylabel(p_success_y)
 plt.title(p_success_title)
+plt.show(block=False)
+
+plt.figure(5)
+n_inhib_y = "Average number of steps where every neuron was inhibited"
+n_inhib_title = "Average number of steps where every neuron was inhibited, egocentric, uneven attraction"
+plt.figure(figsize=(10,5))
+plt.plot(h0_for_plot,mean_inhib,color='red')
+plt.xlabel(x_label)
+plt.ylabel(n_inhib_y)
+plt.title(n_inhib_title)
 plt.show()
-'''
+
+
 
 #TRAJECTORY PLOTS - NEEDS REWORK
 if plot_trajs == True:
