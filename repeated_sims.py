@@ -1,6 +1,6 @@
 # file which contains a function for running the simulation many times (with the option to alter the settings each time)
 # and returns data on 'success' and trajectories
-
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import simulate_ringattractor as sim_ra
@@ -22,6 +22,8 @@ def sample_sims(bp, changing_params, n_samples, slice=100, include_trajs=False, 
                 (we need to be able to split samples based on rows, and aggregate the position over each time)
     '''
     # initialize all the stuff I want to collect
+    img = None
+    activity_df = None
     success_list = []
     time_list = []
     target_list = []
@@ -41,9 +43,7 @@ def sample_sims(bp, changing_params, n_samples, slice=100, include_trajs=False, 
                                                                                  bp['periodicFlag'],bp['rEgo'],bp['rEgoTarget'],bp['Egonumber'],bp['distf'],
                                                                                  bp['adistf'],bp['J'],bp['beta'],bp['h0'],bp['h_b'],bp['dt'],bp['v0'],bp['v0t'],
                                                                                  bp['sigma'],bp['hColl'],bp['rColl'],bp['initialx'],bp['initialy'],bp['initialxt'],bp['initialyt'],
-                                                                                 True,True)
-                print(f'activity for list shape: {np.shape(activity)}')
-                print(activity)
+                                                                                 False,True)
                 target_reached, time_reached, start = sim_met.get_destination_metrics(xPos,yPos,targetsx,targetsy)
                 target_list.append(target_reached)
                 time_list.append(time_reached)
@@ -60,19 +60,15 @@ def sample_sims(bp, changing_params, n_samples, slice=100, include_trajs=False, 
                 '''
                 success_list.append(dist)
                 if include_trajs == True:
-                    x_sliced = xPos[:,::slice] # probably won't need once we implement heat maps
-                    y_sliced = yPos[:,::slice]
-                    x_trajs.append(x_sliced.ravel())
-                    y_trajs.append(y_sliced.ravel())
+                    xpos_1d = xPos.ravel()
+                    ypos_1d = yPos.ravel()
+                    img = sim_met.plot_from_density(xpos_1d, ypos_1d, 20)
+
                 if include_activity == True:
                     for neuron in range(np.shape(activity)[0]):
                         activity_list.append(activity[neuron,0,:])
-    if include_trajs == True:
-        x_trajs_df = pd.DataFrame(x_trajs)
-        y_trajs_df = pd.DataFrame(y_trajs)
-        return success_list, target_list, time_list, x_trajs_df, y_trajs_df
-    
+    # ADD IMPLEMENTATION FOR AVERAGING TRAJECTORIES OVER MULTIPLE SAMPLES
     if include_activity == True:
         activity_df = pd.DataFrame(activity_list)
-        return success_list, target_list, time_list, activity_df
-    return success_list, target_list, time_list
+
+    return success_list, target_list, time_list, activity_df, img

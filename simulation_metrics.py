@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.signal import find_peaks
+import cv2
 import matplotlib.pyplot as plt
 
 # -------- Getting metrics --------
@@ -239,6 +240,7 @@ def plot_neurons(activity_df):
     '''
     n_neurons = activity_df.shape[0]
     mean_max = -100
+    active_neuron_list = []
     for neuron in range(n_neurons):
         mean_activity = np.mean(activity_df.iloc[neuron,:])
         if mean_activity > mean_max:
@@ -247,8 +249,42 @@ def plot_neurons(activity_df):
         mean_activity = np.mean(activity_df.iloc[neuron,:])
         if mean_activity > mean_max * 0.5:
             plt.plot(activity_df.iloc[neuron,:])
-            print(neuron)
+            active_neuron_list.append(neuron)
         plt.title("plot of neuron activity")
-    return None
+    return active_neuron_list
+
+
+# plotting from vivek's code
+def density_map(x, y):
+    blur = (11, 11)
+    h, xedge, yedge, image = plt.hist2d(x, y, bins = 100, density=True, range = [[0,100],[0,100]])
+    print(f"shape of h: {np.shape(h)}")
+    print(f"h: {h}")
+    tmp_img = np.rot90(cv2.GaussianBlur(h, blur, 0))
+    tmp_img /= np.max(tmp_img)
+    print(f"shape of tmp_img: {np.shape(tmp_img)}")
+    print(f"tmp_img: {tmp_img}")
+    return tmp_img
+
+def plot_from_density(xPos, yPos, window_size):
+    tmax = len(xPos)
+    ts = np.arange(1, tmax + 1)
+
+    for i in range(tmax-window_size):
+        # calculate the window
+        window_min = i
+        window_max = i + window_size
+
+        # get the x positions and y positions in the window and map them
+        x = xPos[(ts > window_min) & (ts < window_max)]
+        y = yPos[(ts > window_min) & (ts < window_max)]
+        tmp_img = density_map(x, y)
+        if i == 0:
+            img = tmp_img
+        else:
+            img = np.fmax(tmp_img, img)
+    return img
+    
+
  
 
