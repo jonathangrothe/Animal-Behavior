@@ -225,7 +225,7 @@ def plot_metric(metric,x,title,xlabel,ylabel):
     plt.title(title)
 
     
-def plot_neurons(activity_df):
+def plot_neurons(activity_df, activation_cutoff=0.5, tstart=0, tstop=0):
     # implementation right now: iterates through the mean contributions and finds the maximum mean contribution of any one neuron
     # then plots the activity of all neurons that contribute more than half as much as the mean neuron
     # this could be functionalized, but it is also a good tool to help show when decisions are made
@@ -238,51 +238,59 @@ def plot_neurons(activity_df):
     parameters: 
     activity_df: a Nxt dataframe where N is the number of neurons and t is the number of timesteps in the simulation
     '''
+    if tstop == 0:
+        tstop = len(activity_df)
     n_neurons = activity_df.shape[0]
     mean_max = -100
     active_neuron_list = []
     for neuron in range(n_neurons):
-        mean_activity = np.mean(activity_df.iloc[neuron,:])
+        mean_activity = np.mean(activity_df.iloc[neuron,tstart:tstop+1])
         if mean_activity > mean_max:
             mean_max = mean_activity
+
+    print(mean_activity)
+    if mean_activity < 0:
+        if activation_cutoff == 0:
+            activation_cutoff += 0.0001 # avoid division by 0?
+        activation_cutoff = 1/activation_cutoff
     for neuron in range(n_neurons):
-        mean_activity = np.mean(activity_df.iloc[neuron,:])
-        if mean_activity > mean_max * 0.5:
-            plt.plot(activity_df.iloc[neuron,:])
+        mean_activity = np.mean(activity_df.iloc[neuron,tstart:tstop+1])
+        if mean_activity > mean_max * activation_cutoff:
+            plt.plot(activity_df.iloc[neuron,tstart:tstop+1], label = f"neuron: {neuron}")
             active_neuron_list.append(neuron)
         plt.title("plot of neuron activity")
+        plt.legend()
     return active_neuron_list
 
 
-# plotting from vivek's code
+# heat map plotting from vivek's code - very computationally intensive right now
 def density_map(x, y):
+    '''
+    Takes x and y values and returns 
+    '''
     blur = (11, 11)
-    h, xedge, yedge, image = plt.hist2d(x, y, bins = 100, density=True, range = [[0,100],[0,100]])
-    print(f"shape of h: {np.shape(h)}")
-    print(f"h: {h}")
+    h, xedge, yedge, image = plt.hist2d(x, y, bins = 500, density=True, range = [[0,100],[0,100]])
     tmp_img = np.rot90(cv2.GaussianBlur(h, blur, 0))
     tmp_img /= np.max(tmp_img)
-    print(f"shape of tmp_img: {np.shape(tmp_img)}")
-    print(f"tmp_img: {tmp_img}")
     return tmp_img
 
 def plot_from_density(xPos, yPos, window_size):
-    tmax = len(xPos)
-    ts = np.arange(1, tmax + 1)
+    tmax = len(xPos)-100
 
-    for i in range(tmax-window_size):
+    for i in range((tmax-window_size)//10):
         # calculate the window
-        window_min = i
-        window_max = i + window_size
+        window_min = i*10
+        window_max = i*10 + window_size
 
         # get the x positions and y positions in the window and map them
-        x = xPos[(ts > window_min) & (ts < window_max)]
-        y = yPos[(ts > window_min) & (ts < window_max)]
+        x = xPos[window_min:window_max+1]
+        y = yPos[window_min:window_max+1]
         tmp_img = density_map(x, y)
         if i == 0:
             img = tmp_img
         else:
             img = np.fmax(tmp_img, img)
+
     return img
     
 

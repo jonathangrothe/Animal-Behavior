@@ -28,8 +28,8 @@ def sample_sims(bp, changing_params, n_samples, slice=100, include_trajs=False, 
     time_list = []
     target_list = []
     if include_trajs == True:
-        x_trajs = []
-        y_trajs = []
+        x_list = []
+        y_list = []
     if include_activity == True:
         activity_list = []
     for param in changing_params.keys():
@@ -43,7 +43,7 @@ def sample_sims(bp, changing_params, n_samples, slice=100, include_trajs=False, 
                                                                                  bp['periodicFlag'],bp['rEgo'],bp['rEgoTarget'],bp['Egonumber'],bp['distf'],
                                                                                  bp['adistf'],bp['J'],bp['beta'],bp['h0'],bp['h_b'],bp['dt'],bp['v0'],bp['v0t'],
                                                                                  bp['sigma'],bp['hColl'],bp['rColl'],bp['initialx'],bp['initialy'],bp['initialxt'],bp['initialyt'],
-                                                                                 False,True)
+                                                                                 True,True)
                 target_reached, time_reached, start = sim_met.get_destination_metrics(xPos,yPos,targetsx,targetsy)
                 target_list.append(target_reached)
                 time_list.append(time_reached)
@@ -62,7 +62,8 @@ def sample_sims(bp, changing_params, n_samples, slice=100, include_trajs=False, 
                 if include_trajs == True:
                     xpos_1d = xPos.ravel()
                     ypos_1d = yPos.ravel()
-                    img = sim_met.plot_from_density(xpos_1d, ypos_1d, 20)
+                    x_list += list(xpos_1d)
+                    y_list += list(ypos_1d)
 
                 if include_activity == True:
                     for neuron in range(np.shape(activity)[0]):
@@ -70,5 +71,10 @@ def sample_sims(bp, changing_params, n_samples, slice=100, include_trajs=False, 
     # ADD IMPLEMENTATION FOR AVERAGING TRAJECTORIES OVER MULTIPLE SAMPLES
     if include_activity == True:
         activity_df = pd.DataFrame(activity_list)
+    
+    if include_trajs == True:
+        x_list = np.array(x_list)
+        y_list = np.array(y_list)
+        img = sim_met.plot_from_density(x_list, y_list, 30)
 
     return success_list, target_list, time_list, activity_df, img

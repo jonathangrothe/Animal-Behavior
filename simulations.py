@@ -92,8 +92,9 @@ base = {'N':N,
         'beta':beta}
 
 uneven = True # flag for whether or not the attractions are even
-plot_neurons = False
-h0_for_plot = [0.2] #0.12 to 0.4 for even case
+plot_neurons = True
+plot_trajs = False
+h0_for_plot = [0.215] #0.12 to 0.4 for even case
 h0_for_sim = []
 for item in h0_for_plot:
     h0_for_sim.append([item,item+0.01])
@@ -101,12 +102,13 @@ change = {'h0':h0_for_sim}
 
 sample_size = 1
 
-success_list, target_list, time_list, activity_df, img  = repeated_sims.sample_sims(base,change,sample_size,include_activity=plot_neurons)
+success_list, target_list, time_list, activity_df, img  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
 p_success, se_success, p_correct, se_correct = sim_met.get_success_rate(target_list, sample_size, True, 1)
 
 if plot_neurons == True:
     plt.figure(2)
-    sim_met.plot_neurons(activity_df)
+    sim_met.plot_neurons(activity_df, 0.75, tstart=312,tstop=332)
+    plt.title("Activity of most active neurons (0.75 as active as most active neuron) from time step 300 to time step 350")
     plt.show()
 
 # SAMPLING PLOTS
@@ -149,12 +151,10 @@ plt.show()
 '''
 
 #TRAJECTORY PLOTS - NEEDS REWORK
-
-plt.figure(figsize=(10,10))
-plt.imshow(img)
-plt.show()
-
-
+if plot_trajs == True:
+    plt.figure(figsize=(10,10))
+    plt.imshow(img)
+    plt.show()
 
 '''
 plt.figure(1)
