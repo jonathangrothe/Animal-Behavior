@@ -167,7 +167,7 @@ def get_inhibition_rates(inhib_list,sample_size):
         mean_inhib.append(mean_n_inhib)
     return mean_inhib
 
-def plot_metric(metric,x,title,xlabel,ylabel):
+def plot_metric(metric,x,title,xlabel,ylabel,agg=True):
     '''
     A function which plots an aggregated metric over changing values of a parameter
     Parameters:
@@ -185,17 +185,27 @@ def plot_metric(metric,x,title,xlabel,ylabel):
     sample_size = len(metric)//n_values
     mean_metric = []
     se_metric = []
-    for value in range(n_values):
-        sample_metric = metric[value*sample_size:(value+1)*sample_size]
-        mean_metric.append(np.mean(sample_metric))
-        se_metric.append(np.std(sample_metric)/np.sqrt(sample_size))
-    plt.plot(x, mean_metric, color = 'blue', label = 'Mean')
-    plt.plot(x, np.add(mean_metric,se_metric), color = 'red', label = 'standard error', linestyle = ':')
-    plt.plot(x, np.subtract(mean_metric,se_metric), color = 'red', linestyle = ':')
-    plt.legend()
-    plt.xlabel(xlabel)
-    plt.ylabel(ylabel)
-    plt.title(title)
+    if agg:
+        for value in range(n_values):
+            sample_metric = metric[value*sample_size:(value+1)*sample_size]
+            mean_metric.append(np.mean(sample_metric))
+            se_metric.append(np.std(sample_metric)/np.sqrt(sample_size))
+        plt.plot(x, mean_metric, color = 'blue', label = 'Mean')
+        plt.plot(x, np.add(mean_metric,se_metric), color = 'red', label = 'standard error', linestyle = ':')
+        plt.plot(x, np.subtract(mean_metric,se_metric), color = 'red', linestyle = ':')
+        plt.legend()
+        plt.xlabel(xlabel)
+        plt.ylabel(ylabel)
+        plt.title(title)
+    else:
+        for s in range(sample_size):
+            one_run = metric[s::sample_size]
+            plt.plot(x, one_run, color = 'blue', alpha=sample_size*0.01)
+            plt.legend()
+            plt.xlabel(xlabel)
+            plt.ylabel(ylabel)
+            plt.title(title)
+
 
     
 def plot_neurons(activity_df, activation_cutoff=0.5, tstart=0, tstop=0, N=100):

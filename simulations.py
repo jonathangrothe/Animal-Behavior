@@ -91,17 +91,17 @@ base = {'N':N,
         'sigma':sigma,
         'beta':beta}
 
-uneven = True # flag for whether or not the attractions are even
 plot_neurons = False
-plot_trajs = [True, 'scatter']
-plot_sweep = not (plot_neurons or plot_trajs)
-h0_for_plot = [0.2] #0.12 to 0.4 for even case
+plot_trajs = [False, 'scatter']
+plot_sweep = not (plot_neurons or plot_trajs[0])
+h0_for_plot = np.linspace(0.12,0.43,num=155) #0.12 to 0.4 for even case
 h0_for_sim = []
 for item in h0_for_plot:
-    h0_for_sim.append([item,item+0.01])
+    h0_for_sim.append([item,item])
 change = {'h0':h0_for_sim}
+uneven = h0_for_sim[0][0]!=h0_for_sim[0][1]
 
-sample_size = 30
+sample_size = 25
 
 success_list, target_list, time_list, inhib_list, inhib_times_list, sum_activity_list, activity_df, x_list, y_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
 p_success, se_success, p_correct, se_correct = sim_met.get_success_rate(target_list, sample_size, True, 1)
@@ -114,21 +114,33 @@ figure_num = 1
 if plot_sweep:
     x_label = "h0"
     dist_y_label = "Average distance to target"
-    dist_title = "Average distance to target over last quarter of simulation, egocentric, uneven attraction"
+    dist_title = f" Distance to target over last quarter of simulation, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction"
     plt.figure(figsize=(10,5))
     plt.figure(figure_num)
-    sim_met.plot_metric(success_list,h0_for_plot,dist_title,x_label,dist_y_label)
+    sim_met.plot_metric(success_list,h0_for_plot,dist_title,x_label,dist_y_label,False)
+    figure_num += 1
+
+    dist_agg_title = f"Average distance to target over last quarter of simulation, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction"
+    plt.figure(figsize=(10,5))
+    plt.figure(figure_num)
+    sim_met.plot_metric(success_list,h0_for_plot,dist_agg_title,x_label,dist_y_label,True)
     figure_num += 1
 
     time_y_label = "Average time to target"
-    time_title = "Time to target, egocentric, uneven attraction, stopping distance = 0.5"
+    time_title = f"Time to target, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction, stopping distance = 0.5"
     plt.figure(figsize=(10,5))
     plt.figure(figure_num)
-    sim_met.plot_metric(time_list,h0_for_plot,time_title,x_label,time_y_label)
+    sim_met.plot_metric(time_list,h0_for_plot,time_title,x_label,time_y_label,False)
+    figure_num += 1
+
+    time_agg_title = f"Average time to target, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction, stopping distance = 0.5"
+    plt.figure(figsize=(10,5))
+    plt.figure(figure_num)
+    sim_met.plot_metric(time_list,h0_for_plot,time_agg_title,x_label,time_y_label,True)
     figure_num += 1
 
     p_success_y = "Probability of reaching a target"
-    p_success_title = "Probability of getting within 0.5 units of a target, egocentric, uneven attraction"
+    p_success_title = f"Probability of getting within 0.5 units of a target, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction"
     plt.figure(figsize=(10,5))
     plt.figure(figure_num)
     if uneven: 
@@ -150,7 +162,7 @@ if plot_sweep:
 
     
     n_inhib_y = "Average number of steps where every neuron was inhibited"
-    n_inhib_title = "Average number of steps where every neuron was inhibited, egocentric, uneven attraction"
+    n_inhib_title = f"Average number of steps where every neuron was inhibited, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction"
     plt.figure(figsize=(10,5))
     plt.figure(figure_num)
     plt.plot(h0_for_plot,mean_inhib,color='red')
