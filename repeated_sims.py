@@ -22,18 +22,22 @@ def sample_sims(bp, changing_params, n_samples, slice=100, include_trajs=False, 
                 (we need to be able to split samples based on rows, and aggregate the position over each time)
     '''
     # initialize all the stuff I want to collect
-    img = None
-    activity_df = None
+    # to do: create a warning if including trajectory and including activity when changing parameters 
+    # (b/c they are meant to only aggregate over samples of the same exact simulation settings)
+    if include_trajs or include_activity:
+        for param in changing_params.keys():
+            param_value_list = changing_params[param]
+            if len(param_value_list) > 1:
+                print("warning: taking trajectories or neuron activity over different simulation settings")
     success_list = []
     time_list = []
     target_list = []
     inhib_list = []
     inhib_times_list = []
-    if include_trajs == True:
-        x_list = []
-        y_list = []
-    if include_activity == True:
-        activity_list = []
+    activity_list = [] 
+    activity_df = None
+    x_list = []
+    y_list = []
     for param in changing_params.keys():
         param_value_list = changing_params[param]
         for value in param_value_list:
@@ -52,8 +56,7 @@ def sample_sims(bp, changing_params, n_samples, slice=100, include_trajs=False, 
                 avg_dists_timereached = sim_met.get_avg_distance(xPos, yPos, targetsx, targetsy, time_reached)
                 dist = min(avg_dists_timereached)
                 success_list.append(dist)
-                n_inhib, inhib_times = sim_met.get_neuron_info(activity[:,0,:])
-                print(f"n inhib: {n_inhib}")
+                n_inhib, inhib_times, sum_activity = sim_met.get_neuron_info(activity[:,0,:])
                 inhib_list.append(n_inhib)
                 inhib_times_list.append(inhib_times)
                 if include_trajs == True:
@@ -72,6 +75,5 @@ def sample_sims(bp, changing_params, n_samples, slice=100, include_trajs=False, 
     if include_trajs == True:
         x_list = np.array(x_list)
         y_list = np.array(y_list)
-        img = sim_met.plot_from_density(x_list, y_list, 30)
 
-    return success_list, target_list, time_list, inhib_list, inhib_times_list, activity_df, img
+    return success_list, target_list, time_list, inhib_list, inhib_times_list, activity_df, x_list, y_list

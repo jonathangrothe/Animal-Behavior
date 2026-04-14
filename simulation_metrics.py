@@ -140,13 +140,16 @@ def get_neuron_info(activity):
     '''
     n_inhib = 0
     inhib_index = []
+    sum_activity = []
     tsteps = np.shape(activity)[1] - 100 # I let the sim run for 100 times after reaching the target, but don't want that to impact analysis
     for t in range(tsteps):
         max_activation = np.max(activity[:,t], axis=0)
+        sum_at_t = np.sum(activity[:,t], axis=0)
+        sum_activity.append(sum_at_t)
         if max_activation < 0:
             n_inhib += 1
             inhib_index.append(t)
-    return n_inhib, inhib_index
+    return n_inhib, inhib_index, sum_activity
 
 def get_inhibition_rates(inhib_list,sample_size):
     '''
@@ -161,78 +164,8 @@ def get_inhibition_rates(inhib_list,sample_size):
     n_samples = len(inhib_list)//sample_size
     for x in range(n_samples):
         mean_n_inhib = np.mean(inhib_list[x*sample_size:(x+1)*sample_size])
-        print(f"mean: {mean_n_inhib}")
         mean_inhib.append(mean_n_inhib)
     return mean_inhib
-
-
-
-# THIS NEEDS REWORKING
-def plot_trajectories(xtraj, ytraj, targetsx, targetsy, colors, L, title, n_groups, agg = 'mean'):
-    '''
-    plots n different trajectories in n different colors
-    xtraj: a n x t numpy array of x positions
-    ytraj a n x t numpy array of y positions
-    colors: a length n list of colors
-    L: length of the grid
-    '''
-   # and since there is a lot of dimensions here we should probably write some code to flag when the dimensions are mismatched
-    group_size = len(xtraj)//n_groups # FLAG THIS WHEN UNEVEN IN THE FUTURE
-    plt.xlim(0, L)
-    plt.ylim(0, L)
-    plt.scatter(
-            targetsx,
-            targetsy,
-            s = 10,
-            marker = 's',
-            c = [[0.8, 0, 0.2]], 
-        )
-    marker = 's'
-    if agg == 'median':
-        marker = 'o'
-    if agg == 'min':
-        marker = 'v'
-    if agg == 'max':
-        marker = '^'
-    for group in range(n_groups):
-        x_split = xtraj.iloc[group*group_size:(group+1)*group_size,:]
-        y_split = ytraj.iloc[group*group_size:(group+1)*group_size,:]
-        x_points = []
-        y_points = []
-        for point in range(x_split.shape[1]):
-            if agg == 'mean':
-                xloc_mean = np.mean(x_split.iloc[:,point])
-                yloc_mean = np.mean(y_split.iloc[:,point])
-                x_points.append(xloc_mean)
-                y_points.append(yloc_mean)
-            if agg == 'median':
-                y_median = np.argpartition(y_split.iloc[:,point], group_size // 2)[group_size // 2]
-                xloc_median = x_split.iloc[y_median,point]
-                yloc_median = y_split.iloc[y_median,point]
-                x_points.append(xloc_median)
-                y_points.append(yloc_median)
-            if agg == 'max':
-                y_max = np.argmax(y_split.iloc[:, point])
-                xloc_max = x_split.iloc[y_max,point]
-                yloc_max = y_split.iloc[y_max,point]
-                x_points.append(xloc_max)
-                y_points.append(yloc_max)
-            if agg == 'min':
-                y_min = np.argmin(y_split.iloc[:,point])
-                xloc_min = x_split.iloc[y_min,point]
-                yloc_min = y_split.iloc[y_min,point]
-                x_points.append(xloc_min)
-                y_points.append(yloc_min)
-        plt.scatter(
-            x_points,
-            y_points,
-            s=10,
-            color = colors[group],
-            marker = marker
-        )
-    plt.title(title)
-    #plt.show()
-    plt.pause(0.001)  
 
 def plot_metric(metric,x,title,xlabel,ylabel):
     '''
@@ -265,7 +198,7 @@ def plot_metric(metric,x,title,xlabel,ylabel):
     plt.title(title)
 
     
-def plot_neurons(activity_df, activation_cutoff=0.5, tstart=0, tstop=0):
+def plot_neurons(activity_df, activation_cutoff=0.5, tstart=0, tstop=0, N=100):
     # implementation right now: iterates through the mean contributions and finds the maximum mean contribution of any one neuron
     # then plots the activity of all neurons that contribute more than half as much as the mean neuron
     # this could be functionalized, but it is also a good tool to help show when decisions are made
@@ -280,23 +213,36 @@ def plot_neurons(activity_df, activation_cutoff=0.5, tstart=0, tstop=0):
     '''
     if tstop == 0:
         tstop = len(activity_df)
-    n_neurons = activity_df.shape[0]
     mean_max = -100
+    n_sims = activity_df.shape[0]//N
+    print(np.shape(activity_df))
+    activity_df = activity_df.iloc[:,tstart:tstop+1] # first slice the dataframe so we don't have to worry about indexing for the interval later
+    print(np.shape(activity_df))
     active_neuron_list = []
-    for neuron in range(n_neurons):
-        mean_activity = np.mean(activity_df.iloc[neuron,tstart:tstop+1])
-        if mean_activity > mean_max:
-            mean_max = mean_activity
+    for neuron in range(N):
+        activity_over_sims = []
+        for sim in range(n_sims):
+            mean_activity = np.mean(activity_df.iloc[neuron*sim,:]) #mean activity for neuron in this sim over this time period
+            activity_over_sims.append(mean_activity)
+        mean_over_sims = np.mean(activity_over_sims)
+        if mean_over_sims > mean_max:
+            mean_max = mean_over_sims
 
-    print(mean_activity)
-    if mean_activity < 0:
-        if activation_cutoff == 0:
-            activation_cutoff += 0.0001 # avoid division by 0?
-        activation_cutoff = 1/activation_cutoff
-    for neuron in range(n_neurons):
-        mean_activity = np.mean(activity_df.iloc[neuron,tstart:tstop+1])
-        if mean_activity > mean_max * activation_cutoff:
-            plt.plot(activity_df.iloc[neuron,tstart:tstop+1], label = f"neuron: {neuron}")
+    cut_range = 0
+    if mean_max < 0:
+        abs_mean_max = np.abs(mean_max)
+        cut_range = abs_mean_max - abs_mean_max * activation_cutoff
+    else:
+        cut_range = mean_max - mean_max * activation_cutoff
+    true_cutoff = mean_max - cut_range
+    for neuron in range(N):
+        activity_for_plot = []
+        for sim in range(n_sims):
+            mean_activity = np.mean(activity_df.iloc[neuron*sim,:])
+            activity_for_plot.append(mean_activity)
+        mean_activity_for_plot = np.mean(activity_for_plot)
+        if mean_activity_for_plot > true_cutoff:
+            plt.plot(activity_df.iloc[neuron::N].mean(axis=0), label = f"neuron: {neuron}")
             active_neuron_list.append(neuron)
         plt.title("plot of neuron activity")
         plt.legend()
@@ -345,6 +291,3 @@ def plot_from_density(xPos, yPos, window_size):
             img = np.fmax(tmp_img, img)
     return img
     
-
- 
-

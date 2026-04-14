@@ -315,7 +315,3 @@ def fAct(u,beta):
     returns: value put through the activation function
     '''
     return ((1+np.tanh(beta * u))/2)
-
-
-
-

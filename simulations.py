@@ -92,9 +92,9 @@ base = {'N':N,
         'beta':beta}
 
 uneven = True # flag for whether or not the attractions are even
-plot_neurons = False
+plot_neurons = True
 plot_trajs = False
-h0_for_plot = np.linspace(0.2,0.29,num=15) #0.12 to 0.4 for even case
+h0_for_plot = [0.28] #0.12 to 0.4 for even case
 h0_for_sim = []
 for item in h0_for_plot:
     h0_for_sim.append([item,item+0.01])
@@ -102,14 +102,14 @@ change = {'h0':h0_for_sim}
 
 sample_size = 10
 
-success_list, target_list, time_list, inhib_list, inhib_times_list, activity_df, img  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
+success_list, target_list, time_list, inhib_list, inhib_times_list, activity_df, x_list, y_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
 p_success, se_success, p_correct, se_correct = sim_met.get_success_rate(target_list, sample_size, True, 1)
 mean_inhib = sim_met.get_inhibition_rates(inhib_list, sample_size)
 
 if plot_neurons == True:
     plt.figure(2)
-    sim_met.plot_neurons(activity_df, 0.75, tstart=312,tstop=332)
-    plt.title("Activity of most active neurons (0.75 as active as most active neuron) from time step 300 to time step 350")
+    sim_met.plot_neurons(activity_df, 0.2,330,350)
+    plt.title("Activity of most active neurons (0.5x as active as most active neuron) from time step 300 to time step 350")
     plt.show()
 
 # SAMPLING PLOTS
@@ -160,28 +160,9 @@ plt.ylabel(n_inhib_y)
 plt.title(n_inhib_title)
 plt.show()
 
-
-
-#TRAJECTORY PLOTS - NEEDS REWORK
+# TRAJECTORY PLOTS - takes a really long time to run right now
 if plot_trajs == True:
+    img = sim_met.plot_from_density(x_list, y_list, 30)
     plt.figure(figsize=(10,10))
     plt.imshow(img)
     plt.show()
-
-'''
-plt.figure(1)
-simulation_metrics.plot_trajectories(x_trajs,y_trajs,initialxt,initialyt,
-                                     plt.cm.coolwarm(np.linspace(0, 1, 5)),L,
-                                     'Mean trajectories for allocentric, even attraction. h0:0.68(blue)->0.8(red)',5, 'mean')
-
-plt.figure(2)
-simulation_metrics.plot_trajectories(x_trajs,y_trajs,initialxt,initialyt,
-                                     plt.cm.coolwarm(np.linspace(0, 1, 5)),L,
-                                     'Min trajectories for allocentric, even attraction. h0:0.68(blue)->0.8(red)',5, 'min')
-
-plt.figure(3)
-simulation_metrics.plot_trajectories(x_trajs,y_trajs,initialxt,initialyt,
-                                     plt.cm.coolwarm(np.linspace(0, 1, 5)),L,
-                                     'Max trajectories for allocentric, even attraction. h0:0.68(blue)->0.8(red)',5, 'max')
-plt.show(block=False)
-'''
