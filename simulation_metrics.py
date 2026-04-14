@@ -215,9 +215,7 @@ def plot_neurons(activity_df, activation_cutoff=0.5, tstart=0, tstop=0, N=100):
         tstop = len(activity_df)
     mean_max = -100
     n_sims = activity_df.shape[0]//N
-    print(np.shape(activity_df))
     activity_df = activity_df.iloc[:,tstart:tstop+1] # first slice the dataframe so we don't have to worry about indexing for the interval later
-    print(np.shape(activity_df))
     active_neuron_list = []
     for neuron in range(N):
         activity_over_sims = []
@@ -228,20 +226,13 @@ def plot_neurons(activity_df, activation_cutoff=0.5, tstart=0, tstop=0, N=100):
         if mean_over_sims > mean_max:
             mean_max = mean_over_sims
 
-    cut_range = 0
-    if mean_max < 0:
-        abs_mean_max = np.abs(mean_max)
-        cut_range = abs_mean_max - abs_mean_max * activation_cutoff
-    else:
-        cut_range = mean_max - mean_max * activation_cutoff
-    true_cutoff = mean_max - cut_range
     for neuron in range(N):
         activity_for_plot = []
         for sim in range(n_sims):
-            mean_activity = np.mean(activity_df.iloc[neuron*sim,:])
+            mean_activity = np.mean(activity_df.iloc[neuron*(sim+1),:])
             activity_for_plot.append(mean_activity)
         mean_activity_for_plot = np.mean(activity_for_plot)
-        if mean_activity_for_plot > true_cutoff:
+        if mean_activity_for_plot > mean_max*activation_cutoff:
             plt.plot(activity_df.iloc[neuron::N].mean(axis=0), label = f"neuron: {neuron}")
             active_neuron_list.append(neuron)
         plt.title("plot of neuron activity")
@@ -249,7 +240,7 @@ def plot_neurons(activity_df, activation_cutoff=0.5, tstart=0, tstop=0, N=100):
     return active_neuron_list
 
 
-# heat map plotting from vivek's code - very computationally intensive right now
+# heat map plotting from vivek's code - very slow to run right now
 def density_map(x, y):
     '''
     Takes x and y values and returns a 2d array corresponding to a 2d histogram.
@@ -277,10 +268,10 @@ def plot_from_density(xPos, yPos, window_size):
                 Does not affect how many times we call density_map, just the width of each range of densities
     '''
     tmax = len(xPos)
-    for i in range((tmax-window_size)//10):
+    for i in range((tmax-window_size)):
         # calculate the window
-        window_min = i*10
-        window_max = i*10 + window_size
+        window_min = i
+        window_max = i + window_size
         # get the x positions and y positions in the window and map them
         x = xPos[window_min:window_max+1]
         y = yPos[window_min:window_max+1]

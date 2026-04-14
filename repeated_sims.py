@@ -68,7 +68,7 @@ def sample_sims(bp, changing_params, n_samples, slice=100, include_trajs=False, 
                 if include_activity == True:
                     for neuron in range(np.shape(activity)[0]):
                         activity_list.append(activity[neuron,0,:])
-    # ADD IMPLEMENTATION FOR ANALYZING NEURON BEHAVIOR OVER MULTIPLE SAMPLES
+                        
     if include_activity == True:
         activity_df = pd.DataFrame(activity_list)
     

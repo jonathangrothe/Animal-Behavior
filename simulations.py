@@ -92,77 +92,85 @@ base = {'N':N,
         'beta':beta}
 
 uneven = True # flag for whether or not the attractions are even
-plot_neurons = True
+plot_neurons = False
 plot_trajs = False
-h0_for_plot = [0.28] #0.12 to 0.4 for even case
+plot_sweep = not (plot_neurons or plot_trajs)
+h0_for_plot = [0.28,0.29] #0.12 to 0.4 for even case
 h0_for_sim = []
 for item in h0_for_plot:
     h0_for_sim.append([item,item+0.01])
 change = {'h0':h0_for_sim}
 
-sample_size = 10
+sample_size = 2
 
 success_list, target_list, time_list, inhib_list, inhib_times_list, activity_df, x_list, y_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
 p_success, se_success, p_correct, se_correct = sim_met.get_success_rate(target_list, sample_size, True, 1)
 mean_inhib = sim_met.get_inhibition_rates(inhib_list, sample_size)
 
+figure_num = 1
+# SWEEP PLOTS
+
+if plot_sweep:
+    x_label = "h0"
+    dist_y_label = "Average distance to target"
+    dist_title = "Average distance to target over last quarter of simulation, egocentric, uneven attraction"
+    plt.figure(figsize=(10,5))
+    plt.figure(figure_num)
+    sim_met.plot_metric(success_list,h0_for_plot,dist_title,x_label,dist_y_label)
+    figure_num += 1
+
+    time_y_label = "Average time to target"
+    time_title = "Time to target, egocentric, uneven attraction, stopping distance = 0.5"
+    plt.figure(figsize=(10,5))
+    plt.figure(figure_num)
+    sim_met.plot_metric(time_list,h0_for_plot,time_title,x_label,time_y_label)
+    figure_num += 1
+
+    p_success_y = "Probability of reaching a target"
+    p_success_title = "Probability of getting within 0.5 units of a target, egocentric, uneven attraction"
+    plt.figure(figsize=(10,5))
+    plt.figure(figure_num)
+    if uneven: 
+        plt.plot(h0_for_plot,p_correct,color='Green', label="Correct target")
+        plt.plot(h0_for_plot, np.add(p_correct,se_correct), color = 'green', label = 'standard error for correct', linestyle = ':')
+        plt.plot(h0_for_plot, np.subtract(p_correct,se_correct), color = 'green', linestyle = ':')
+        plt.plot(h0_for_plot,p_success,color='Blue', label="Any target")
+        plt.plot(h0_for_plot, np.add(p_success,se_success), color = 'blue', label = 'standard error for any target', linestyle = ':')
+        plt.plot(h0_for_plot, np.subtract(p_success,se_success), color = 'blue', linestyle = ':')
+        plt.legend()
+    if not uneven:
+        plt.plot(h0_for_plot,p_success,color='Blue')
+        plt.plot(h0_for_plot, np.add(p_success,se_success), color = 'blue', label = 'standard error', linestyle = ':')
+        plt.plot(h0_for_plot, np.subtract(p_success,se_success), color = 'blue', linestyle = ':')
+    plt.xlabel(x_label)
+    plt.ylabel(p_success_y)
+    plt.title(p_success_title)
+    figure_num += 1
+
+    
+    n_inhib_y = "Average number of steps where every neuron was inhibited"
+    n_inhib_title = "Average number of steps where every neuron was inhibited, egocentric, uneven attraction"
+    plt.figure(figsize=(10,5))
+    plt.figure(figure_num)
+    plt.plot(h0_for_plot,mean_inhib,color='red')
+    plt.xlabel(x_label)
+    plt.ylabel(n_inhib_y)
+    plt.title(n_inhib_title)
+    figure_num += 1
+
+# SINGLE SETTING PLOTS
+
 if plot_neurons == True:
-    plt.figure(2)
-    sim_met.plot_neurons(activity_df, 0.2,330,350)
-    plt.title("Activity of most active neurons (0.5x as active as most active neuron) from time step 300 to time step 350")
-    plt.show()
+    plt.figure(figure_num)
+    sim_met.plot_neurons(activity_df,0.9,0,350)
+    plt.title("Activity of most active neurons (0.9x as active as most active neuron) from time step 0 to time step 350")
+    figure_num += 1
 
-# SAMPLING PLOTS
-
-x_label = "h0"
-dist_y_label = "Average distance to target"
-dist_title = "Average distance to target over last quarter of simulation, egocentric, uneven attraction"
-plt.figure(figsize=(10,5))
-plt.figure(2)
-sim_met.plot_metric(success_list,h0_for_plot,dist_title,x_label,dist_y_label)
-plt.show(block=False)
-
-time_y_label = "Average time to target"
-time_title = "Time to target, egocentric, uneven attraction, stopping distance = 0.5"
-plt.figure(figsize=(10,5))
-plt.figure(3)
-sim_met.plot_metric(time_list,h0_for_plot,time_title,x_label,time_y_label)
-plt.show(block=False)
-
-p_success_y = "Probability of reaching a target"
-p_success_title = "Probability of getting within 0.5 units of a target, egocentric, uneven attraction"
-plt.figure(figsize=(10,5))
-plt.figure(4)
-if uneven: 
-    plt.plot(h0_for_plot,p_correct,color='Green', label="Correct target")
-    plt.plot(h0_for_plot, np.add(p_correct,se_correct), color = 'green', label = 'standard error for correct', linestyle = ':')
-    plt.plot(h0_for_plot, np.subtract(p_correct,se_correct), color = 'green', linestyle = ':')
-    plt.plot(h0_for_plot,p_success,color='Blue', label="Any target")
-    plt.plot(h0_for_plot, np.add(p_success,se_success), color = 'blue', label = 'standard error for any target', linestyle = ':')
-    plt.plot(h0_for_plot, np.subtract(p_success,se_success), color = 'blue', linestyle = ':')
-    plt.legend()
-if not uneven:
-    plt.plot(h0_for_plot,p_success,color='Blue')
-    plt.plot(h0_for_plot, np.add(p_success,se_success), color = 'blue', label = 'standard error', linestyle = ':')
-    plt.plot(h0_for_plot, np.subtract(p_success,se_success), color = 'blue', linestyle = ':')
-plt.xlabel(x_label)
-plt.ylabel(p_success_y)
-plt.title(p_success_title)
-plt.show(block=False)
-
-plt.figure(5)
-n_inhib_y = "Average number of steps where every neuron was inhibited"
-n_inhib_title = "Average number of steps where every neuron was inhibited, egocentric, uneven attraction"
-plt.figure(figsize=(10,5))
-plt.plot(h0_for_plot,mean_inhib,color='red')
-plt.xlabel(x_label)
-plt.ylabel(n_inhib_y)
-plt.title(n_inhib_title)
-plt.show()
-
-# TRAJECTORY PLOTS - takes a really long time to run right now
 if plot_trajs == True:
+    plt.figure(figsize=(5,5))
+    plt.figure(figure_num)
     img = sim_met.plot_from_density(x_list, y_list, 30)
-    plt.figure(figsize=(10,10))
     plt.imshow(img)
-    plt.show()
+    figure_num += 1
+
+plt.show()
