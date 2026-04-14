@@ -52,7 +52,7 @@ for i in range(N):
     J[i,i] = 0.0
     J = np.squeeze(J)
 
-allocentricFlag = 0 # 1 is allo, 0 is ego
+allocentricFlag = 1 # 1 is allo, 0 is ego
 h0s = [0.25,0.25] # attraction vector, first are attraction for targets, then agents
 h_b = 0.2
 sigma = 0.5
@@ -97,14 +97,14 @@ plot_sweep = not (plot_neurons or plot_trajs[0])
 h0_for_plot = np.linspace(0.12,0.43,num=155) #0.12 to 0.4 for even case
 h0_for_sim = []
 for item in h0_for_plot:
-    h0_for_sim.append([item,item+0.01])
+    h0_for_sim.append([item,item])
 change = {'h0':h0_for_sim}
 uneven = h0_for_sim[0][0]!=h0_for_sim[0][1]
 
 sample_size = 25
 
 success_list, target_list, time_list, inhib_list, inhib_times_list, sum_activity_list, activity_df, x_list, y_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
-p_success, se_success, p_correct, se_correct = sim_met.get_success_rate(target_list, sample_size, True, 1)
+p_success, se_success, p_correct, se_correct = sim_met.get_success_rate(target_list, sample_size, uneven, 1)
 mean_inhib = sim_met.get_inhibition_rates(inhib_list, sample_size)
 
 figure_num = 1
