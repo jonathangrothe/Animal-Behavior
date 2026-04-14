@@ -97,7 +97,7 @@ plot_sweep = not (plot_neurons or plot_trajs[0])
 h0_for_plot = np.linspace(0.12,0.43,num=155) #0.12 to 0.4 for even case
 h0_for_sim = []
 for item in h0_for_plot:
-    h0_for_sim.append([item,item])
+    h0_for_sim.append([item,item+0.01])
 change = {'h0':h0_for_sim}
 uneven = h0_for_sim[0][0]!=h0_for_sim[0][1]
 
