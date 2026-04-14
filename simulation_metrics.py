@@ -248,6 +248,17 @@ def plot_sum_activity(activity_list):
         plt.plot(item)
     return None
 
+def plot_traj(xPos,yPos,targetsx,targetsy,sample_size):
+    '''
+    A function that takes x trajectories and y trajectories and plots them over each other, with a low ish opacity so we can see overlap. 
+    Designed to be used over the same simulation settings with a number s of samples.
+    Need: to be able to find the final time for each sim (collected earlier?)
+    '''
+    
+    for sample in range(sample_size):
+       plt.scatter(xPos[sample],yPos[sample],color='black',alpha=sample_size*0.0001,s=1)
+    plt.scatter(targetsx,targetsy,color='red',s=5)
+    return None
 
 # heat map plotting from vivek's code - very slow to run right now
 def density_map(x, y):

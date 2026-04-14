@@ -6,7 +6,7 @@ import pandas as pd
 import simulate_ringattractor as sim_ra
 import simulation_metrics as sim_met
 
-def sample_sims(bp, changing_params, n_samples, slice=100, include_trajs=False, include_activity=False):
+def sample_sims(bp, changing_params, n_samples, slice=100, include_trajs=[False, "scatter"], include_activity=False):
     '''
     bp: (base parameters) a dictionary which contains the base values to run the simulation on. It will contain an entry for every parameter in the simulation
     changing_params: a dictionary which contains the parameters that are going to be changed throughout the simulations as keys, 
@@ -24,7 +24,7 @@ def sample_sims(bp, changing_params, n_samples, slice=100, include_trajs=False, 
     # initialize all the stuff I want to collect
     # to do: create a warning if including trajectory and including activity when changing parameters 
     # (b/c they are meant to only aggregate over samples of the same exact simulation settings)
-    if include_trajs or include_activity:
+    if include_trajs[0] or include_activity:
         for param in changing_params.keys():
             param_value_list = changing_params[param]
             if len(param_value_list) > 1:
@@ -61,13 +61,18 @@ def sample_sims(bp, changing_params, n_samples, slice=100, include_trajs=False, 
                 inhib_list.append(n_inhib)
                 inhib_times_list.append(inhib_times)
 
-                if include_trajs == True:
+                if include_trajs[0]:
                     xpos_1d = xPos.ravel()
                     ypos_1d = yPos.ravel()
-                    x_list += list(xpos_1d)
-                    y_list += list(ypos_1d)
+                    if include_trajs[1] == 'heat':
+                        x_list += list(xpos_1d)
+                        y_list += list(ypos_1d)
+                    if include_trajs[1] == 'scatter':
+                        x_list.append(xpos_1d)
+                        y_list.append(ypos_1d)
 
-                if include_activity == True: # we also want to add a sum of activity list,
+
+                if include_activity: # we also want to add a sum of activity list,
                     sum_activity = []
                     for time in range(np.shape(activity)[2]):
                         sum_activity.append(np.sum(activity[:,0,time]))
@@ -76,13 +81,12 @@ def sample_sims(bp, changing_params, n_samples, slice=100, include_trajs=False, 
                         activity_list.append(activity[neuron,0,:])
 
 
-    if include_activity == True:
-        print(np.shape(sum_activity_list[0]))
-        print(np.shape(sum_activity_list[1]))
+    if include_activity:
         activity_df = pd.DataFrame(activity_list)
     
-    if include_trajs == True:
-        x_list = np.array(x_list)
-        y_list = np.array(y_list)
+    if include_trajs[0]:
+        if include_trajs[1] == 'heat':
+            x_list = np.array(x_list)
+            y_list = np.array(y_list)
 
     return success_list, target_list, time_list, inhib_list, inhib_times_list, sum_activity_list, activity_df, x_list, y_list

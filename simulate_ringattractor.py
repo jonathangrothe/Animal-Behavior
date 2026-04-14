@@ -5,7 +5,7 @@ import math
 # ---------- Simulation code!! ----------
 def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag,rEgo,rEgoTarget,Egonumber,
                             distf,adistf,J,beta,h0,h_b,dt,v0,v0t,sigma,hColl,rColl,
-                            initialx,initialy,initialxt,initialyt,plot=True,stop=False,stopping_dist=0.5):
+                            initialx,initialy,initialxt,initialyt,plot=True,stop=False,stopping_dist=0.5,steps_after_reach=5):
 
     # -------- INITIALIZATIONS WITHIN THE SIMULATION --------
 
@@ -258,7 +258,7 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
                 total_dist = np.sqrt((x_dist**2)+(y_dist**2))
                 if total_dist <= stopping_dist:
                     stopped = True
-                    stopping_time = tstep + 100
+                    stopping_time = tstep + steps_after_reach
 
         if stop == True and stopped == True:
             if tstep >= stopping_time:

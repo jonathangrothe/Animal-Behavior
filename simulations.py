@@ -92,8 +92,8 @@ base = {'N':N,
         'beta':beta}
 
 uneven = True # flag for whether or not the attractions are even
-plot_neurons = True
-plot_trajs = False
+plot_neurons = False
+plot_trajs = [True, 'scatter']
 plot_sweep = not (plot_neurons or plot_trajs)
 h0_for_plot = [0.2] #0.12 to 0.4 for even case
 h0_for_sim = []
@@ -101,7 +101,7 @@ for item in h0_for_plot:
     h0_for_sim.append([item,item+0.01])
 change = {'h0':h0_for_sim}
 
-sample_size = 10
+sample_size = 30
 
 success_list, target_list, time_list, inhib_list, inhib_times_list, sum_activity_list, activity_df, x_list, y_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
 p_success, se_success, p_correct, se_correct = sim_met.get_success_rate(target_list, sample_size, True, 1)
@@ -161,7 +161,7 @@ if plot_sweep:
 
 # SINGLE SETTING PLOTS
 
-if plot_neurons == True:
+if plot_neurons:
     plt.figure(figure_num)
     sim_met.plot_neurons(activity_df,0)
     plt.title("Activity of most active neurons (any on average active neuron) from time step 0 to the last time step")
@@ -174,11 +174,17 @@ if plot_neurons == True:
     plt.ylabel("Sum of neuron activity")
     figure_num+=1
 
-if plot_trajs == True:
-    plt.figure(figsize=(5,5))
+
+if plot_trajs[0]:
+    plt.figure(figsize=(7,7))
     plt.figure(figure_num)
-    img = sim_met.plot_from_density(x_list, y_list, 30)
-    plt.imshow(img)
+    if plot_trajs[1] == 'heat':
+        img = sim_met.plot_from_density(x_list, y_list, 30)
+        plt.imshow(img)
+    if plot_trajs[1] == 'scatter':
+        sim_met.plot_traj(x_list,y_list,initialxt,initialyt,sample_size)
+    plt.title("Trajectory plot")
     figure_num += 1
+
 
 plt.show()
