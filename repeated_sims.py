@@ -35,6 +35,7 @@ def sample_sims(bp, changing_params, n_samples, slice=100, include_trajs=False, 
     inhib_list = []
     inhib_times_list = []
     activity_list = [] 
+    sum_activity_list = []
     activity_df = None
     x_list = []
     y_list = []
@@ -59,21 +60,29 @@ def sample_sims(bp, changing_params, n_samples, slice=100, include_trajs=False, 
                 n_inhib, inhib_times, sum_activity = sim_met.get_neuron_info(activity[:,0,:])
                 inhib_list.append(n_inhib)
                 inhib_times_list.append(inhib_times)
+
                 if include_trajs == True:
                     xpos_1d = xPos.ravel()
                     ypos_1d = yPos.ravel()
                     x_list += list(xpos_1d)
                     y_list += list(ypos_1d)
 
-                if include_activity == True:
+                if include_activity == True: # we also want to add a sum of activity list,
+                    sum_activity = []
+                    for time in range(np.shape(activity)[2]):
+                        sum_activity.append(np.sum(activity[:,0,time]))
+                    sum_activity_list.append(sum_activity)
                     for neuron in range(np.shape(activity)[0]):
                         activity_list.append(activity[neuron,0,:])
-                        
+
+
     if include_activity == True:
+        print(np.shape(sum_activity_list[0]))
+        print(np.shape(sum_activity_list[1]))
         activity_df = pd.DataFrame(activity_list)
     
     if include_trajs == True:
         x_list = np.array(x_list)
         y_list = np.array(y_list)
 
-    return success_list, target_list, time_list, inhib_list, inhib_times_list, activity_df, x_list, y_list
+    return success_list, target_list, time_list, inhib_list, inhib_times_list, sum_activity_list, activity_df, x_list, y_list

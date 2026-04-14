@@ -92,22 +92,23 @@ base = {'N':N,
         'beta':beta}
 
 uneven = True # flag for whether or not the attractions are even
-plot_neurons = False
+plot_neurons = True
 plot_trajs = False
 plot_sweep = not (plot_neurons or plot_trajs)
-h0_for_plot = [0.28,0.29] #0.12 to 0.4 for even case
+h0_for_plot = [0.2] #0.12 to 0.4 for even case
 h0_for_sim = []
 for item in h0_for_plot:
     h0_for_sim.append([item,item+0.01])
 change = {'h0':h0_for_sim}
 
-sample_size = 2
+sample_size = 10
 
-success_list, target_list, time_list, inhib_list, inhib_times_list, activity_df, x_list, y_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
+success_list, target_list, time_list, inhib_list, inhib_times_list, sum_activity_list, activity_df, x_list, y_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
 p_success, se_success, p_correct, se_correct = sim_met.get_success_rate(target_list, sample_size, True, 1)
 mean_inhib = sim_met.get_inhibition_rates(inhib_list, sample_size)
 
 figure_num = 1
+
 # SWEEP PLOTS
 
 if plot_sweep:
@@ -162,9 +163,16 @@ if plot_sweep:
 
 if plot_neurons == True:
     plt.figure(figure_num)
-    sim_met.plot_neurons(activity_df,0.9,0,350)
-    plt.title("Activity of most active neurons (0.9x as active as most active neuron) from time step 0 to time step 350")
+    sim_met.plot_neurons(activity_df,0)
+    plt.title("Activity of most active neurons (any on average active neuron) from time step 0 to the last time step")
     figure_num += 1
+
+    plt.figure(figure_num)
+    sim_met.plot_sum_activity(sum_activity_list)
+    plt.title("Sum of all neuron activity over time")
+    plt.xlabel("Time")
+    plt.ylabel("Sum of neuron activity")
+    figure_num+=1
 
 if plot_trajs == True:
     plt.figure(figsize=(5,5))

@@ -239,6 +239,15 @@ def plot_neurons(activity_df, activation_cutoff=0.5, tstart=0, tstop=0, N=100):
         plt.legend()
     return active_neuron_list
 
+def plot_sum_activity(activity_list):
+    '''
+    A function that plots the sum of activity over ONE setting, with each sample a different line?
+    '''
+    for item in activity_list:
+        print(np.shape(item))
+        plt.plot(item)
+    return None
+
 
 # heat map plotting from vivek's code - very slow to run right now
 def density_map(x, y):
