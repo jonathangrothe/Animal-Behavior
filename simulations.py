@@ -52,7 +52,7 @@ for i in range(N):
     J[i,i] = 0.0
     J = np.squeeze(J)
 
-allocentricFlag = 1 # 1 is allo, 0 is ego
+allocentricFlag = 0 # 1 is allo, 0 is ego
 h0s = [0.25,0.25] # attraction vector, first are attraction for targets, then agents
 h_b = 0.2
 sigma = 0.5
@@ -94,14 +94,14 @@ base = {'N':N,
 plot_neurons = True
 plot_trajs = [True, 'scatter']
 plot_sweep = not (plot_neurons or plot_trajs[0])
-h0_for_plot = [0.25] #0.12 to 0.4 for even case
+h0_for_plot = [0.215] #0.12 to 0.4 for even case
 h0_for_sim = []
 for item in h0_for_plot:
-    h0_for_sim.append([item,item])
+    h0_for_sim.append([item,item+0.01])
 change = {'h0':h0_for_sim}
 uneven = h0_for_sim[0][0]!=h0_for_sim[0][1]
 
-sample_size = 1
+sample_size = 25
 
 success_list, target_list, time_list, inhib_list, inhib_times_list, sum_activity_list, activity_df, x_list, y_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
 p_success, se_success, p_correct, se_correct = sim_met.get_success_rate(target_list, sample_size, uneven, 1)
@@ -175,8 +175,13 @@ if plot_sweep:
 
 if plot_neurons:
     plt.figure(figure_num)
-    sim_met.plot_neurons(activity_df,5,600,0,100)
-    plt.title("Activity of most active neurons (any on average active neuron) from time step 0 to the last time step")
+    sim_met.plot_neurons(activity_df,True,5,0,0,100)
+    plt.title(f"Average activity of five most active neurons, h0: {h0_for_sim[0]}, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction")
+    figure_num += 1
+
+    plt.figure(figure_num)
+    sim_met.plot_neurons(activity_df,False,5,0,0,100)
+    plt.title(f"Activity of five most active neurons, h0: {h0_for_sim[0]}, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction")
     figure_num += 1
 
     plt.figure(figure_num)

@@ -208,7 +208,7 @@ def plot_metric(metric,x,title,xlabel,ylabel,agg=True):
 
 
     
-def plot_neurons(activity_df, top_neurons=3, tstart=0, tstop=0, N=100):
+def plot_neurons(activity_df, agg=True, top_neurons=3, tstart=0, tstop=0, N=100):
     # this function is mostly for me right now, I think this does allow for further analysis, but it might be a little too granular 
     # seems like its hard to know what to plot when it comes to individual neurons, 
     # a lot of the time leading to the decision point neuron 50 gets more active, which is interesting. Like the bump dissappears and reappears?
@@ -231,29 +231,32 @@ def plot_neurons(activity_df, top_neurons=3, tstart=0, tstop=0, N=100):
         mean_over_sims = np.mean(activity_over_sims)
         average_activity_list.append(mean_over_sims)
 
-    # now we need to get the indices of the least active neuron and the top_neurons most active neurons
     plot_indices = sorted(range(len(average_activity_list)), key=lambda i: average_activity_list[i])[-top_neurons:]
     plot_indices.reverse()
-    #min_idx = sorted(range(len(average_activity_list)), key=lambda i: average_activity_list[i])[0:top_neurons]
-    #min_idx.reverse()
-    #plot_indices = plot_indices + min_idx
     for item in plot_indices:
         print(f"index: {item}, avg activity: {average_activity_list[item]}")
 
     # for each neuron we want to plot: 
     # iterate through each sim, plot first one with label, then plot rest without, use different color for different neurons
-    colors = plt.cm.tab10(range(len(plot_indices)))
-    for neuron in range(len(plot_indices)):
-        for sim in range(sample_size):
-            if sim == 0:
-                plt.plot(activity_df.iloc[plot_indices[neuron]+((sim)*N)], alpha = 0.5/sample_size, label = f"neuron: {plot_indices[neuron]}", color=colors[neuron])
-            else: 
+    colors = plt.cm.viridis(np.linspace(0,1,len(plot_indices)))
+    if agg:
+        for neuron in range(len(plot_indices)):
+            # get mean activity of every 100th neuron starting at this one
+            plt.plot(np.mean(activity_df.iloc[plot_indices[neuron]::N],axis=0),alpha = 0.6, label = f"neuron: {plot_indices[neuron]}", color=colors[neuron])
+            plt.legend()
+                
+    else:
+        for neuron in range(len(plot_indices)):
+            for sim in range(sample_size):
+                if sim == 0:
+                    plt.plot(activity_df.iloc[plot_indices[neuron]+((sim)*N)], alpha = 0.6/sample_size, label = f"neuron: {plot_indices[neuron]}", color=colors[neuron])
+                else: 
 
-                plt.plot(activity_df.iloc[plot_indices[neuron]+((sim)*N)], alpha = 0.5/sample_size, color = colors[neuron])
+                    plt.plot(activity_df.iloc[plot_indices[neuron]+((sim)*N)], alpha = 0.6/sample_size, color = colors[neuron])
 
-    leg = plt.legend()
-    for lh in leg.legend_handles: 
-        lh.set_alpha(1.0)
+        leg = plt.legend()
+        for lh in leg.legend_handles: 
+            lh.set_alpha(1.0)
     return None
 
 def plot_sum_activity(activity_list):
@@ -268,11 +271,16 @@ def plot_traj(xPos,yPos,targetsx,targetsy,sample_size):
     '''
     A function that takes x trajectories and y trajectories and plots them over each other, with a low ish opacity so we can see overlap. 
     Designed to be used over the same simulation settings with a number s of samples.
-    Need: to be able to find the final time for each sim (collected earlier?)
+    Need: to color by velocity
     '''
     
     for sample in range(sample_size):
-       plt.scatter(xPos[sample],yPos[sample],color='black',alpha=0.5/sample_size,s=1)
+       deltax = np.diff(xPos[sample])
+       deltay = np.diff(yPos[sample])
+       dist = np.zeros(len(xPos[sample]))
+       dist[0] =0
+       dist[1:] = np.sqrt(deltax**2 + deltay**2)
+       plt.scatter(xPos[sample],yPos[sample],c = dist, cmap = 'afmhot_r', alpha=0.4/sample_size,s=1)
     plt.scatter(targetsx,targetsy,color='red',s=5)
     return None
 
