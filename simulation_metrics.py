@@ -208,53 +208,59 @@ def plot_metric(metric,x,title,xlabel,ylabel,agg=True):
 
 
     
-def plot_neurons(activity_df, activation_cutoff=0.5, tstart=0, tstop=0, N=100):
-    # implementation right now: iterates through the mean contributions and finds the maximum mean contribution of any one neuron
-    # then plots the activity of all neurons that contribute more than half as much as the mean neuron
-    # this could be functionalized, but it is also a good tool to help show when decisions are made
-    # this can really clearly illustrate the differences between ego and allocentric in this context
-    # next: look at the bad decisions and see if anything is different (look at what the mean contributions actually are as well)
-    # and look at the noisy data and see if this sheds any light
-    # also to do: extend this to mean neuron activity over multiple samples?
+def plot_neurons(activity_df, top_neurons=3, tstart=0, tstop=0, N=100):
+    # this function is mostly for me right now, I think this does allow for further analysis, but it might be a little too granular 
+    # seems like its hard to know what to plot when it comes to individual neurons, 
+    # a lot of the time leading to the decision point neuron 50 gets more active, which is interesting. Like the bump dissappears and reappears?
     '''
     A function which takes the activity of all the neurons in the ring attractor for one agent and plots them
     parameters: 
     activity_df: a Nxt dataframe where N is the number of neurons and t is the number of timesteps in the simulation
     '''
     if tstop == 0:
-        tstop = len(activity_df)
-    mean_max = -100
-    n_sims = activity_df.shape[0]//N
-    activity_df = activity_df.iloc[:,tstart:tstop+1] # first slice the dataframe so we don't have to worry about indexing for the interval later
-    active_neuron_list = []
+        tstop = activity_df.shape[1]
+    sample_size = activity_df.shape[0]//N
+    activity_df = activity_df.iloc[:,tstart:tstop+1] # first slice the dataframe based on time interval so we don't have to worry about indexing for the interval later
+    average_activity_list = []
+    # this gets a list of each neurons average activity averaged over all samples
     for neuron in range(N):
         activity_over_sims = []
-        for sim in range(n_sims):
-            mean_activity = np.mean(activity_df.iloc[neuron*sim,:]) #mean activity for neuron in this sim over this time period
+        for sim in range(sample_size):
+            mean_activity = np.mean(activity_df.iloc[neuron+(sim*N),:]) #mean activity for neuron in this sim over this time period
             activity_over_sims.append(mean_activity)
         mean_over_sims = np.mean(activity_over_sims)
-        if mean_over_sims > mean_max:
-            mean_max = mean_over_sims
+        average_activity_list.append(mean_over_sims)
 
-    for neuron in range(N):
-        activity_for_plot = []
-        for sim in range(n_sims):
-            mean_activity = np.mean(activity_df.iloc[neuron*(sim+1),:])
-            activity_for_plot.append(mean_activity)
-        mean_activity_for_plot = np.mean(activity_for_plot)
-        if mean_activity_for_plot > mean_max*activation_cutoff:
-            plt.plot(activity_df.iloc[neuron::N].mean(axis=0), label = f"neuron: {neuron}")
-            active_neuron_list.append(neuron)
-        plt.title("plot of neuron activity")
-        plt.legend()
-    return active_neuron_list
+    # now we need to get the indices of the least active neuron and the top_neurons most active neurons
+    plot_indices = sorted(range(len(average_activity_list)), key=lambda i: average_activity_list[i])[-top_neurons:]
+    plot_indices.reverse()
+    #min_idx = sorted(range(len(average_activity_list)), key=lambda i: average_activity_list[i])[0:top_neurons]
+    #min_idx.reverse()
+    #plot_indices = plot_indices + min_idx
+    for item in plot_indices:
+        print(f"index: {item}, avg activity: {average_activity_list[item]}")
+
+    # for each neuron we want to plot: 
+    # iterate through each sim, plot first one with label, then plot rest without, use different color for different neurons
+    colors = plt.cm.tab10(range(len(plot_indices)))
+    for neuron in range(len(plot_indices)):
+        for sim in range(sample_size):
+            if sim == 0:
+                plt.plot(activity_df.iloc[plot_indices[neuron]+((sim)*N)], alpha = 0.5/sample_size, label = f"neuron: {plot_indices[neuron]}", color=colors[neuron])
+            else: 
+
+                plt.plot(activity_df.iloc[plot_indices[neuron]+((sim)*N)], alpha = 0.5/sample_size, color = colors[neuron])
+
+    leg = plt.legend()
+    for lh in leg.legend_handles: 
+        lh.set_alpha(1.0)
+    return None
 
 def plot_sum_activity(activity_list):
     '''
     A function that plots the sum of activity over ONE setting, with each sample a different line?
     '''
     for item in activity_list:
-        print(np.shape(item))
         plt.plot(item)
     return None
 
@@ -266,7 +272,7 @@ def plot_traj(xPos,yPos,targetsx,targetsy,sample_size):
     '''
     
     for sample in range(sample_size):
-       plt.scatter(xPos[sample],yPos[sample],color='black',alpha=sample_size*0.0001,s=1)
+       plt.scatter(xPos[sample],yPos[sample],color='black',alpha=0.5/sample_size,s=1)
     plt.scatter(targetsx,targetsy,color='red',s=5)
     return None
 

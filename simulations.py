@@ -91,17 +91,17 @@ base = {'N':N,
         'sigma':sigma,
         'beta':beta}
 
-plot_neurons = False
-plot_trajs = [False, 'scatter']
+plot_neurons = True
+plot_trajs = [True, 'scatter']
 plot_sweep = not (plot_neurons or plot_trajs[0])
-h0_for_plot = np.linspace(0.12,0.43,num=155) #0.12 to 0.4 for even case
+h0_for_plot = [0.25] #0.12 to 0.4 for even case
 h0_for_sim = []
 for item in h0_for_plot:
     h0_for_sim.append([item,item])
 change = {'h0':h0_for_sim}
 uneven = h0_for_sim[0][0]!=h0_for_sim[0][1]
 
-sample_size = 25
+sample_size = 1
 
 success_list, target_list, time_list, inhib_list, inhib_times_list, sum_activity_list, activity_df, x_list, y_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
 p_success, se_success, p_correct, se_correct = sim_met.get_success_rate(target_list, sample_size, uneven, 1)
@@ -175,13 +175,13 @@ if plot_sweep:
 
 if plot_neurons:
     plt.figure(figure_num)
-    sim_met.plot_neurons(activity_df,0)
+    sim_met.plot_neurons(activity_df,5,600,0,100)
     plt.title("Activity of most active neurons (any on average active neuron) from time step 0 to the last time step")
     figure_num += 1
 
     plt.figure(figure_num)
     sim_met.plot_sum_activity(sum_activity_list)
-    plt.title("Sum of all neuron activity over time")
+    plt.title(f"Sum of all neuron activity over time, h0: {h0_for_sim[0]}, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction")
     plt.xlabel("Time")
     plt.ylabel("Sum of neuron activity")
     figure_num+=1
@@ -195,7 +195,7 @@ if plot_trajs[0]:
         plt.imshow(img)
     if plot_trajs[1] == 'scatter':
         sim_met.plot_traj(x_list,y_list,initialxt,initialyt,sample_size)
-    plt.title("Trajectory plot")
+    plt.title(f"Trajectory plot, h0: {h0_for_sim[0]}, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction")
     figure_num += 1
 
 
