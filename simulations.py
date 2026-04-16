@@ -94,10 +94,10 @@ base = {'N':N,
 plot_neurons = True
 plot_trajs = [True, 'scatter']
 plot_sweep = not (plot_neurons or plot_trajs[0])
-h0_for_plot = [0.19] #0.12 to 0.4 for even case
+h0_for_plot = [0.43] #0.12 to 0.4 for even case
 h0_for_sim = []
 for item in h0_for_plot:
-    h0_for_sim.append([item,item])
+    h0_for_sim.append([item,item+0.01])
 change = {'h0':h0_for_sim}
 uneven = h0_for_sim[0][0]!=h0_for_sim[0][1]
 
@@ -199,28 +199,37 @@ if plot_neurons:
     plt.title(f"Activity of five most active neurons up to time {critical_points[0]}, h0: {h0_for_sim[0]}, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction")
     figure_num += 1
 
-    # FOR ALLO NEED TO HAVE A WAY OF SEPERATING BASED ON WHAT TARGET WE END UP AT, 
-    # otherwise the average activity kind of cancels (might be easier to run uneven first...)
-    plt.figure(figure_num)
-    sim_met.plot_neurons(activity_df,True,5,critical_points[0],critical_points[1],100)
-    plt.title(f"Average activity of five most active neurons from time {critical_points[0]} to time {critical_points[1]}, h0: {h0_for_sim[0]}, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction")
-    figure_num += 1
+    if len(critical_points) > 1:
+        plt.figure(figure_num)
+        sim_met.plot_neurons(activity_df,True,5,critical_points[0],critical_points[1],100)
+        plt.title(f"Average activity of five most active neurons from time {critical_points[0]} to time {critical_points[1]}, h0: {h0_for_sim[0]}, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction")
+        figure_num += 1
 
-    plt.figure(figure_num)
-    sim_met.plot_neurons(activity_df,False,5,critical_points[0],critical_points[1],100)
-    plt.title(f"Activity of five most active neurons from time {critical_points[0]} to time {critical_points[1]}, h0: {h0_for_sim[0]}, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction")
-    figure_num += 1
+        plt.figure(figure_num)
+        sim_met.plot_neurons(activity_df,False,5,critical_points[0],critical_points[1],100)
+        plt.title(f"Activity of five most active neurons from time {critical_points[0]} to time {critical_points[1]}, h0: {h0_for_sim[0]}, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction")
+        figure_num += 1
 
-    plt.figure(figure_num)
-    sim_met.plot_neurons(activity_df,True,5,critical_points[1]+200,0,100)
-    plt.title(f"Average activity of five most active neurons from time {critical_points[1]+200} to end, h0: {h0_for_sim[0]}, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction")
-    figure_num += 1
+        plt.figure(figure_num)
+        sim_met.plot_neurons(activity_df,True,5,critical_points[1]+200,0,100)
+        plt.title(f"Average activity of five most active neurons from time {critical_points[1]+200} to end, h0: {h0_for_sim[0]}, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction")
+        figure_num += 1
 
-    plt.figure(figure_num)
-    sim_met.plot_neurons(activity_df,False,5,critical_points[1]+200,0,100)
-    plt.title(f"Activity of five most active neurons from time {critical_points[1]+200} to end, h0: {h0_for_sim[0]}, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction")
-    figure_num += 1
+        plt.figure(figure_num)
+        sim_met.plot_neurons(activity_df,False,5,critical_points[1]+200,0,100)
+        plt.title(f"Activity of five most active neurons from time {critical_points[1]+200} to end, h0: {h0_for_sim[0]}, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction")
+        figure_num += 1
 
+    else: 
+        plt.figure(figure_num)
+        sim_met.plot_neurons(activity_df,True,5,critical_points[0]+200,0,100)
+        plt.title(f"Average activity of five most active neurons from time {critical_points[0]+200} to end, h0: {h0_for_sim[0]}, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction")
+        figure_num += 1
+
+        plt.figure(figure_num)
+        sim_met.plot_neurons(activity_df,False,5,critical_points[0]+200,0,100)
+        plt.title(f"Activity of five most active neurons from time {critical_points[0]+200} to end, h0: {h0_for_sim[0]}, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction")
+        figure_num += 1
 
 if plot_trajs[0]:
     plt.figure(figsize=(7,7))

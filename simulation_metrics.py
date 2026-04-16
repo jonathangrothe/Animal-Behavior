@@ -232,8 +232,6 @@ def plot_neurons(activity_df, agg=True, top_neurons=3, tstart=0, tstop=0, N=100)
 
     plot_indices = sorted(range(len(average_activity_list)), key=lambda i: average_activity_list[i])[-top_neurons:]
     plot_indices.reverse()
-    for item in plot_indices:
-        print(f"index: {item}, avg activity: {average_activity_list[item]}")
 
     # for each neuron we want to plot: 
     # iterate through each sim, plot first one with label, then plot rest without, use different color for different neurons
@@ -286,7 +284,7 @@ def plot_traj(xPos,yPos,targetsx,targetsy,sample_size):
        dist = np.zeros(len(xPos[sample]))
        dist[0] =0
        dist[1:] = np.sqrt(deltax**2 + deltay**2)
-       plt.scatter(xPos[sample],yPos[sample],c = dist, cmap = 'afmhot_r', alpha=0.4/sample_size,s=1)
+       plt.scatter(xPos[sample],yPos[sample],c = dist, cmap = 'afmhot', alpha=0.4/sample_size,s=1)
     plt.scatter(targetsx,targetsy,color='red',s=5)
     return None
 
