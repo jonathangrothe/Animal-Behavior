@@ -56,18 +56,17 @@ def get_destination_metrics(xPos, yPos, targetsx, targetsy , stopping_distance =
             break
     return target_reached, time_target_reached, movement_start
 
-def get_direction_info(headings, n_peaks, start_step=200, dest_step=5000):
+def get_peaks(data_arr):
     '''
-    A function which takes the agent's heading at each time step and determines when it turns towards one target
-    This will depend on the initial geometry, so we might need to take that as a parameter
-    First we'll try to just detect changes and see if that's adequate
+    a function which takes a numpy array and finds the top n peaks 
+    designed to be used to find the decision points, could be used with headings, trajectories, or neuron activity
+    (as long as we get the data in the right shape)
     '''
-    headings = headings[0,:]
-    peaks, properties = find_peaks(headings, prominence=0)
-    prominences = properties['prominences']
-    top_n_indices = np.argsort(prominences)[-n_peaks:]
-    top_n_peaks = peaks[top_n_indices]
-    return top_n_peaks
+    x = np.linspace(0,len(data_arr),num=len(data_arr))
+    diff = np.gradient(data_arr,x)
+    critical_points = np.where(np.diff(np.sign(diff)))[0]
+    print(f"critical points: {critical_points}")
+    return critical_points
 
 def get_success_rate(target_list, sample_size, uneven=False, best_index=-1):
     '''
@@ -263,9 +262,16 @@ def plot_sum_activity(activity_list):
     '''
     A function that plots the sum of activity over ONE setting, with each sample a different line?
     '''
+    min_len = 5000
     for item in activity_list:
         plt.plot(item)
-    return None
+        if len(item) < min_len:
+            min_len = len(item)
+    sum_list_truncated = []
+    for item in activity_list:
+        sum_list_truncated.append(item[:min_len])
+    mean_list = np.mean(sum_list_truncated,axis=0)
+    return mean_list
 
 def plot_traj(xPos,yPos,targetsx,targetsy,sample_size):
     '''
