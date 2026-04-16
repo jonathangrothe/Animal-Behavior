@@ -207,7 +207,7 @@ def plot_metric(metric,x,title,xlabel,ylabel,agg=True):
 
 
     
-def plot_neurons(activity_df, agg=True, top_neurons=3, tstart=0, tstop=0, N=100):
+def plot_neurons(activity_df, agg=True, top_neurons=3, tstart=0, tstop=0, N=100, start_neuron=0, end_neuron=100):
     # this function is mostly for me right now, I think this does allow for further analysis, but it might be a little too granular 
     # seems like its hard to know what to plot when it comes to individual neurons, 
     # a lot of the time leading to the decision point neuron 50 gets more active, which is interesting. Like the bump dissappears and reappears?
@@ -222,7 +222,7 @@ def plot_neurons(activity_df, agg=True, top_neurons=3, tstart=0, tstop=0, N=100)
     activity_df = activity_df.iloc[:,tstart:tstop+1] # first slice the dataframe based on time interval so we don't have to worry about indexing for the interval later
     average_activity_list = []
     # this gets a list of each neurons average activity averaged over all samples
-    for neuron in range(N):
+    for neuron in range(start_neuron,end_neuron):
         activity_over_sims = []
         for sim in range(sample_size):
             mean_activity = np.mean(activity_df.iloc[neuron+(sim*N),:]) #mean activity for neuron in this sim over this time period
@@ -239,14 +239,14 @@ def plot_neurons(activity_df, agg=True, top_neurons=3, tstart=0, tstop=0, N=100)
     if agg:
         for neuron in range(len(plot_indices)):
             # get mean activity of every 100th neuron starting at this one
-            plt.plot(np.mean(activity_df.iloc[plot_indices[neuron]::N],axis=0),alpha = 0.6, label = f"neuron: {plot_indices[neuron]}", color=colors[neuron])
+            plt.plot(np.mean(activity_df.iloc[plot_indices[neuron]::N],axis=0),alpha = 0.6, label = f"neuron: {plot_indices[neuron]+start_neuron}", color=colors[neuron])
             plt.legend()
                 
     else:
         for neuron in range(len(plot_indices)):
             for sim in range(sample_size):
                 if sim == 0:
-                    plt.plot(activity_df.iloc[plot_indices[neuron]+((sim)*N)], alpha = 0.6/sample_size, label = f"neuron: {plot_indices[neuron]}", color=colors[neuron])
+                    plt.plot(activity_df.iloc[plot_indices[neuron]+((sim)*N)], alpha = 0.6/sample_size, label = f"neuron: {plot_indices[neuron]+start_neuron}", color=colors[neuron])
                 else: 
 
                     plt.plot(activity_df.iloc[plot_indices[neuron]+((sim)*N)], alpha = 0.6/sample_size, color = colors[neuron])
@@ -271,21 +271,29 @@ def plot_sum_activity(activity_list):
     mean_list = np.mean(sum_list_truncated,axis=0)
     return mean_list
 
-def plot_traj(xPos,yPos,targetsx,targetsy,sample_size):
+def plot_traj(xPos,yPos,targetsx,targetsy,sample_size,start_ind=0,end_ind=0):
     '''
     A function that takes x trajectories and y trajectories and plots them over each other, with a low ish opacity so we can see overlap. 
     Designed to be used over the same simulation settings with a number s of samples.
     Need: to color by velocity
     '''
-    
-    for sample in range(sample_size):
-       deltax = np.diff(xPos[sample])
-       deltay = np.diff(yPos[sample])
-       dist = np.zeros(len(xPos[sample]))
-       dist[0] =0
-       dist[1:] = np.sqrt(deltax**2 + deltay**2)
-       plt.scatter(xPos[sample],yPos[sample],c = dist, cmap = 'afmhot', alpha=0.4/sample_size,s=1)
-    plt.scatter(targetsx,targetsy,color='red',s=5)
+    if end_ind == 0:
+        for sample in range(sample_size):
+            deltax = np.diff(xPos[sample][start_ind:])
+            deltay = np.diff(yPos[sample][start_ind:])
+            dist = np.zeros(len(xPos[sample][start_ind:]))
+            dist[0] =0
+            dist[1:] = np.sqrt(deltax**2 + deltay**2)
+            plt.scatter(xPos[sample][start_ind:],yPos[sample][start_ind:],c = dist, cmap = 'afmhot_r', alpha=0.4/sample_size,s=1)
+        plt.scatter(targetsx,targetsy,color='red',s=5)
+    else:
+        for sample in range(sample_size):
+            deltax = np.diff(xPos[sample][start_ind:end_ind])
+            deltay = np.diff(yPos[sample][start_ind:end_ind])
+            dist = np.zeros(len(xPos[sample][start_ind:end_ind]))
+            dist[0] =0
+            dist[1:] = np.sqrt(deltax**2 + deltay**2)
+            plt.scatter(xPos[sample][start_ind:end_ind],yPos[sample][start_ind:end_ind],c = dist, cmap = 'afmhot_r', alpha=0.5,s=8)
     return None
 
 # heat map plotting from vivek's code - very slow to run right now
@@ -330,3 +338,8 @@ def plot_from_density(xPos, yPos, window_size):
             img = np.fmax(tmp_img, img)
     return img
     
+
+
+# TO DO: PLOT HEADING
+# Will need to get heading from the repeated_sims in like a list of lists or smth
+# should have all the indices of all neurons being inhibited, so we're good there
