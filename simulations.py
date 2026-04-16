@@ -94,7 +94,7 @@ base = {'N':N,
 plot_neurons = True
 plot_trajs = [True, 'scatter']
 plot_sweep = not (plot_neurons or plot_trajs[0])
-h0_for_plot = [0.215] #0.12 to 0.4 for even case
+h0_for_plot = [0.42] #0.12 to 0.4 for even case
 h0_for_sim = []
 for item in h0_for_plot:
     h0_for_sim.append([item,item+0.01])
