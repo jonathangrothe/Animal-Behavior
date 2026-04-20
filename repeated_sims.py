@@ -61,6 +61,17 @@ def sample_sims(bp, changing_params, n_samples, slice=100, include_trajs=[False,
                 inhib_list.append(n_inhib)
                 inhib_times_list.append(inhib_times)
 
+                # get decision time using sum of neuron activity
+                print(np.shape(activity))
+                sum_activity = []
+                for time in range(np.shape(activity)[2]):
+                    sum_activity.append(np.sum(activity[:,0,time]))
+                print(len(sum_activity))
+                dec_point = sim_met.get_decision_time(sum_activity)
+                print(dec_point)
+                sim_met.get_num_active(activity,0,dec_point)
+                # get number of neurons active on average before decision and after decision
+
                 if include_trajs[0]:
                     xpos_1d = xPos.ravel()
                     ypos_1d = yPos.ravel()

@@ -166,6 +166,31 @@ def get_inhibition_rates(inhib_list,sample_size):
         mean_inhib.append(mean_n_inhib)
     return mean_inhib
 
+def get_decision_time(sum_activity, thresh=0.4):
+    '''
+    takes a list of the sum of all neuron activity, 
+    returns the index of when the sum of activity gets past a threshold (thresh) of the final sum
+    '''
+    final_sum = sum_activity[-1]
+    constant = True
+    dec_index = len(sum_activity)-1
+    while constant == True:
+        delta = np.abs(sum_activity[dec_index]-final_sum)
+        if delta > thresh:
+            constant = False
+        else: 
+            dec_index = dec_index -1
+    return(dec_index)
+
+def get_num_active(activity, tstart, tstop):
+    '''
+    '''
+    N = np.shape(activity)[0]
+    for neuron in range(N):
+        # average over specified time
+        avg = np.average(activity[neuron,0,tstart:tstop])
+        print(f"neuron: {neuron}, avg: {avg}")
+
 def plot_metric(metric,x,title,xlabel,ylabel,agg=True):
     '''
     A function which plots an aggregated metric over changing values of a parameter
@@ -205,9 +230,7 @@ def plot_metric(metric,x,title,xlabel,ylabel,agg=True):
             plt.ylabel(ylabel)
             plt.title(title)
 
-
-    
-def plot_neurons(activity_df, agg=True, top_neurons=3, tstart=0, tstop=0, N=100, start_neuron=0, end_neuron=100):
+def plot_neurons(activity_df, agg=True, tstart=0, tstop=0, N=100, start_neuron=0, end_neuron=100):
     # this function is mostly for me right now, I think this does allow for further analysis, but it might be a little too granular 
     # seems like its hard to know what to plot when it comes to individual neurons, 
     # a lot of the time leading to the decision point neuron 50 gets more active, which is interesting. Like the bump dissappears and reappears?
@@ -221,6 +244,7 @@ def plot_neurons(activity_df, agg=True, top_neurons=3, tstart=0, tstop=0, N=100,
     sample_size = activity_df.shape[0]//N
     activity_df = activity_df.iloc[:,tstart:tstop+1] # first slice the dataframe based on time interval so we don't have to worry about indexing for the interval later
     average_activity_list = []
+    active_neuron_list = []
     # this gets a list of each neurons average activity averaged over all samples
     for neuron in range(start_neuron,end_neuron):
         activity_over_sims = []
@@ -228,28 +252,27 @@ def plot_neurons(activity_df, agg=True, top_neurons=3, tstart=0, tstop=0, N=100,
             mean_activity = np.mean(activity_df.iloc[neuron+(sim*N),:]) #mean activity for neuron in this sim over this time period
             activity_over_sims.append(mean_activity)
         mean_over_sims = np.mean(activity_over_sims)
-        average_activity_list.append(mean_over_sims)
-
-    plot_indices = sorted(range(len(average_activity_list)), key=lambda i: average_activity_list[i])[-top_neurons:]
-    plot_indices.reverse()
+        if mean_over_sims > 0:
+            average_activity_list.append(mean_over_sims)
+            active_neuron_list.append(neuron)
 
     # for each neuron we want to plot: 
     # iterate through each sim, plot first one with label, then plot rest without, use different color for different neurons
-    colors = plt.cm.viridis(np.linspace(0,1,len(plot_indices)))
+    colors = plt.cm.viridis(np.linspace(0,1,len(active_neuron_list)))
     if agg:
-        for neuron in range(len(plot_indices)):
+        for neuron in range(len(active_neuron_list)):
             # get mean activity of every 100th neuron starting at this one
-            plt.plot(np.mean(activity_df.iloc[plot_indices[neuron]::N],axis=0),alpha = 0.6, label = f"neuron: {plot_indices[neuron]+start_neuron}", color=colors[neuron])
+            plt.plot(np.mean(activity_df.iloc[active_neuron_list[neuron]::N],axis=0),alpha = 0.6, label = f"neuron: {active_neuron_list[neuron]+start_neuron}", color=colors[neuron])
             plt.legend()
                 
     else:
-        for neuron in range(len(plot_indices)):
+        for neuron in range(len(active_neuron_list)):
             for sim in range(sample_size):
                 if sim == 0:
-                    plt.plot(activity_df.iloc[plot_indices[neuron]+((sim)*N)], alpha = 0.6/sample_size, label = f"neuron: {plot_indices[neuron]+start_neuron}", color=colors[neuron])
+                    plt.plot(activity_df.iloc[active_neuron_list[neuron]+((sim)*N)], alpha = 0.6/sample_size, label = f"neuron: {active_neuron_list[neuron]+start_neuron}", color=colors[neuron])
                 else: 
 
-                    plt.plot(activity_df.iloc[plot_indices[neuron]+((sim)*N)], alpha = 0.6/sample_size, color = colors[neuron])
+                    plt.plot(activity_df.iloc[active_neuron_list[neuron]+((sim)*N)], alpha = 0.6/sample_size, color = colors[neuron])
 
         leg = plt.legend()
         for lh in leg.legend_handles: 
