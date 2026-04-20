@@ -51,7 +51,6 @@ def sample_sims(bp, changing_params, n_samples, slice=100, include_trajs=[False,
                                                                                  bp['adistf'],bp['J'],bp['beta'],bp['h0'],bp['h_b'],bp['dt'],bp['v0'],bp['v0t'],
                                                                                  bp['sigma'],bp['hColl'],bp['rColl'],bp['initialx'],bp['initialy'],bp['initialxt'],bp['initialyt'],
                                                                                  False,True)
-                print(headings[0,300:350])
                 target_reached, time_reached, start = sim_met.get_destination_metrics(xPos,yPos,targetsx,targetsy)
                 target_list.append(target_reached)
                 time_list.append(time_reached)
