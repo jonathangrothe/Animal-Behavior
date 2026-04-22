@@ -36,6 +36,7 @@ def sample_sims(bp, changing_params, n_samples, slice=100, include_trajs=[False,
     inhib_times_list = []
     activity_list = [] 
     sum_activity_list = []
+    decision_points = []
     activity_df = None
     x_list = []
     y_list = []
@@ -62,16 +63,23 @@ def sample_sims(bp, changing_params, n_samples, slice=100, include_trajs=[False,
                 inhib_times_list.append(inhib_times)
 
                 # get decision time using sum of neuron activity
-                print(np.shape(activity))
                 sum_activity = []
                 for time in range(np.shape(activity)[2]):
                     sum_activity.append(np.sum(activity[:,0,time]))
-                print(len(sum_activity))
                 dec_point = sim_met.get_decision_time(sum_activity)
-                print(dec_point)
+                decision_points.append(dec_point)
                 sim_met.get_num_active(activity,0,dec_point)
                 # get number of neurons active on average before decision and after decision
-
+                # code for plotting neuron activity: 
+                '''
+                plt.figure(figsize=(12,7))
+                plt.figure(2)
+                rolled = np.roll(activity[:,0,:],50,axis=0)
+                plt.imshow(rolled,cmap='viridis',aspect='auto')
+                plt.title("Neuron activation over time example")
+                plt.colorbar()
+                plt.show()
+                '''
                 if include_trajs[0]:
                     xpos_1d = xPos.ravel()
                     ypos_1d = yPos.ravel()
@@ -100,4 +108,4 @@ def sample_sims(bp, changing_params, n_samples, slice=100, include_trajs=[False,
             x_list = np.array(x_list)
             y_list = np.array(y_list)
 
-    return success_list, target_list, time_list, inhib_list, inhib_times_list, sum_activity_list, activity_df, x_list, y_list
+    return success_list, target_list, time_list, inhib_list, inhib_times_list, decision_points, sum_activity_list, activity_df, x_list, y_list

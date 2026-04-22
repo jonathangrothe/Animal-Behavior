@@ -91,16 +91,19 @@ base = {'N':N,
         'sigma':sigma,
         'beta':beta}
 
-plot_neurons = True
-plot_trajs = [True, 'scatter']
+plot_neurons = False
+plot_trajs = [False, 'scatter']
 plot_sweep = not (plot_neurons or plot_trajs[0])
-sigma_for_sim = [0.4]
-change = {'sigma':sigma_for_sim}
-uneven = h0s[0] != h0s[1]
+h0_for_plot = np.linspace(0.249,0.252,num=600)
+h0_for_sim = []
+for item in h0_for_plot:
+    h0_for_sim.append([item,item+0.01])
+change = {'h0':h0_for_sim}
+uneven = True
 
-sample_size = 25
+sample_size = 100
 
-success_list, target_list, time_list, inhib_list, inhib_times_list, sum_activity_list, activity_df, x_list, y_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
+success_list, target_list, time_list, inhib_list, inhib_times_list, decision_points, sum_activity_list, activity_df, x_list, y_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
 p_success, se_success, p_correct, se_correct = sim_met.get_success_rate(target_list, sample_size, uneven, 1)
 mean_inhib = sim_met.get_inhibition_rates(inhib_list, sample_size)
 
@@ -114,26 +117,26 @@ if plot_sweep:
     dist_title = f" Distance to target over last quarter of simulation, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction"
     plt.figure(figsize=(10,5))
     plt.figure(figure_num)
-    sim_met.plot_metric(success_list,sigma_for_sim,dist_title,x_label,dist_y_label,False)
+    sim_met.plot_metric(success_list,h0_for_plot,dist_title,x_label,dist_y_label,False)
     figure_num += 1
 
     dist_agg_title = f"Average distance to target over last quarter of simulation, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction"
     plt.figure(figsize=(10,5))
     plt.figure(figure_num)
-    sim_met.plot_metric(success_list,sigma_for_sim,dist_agg_title,x_label,dist_y_label,True)
+    sim_met.plot_metric(success_list,h0_for_plot,dist_agg_title,x_label,dist_y_label,True)
     figure_num += 1
 
     time_y_label = "Average time to target"
     time_title = f"Time to target, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction, stopping distance = 0.5"
     plt.figure(figsize=(10,5))
     plt.figure(figure_num)
-    sim_met.plot_metric(time_list,sigma_for_sim,time_title,x_label,time_y_label,False)
+    sim_met.plot_metric(time_list,h0_for_plot,time_title,x_label,time_y_label,False)
     figure_num += 1
 
     time_agg_title = f"Average time to target, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction, stopping distance = 0.5"
     plt.figure(figsize=(10,5))
     plt.figure(figure_num)
-    sim_met.plot_metric(time_list,sigma_for_sim,time_agg_title,x_label,time_y_label,True)
+    sim_met.plot_metric(time_list,h0_for_plot,time_agg_title,x_label,time_y_label,True)
     figure_num += 1
 
     p_success_y = "Probability of reaching a target"
@@ -141,17 +144,17 @@ if plot_sweep:
     plt.figure(figsize=(10,5))
     plt.figure(figure_num)
     if uneven: 
-        plt.plot(sigma_for_sim,p_correct,color='Green', label="Correct target")
-        plt.plot(sigma_for_sim, np.add(p_correct,se_correct), color = 'green', label = 'standard error for correct', linestyle = ':')
-        plt.plot(sigma_for_sim, np.subtract(p_correct,se_correct), color = 'green', linestyle = ':')
-        plt.plot(sigma_for_sim,p_success,color='Blue', label="Any target")
-        plt.plot(sigma_for_sim, np.add(p_success,se_success), color = 'blue', label = 'standard error for any target', linestyle = ':')
-        plt.plot(sigma_for_sim, np.subtract(p_success,se_success), color = 'blue', linestyle = ':')
+        plt.plot(h0_for_plot,p_correct,color='Green', label="Correct target")
+        plt.plot(h0_for_plot, np.add(p_correct,se_correct), color = 'green', label = 'standard error for correct', linestyle = ':')
+        plt.plot(h0_for_plot, np.subtract(p_correct,se_correct), color = 'green', linestyle = ':')
+        plt.plot(h0_for_plot,p_success,color='Blue', label="Any target")
+        plt.plot(h0_for_plot, np.add(p_success,se_success), color = 'blue', label = 'standard error for any target', linestyle = ':')
+        plt.plot(h0_for_plot, np.subtract(p_success,se_success), color = 'blue', linestyle = ':')
         plt.legend()
     if not uneven:
-        plt.plot(sigma_for_sim,p_success,color='Blue')
-        plt.plot(sigma_for_sim, np.add(p_success,se_success), color = 'blue', label = 'standard error', linestyle = ':')
-        plt.plot(sigma_for_sim, np.subtract(p_success,se_success), color = 'blue', linestyle = ':')
+        plt.plot(h0_for_plot,p_success,color='Blue')
+        plt.plot(h0_for_plot, np.add(p_success,se_success), color = 'blue', label = 'standard error', linestyle = ':')
+        plt.plot(h0_for_plot, np.subtract(p_success,se_success), color = 'blue', linestyle = ':')
     plt.xlabel(x_label)
     plt.ylabel(p_success_y)
     plt.title(p_success_title)
@@ -162,7 +165,7 @@ if plot_sweep:
     n_inhib_title = f"Average number of steps where every neuron was inhibited, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction"
     plt.figure(figsize=(10,5))
     plt.figure(figure_num)
-    plt.plot(sigma_for_sim,mean_inhib,color='red')
+    plt.plot(h0_for_plot,mean_inhib,color='red')
     plt.xlabel(x_label)
     plt.ylabel(n_inhib_y)
     plt.title(n_inhib_title)
@@ -175,40 +178,34 @@ if plot_sweep:
 # this is only going off of the first sample, we should probably change this in repeated_sims
 # so it just returns a one d list? and a df? 
 
-
+mean_dec_index = round(np.mean(decision_points))
+print(mean_dec_index)
 if plot_neurons:   
-    index_sum = 0
-    for sim in range(len(sum_activity_list)):
-        dec_index = sim_met.get_decision_time(sum_activity_list[sim])
-        index_sum += dec_index
-    mean_index = index_sum/len(sum_activity_list)
-    print(f"mean decision index: {mean_index}")
-
     plt.figure(figure_num)
     mean_list = sim_met.plot_sum_activity(sum_activity_list)
-    plt.title(f"Sum of all neuron activity over time, h0: {base['h0']}, sigma: {sigma_for_sim} {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction")
+    plt.title(f"Sum of all neuron activity over time, h0: {h0_for_plot}, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction")
     plt.xlabel("Time")
     plt.ylabel("Sum of neuron activity")
     figure_num+=1
 
     plt.figure(figure_num)
-    sim_met.plot_neurons(activity_df,True,0,dec_index,100)
-    plt.title(f"Average activity of all on average active neurons pre decision, h0: {base['h0']}, sigma: {sigma_for_sim}, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction")
+    sim_met.plot_neurons(activity_df,True,0,mean_dec_index,100)
+    plt.title(f"Average activity of all on average active neurons pre decision, h0: {h0_for_plot}, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction")
     figure_num += 1
 
     plt.figure(figure_num)
-    sim_met.plot_neurons(activity_df,False,0,dec_index,100)
-    plt.title(f"Activity of all on average active neurons pre decision, h0: {base['h0']}, sigma: {sigma_for_sim} {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction")
+    sim_met.plot_neurons(activity_df,False,0,mean_dec_index,100)
+    plt.title(f"Activity of all on average active neurons pre decision, h0: {h0_for_plot}, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction")
     figure_num += 1
 
     plt.figure(figure_num)
-    sim_met.plot_neurons(activity_df,True,dec_index,0,100)
-    plt.title(f"Average activity of all on average active neurons post decision, h0: {base['h0']}, sigma: {sigma_for_sim}, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction")
+    sim_met.plot_neurons(activity_df,True,mean_dec_index,0,100)
+    plt.title(f"Average activity of all on average active neurons post decision, h0: {h0_for_plot}, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction")
     figure_num += 1
 
     plt.figure(figure_num)
-    sim_met.plot_neurons(activity_df,False,dec_index,0,100)
-    plt.title(f"Activity of all on average active neurons post decision, h0: {base['h0']}, sigma: {sigma_for_sim} {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction")
+    sim_met.plot_neurons(activity_df,False,mean_dec_index,0,100)
+    plt.title(f"Activity of all on average active neurons post decision, h0: {h0_for_plot}, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction")
     figure_num += 1
 
 
@@ -220,7 +217,21 @@ if plot_trajs[0]:
         plt.imshow(img)
     if plot_trajs[1] == 'scatter':
         sim_met.plot_traj(x_list,y_list,initialxt,initialyt,sample_size)
-    plt.title(f"Trajectory plot, h0: {base['h0']}, sigma: {sigma_for_sim}, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction")
+    plt.title(f"Trajectory plot, h0: {h0_for_plot}, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction")
+    figure_num += 1
+
+    plt.figure(figsize=(7,7))
+    plt.figure(figure_num)
+    if plot_trajs[1] == 'scatter':
+        sim_met.plot_traj(x_list,y_list,initialxt,initialyt,sample_size,mean_dec_index-75,mean_dec_index-25)
+    plt.title(f"Trajectory plot, from time: {mean_dec_index-25} to time: {mean_dec_index+15} h0: {h0_for_sim[0]}, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction")
+    figure_num += 1
+
+    plt.figure(figsize=(7,7))
+    plt.figure(figure_num)
+    if plot_trajs[1] == 'scatter':
+        sim_met.plot_traj(x_list,y_list,initialxt,initialyt,sample_size,mean_dec_index-25,mean_dec_index+25)
+    plt.title(f"Trajectory plot, from time: {mean_dec_index+15} to time: {mean_dec_index+60} h0: {h0_for_sim[0]}, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction")
     figure_num += 1
 
     

@@ -189,7 +189,6 @@ def get_num_active(activity, tstart, tstop):
     for neuron in range(N):
         # average over specified time
         avg = np.average(activity[neuron,0,tstart:tstop])
-        print(f"neuron: {neuron}, avg: {avg}")
 
 def plot_metric(metric,x,title,xlabel,ylabel,agg=True):
     '''
