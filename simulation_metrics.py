@@ -166,21 +166,14 @@ def get_inhibition_rates(inhib_list,sample_size):
         mean_inhib.append(mean_n_inhib)
     return mean_inhib
 
-def get_decision_time(sum_activity, thresh=0.4):
+def get_decision_time(sum_activity):
     '''
     takes a list of the sum of all neuron activity, 
     returns the index of when the sum of activity gets past a threshold (thresh) of the final sum
     '''
-    final_sum = sum_activity[-1]
-    constant = True
-    dec_index = len(sum_activity)-1
-    while constant == True:
-        delta = np.abs(sum_activity[dec_index]-final_sum)
-        if delta > thresh:
-            constant = False
-        else: 
-            dec_index = dec_index -1
-    return(dec_index)
+    dec_start = np.argmin(sum_activity)
+    dec_end = np.argmax(sum_activity[dec_start:])+dec_start
+    return dec_start, dec_end
 
 def get_num_active(activity, tstart, tstop):
     '''
@@ -190,7 +183,7 @@ def get_num_active(activity, tstart, tstop):
         # average over specified time
         avg = np.average(activity[neuron,0,tstart:tstop])
 
-def plot_metric(metric,x,title,xlabel,ylabel,agg=True):
+def plot_metric(metric,x,color,label,agg=True):
     '''
     A function which plots an aggregated metric over changing values of a parameter
     Parameters:
@@ -213,21 +206,15 @@ def plot_metric(metric,x,title,xlabel,ylabel,agg=True):
             sample_metric = metric[value*sample_size:(value+1)*sample_size]
             mean_metric.append(np.mean(sample_metric))
             se_metric.append(np.std(sample_metric)/np.sqrt(sample_size))
-        plt.plot(x, mean_metric, color = 'blue', label = 'Mean')
-        plt.plot(x, np.add(mean_metric,se_metric), color = 'red', label = 'standard error', linestyle = ':')
-        plt.plot(x, np.subtract(mean_metric,se_metric), color = 'red', linestyle = ':')
+        plt.plot(x, mean_metric, color = color, label = label)
+        plt.plot(x, np.add(mean_metric,se_metric), color = color, label = 'standard error', linestyle = ':')
+        plt.plot(x, np.subtract(mean_metric,se_metric), color = color, linestyle = ':')
         plt.legend()
-        plt.xlabel(xlabel)
-        plt.ylabel(ylabel)
-        plt.title(title)
     else:
         for s in range(sample_size):
             one_run = metric[s::sample_size]
             plt.plot(x, one_run, color = 'blue', alpha=sample_size*0.01)
             plt.legend()
-            plt.xlabel(xlabel)
-            plt.ylabel(ylabel)
-            plt.title(title)
 
 def plot_neurons(activity_df, agg=True, tstart=0, tstop=0, N=100, start_neuron=0, end_neuron=100):
     # this function is mostly for me right now, I think this does allow for further analysis, but it might be a little too granular 
