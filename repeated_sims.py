@@ -68,6 +68,7 @@ def sample_sims(bp, changing_params, n_samples, slice=100, include_trajs=[False,
                     sum_activity.append(np.sum(activity[:,0,time]))
                 dec_start, dec_end = sim_met.get_decision_time(sum_activity)
                 decision_points.append([dec_start,dec_end]) 
+                print(dec_end-dec_start) # NEXT UP: ADD THIS AS A METRIC AND PLOT IT OVER SWEEP
                 #sim_met.get_num_active(activity,0,dec_start)
                 # get number of neurons active on average before decision and after decision
                 # code for plotting neuron activity: 

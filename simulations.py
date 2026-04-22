@@ -94,7 +94,7 @@ base = {'N':N,
 plot_neurons = True
 plot_trajs = [True, 'scatter']
 plot_sweep = not (plot_neurons or plot_trajs[0])
-h0_for_plot = [0.249]
+h0_for_plot = np.linspace(0.249,0.252,num=15)
 h0_for_uneven_sim = []
 h0_for_even_sim = []
 for item in h0_for_plot:
@@ -105,7 +105,7 @@ change_even = {'h0':h0_for_even_sim}
 change = {'h0':h0_for_uneven_sim}
 uneven = True
 
-sample_size = 10
+sample_size = 20
 
 if plot_sweep:
     success_list_u, target_list_u, time_list_u, inhib_list_u, inhib_times_list_u, decision_points_u, sum_activity_list_u, activity_df_u, x_list_u, y_list_u  = repeated_sims.sample_sims(base,change_uneven,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
@@ -119,9 +119,6 @@ else:
     success_list, target_list, time_list, inhib_list, inhib_times_list, decision_points, sum_activity_list, activity_df, x_list, y_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
     p_success, se_success, p_correct, se_correct = sim_met.get_success_rate(target_list, sample_size, uneven, 1)
     mean_inhib = sim_met.get_inhibition_rates(inhib_list, sample_size)
-
-#CHANGE THE WAY WE DO THINGS WITH DECISION POINTS!!
-
 
 figure_num = 1
 
@@ -201,14 +198,23 @@ if plot_sweep:
 
 # need to shift this so it plots a heatmap and maybe less of this arbitrary stuff
 if plot_neurons:  
-    mean_dec_index = round(np.mean(decision_points))
-    print(mean_dec_index) 
+    sum_start_ind = 0
+    sum_end_ind = 0
+    for item in decision_points:
+        sum_start_ind += item[0]
+        sum_end_ind += item[1]
+    mean_start_index = round(sum_start_ind/len(decision_points))
+    mean_end_index = round(sum_end_ind/len(decision_points))
+    diff = mean_end_index-mean_start_index
+    print(mean_start_index)
+    print(mean_end_index) 
+    print(diff)
     plt.figure(figsize=(12,7))
     plt.figure(figure_num)
     rolled= np.roll(activity_df.values, shift=50, axis=0)
     plt.imshow(rolled,cmap='viridis',aspect='auto')
-    plt.axvline(x=mean_dec_index-70, color='red', linestyle='--')
-    plt.axvline(x=mean_dec_index-25, color='red', linestyle='--')
+    plt.axvline(x=mean_start_index, color='red', linestyle='--')
+    plt.axvline(x=mean_end_index, color='red', linestyle='--')
     plt.title("Neuron activation over time example")
     plt.colorbar()
     figure_num += 1
@@ -220,22 +226,32 @@ if plot_neurons:
     figure_num+=1
 
     plt.figure(figure_num)
-    sim_met.plot_neurons(activity_df,True,0,mean_dec_index,100)
+    sim_met.plot_neurons(activity_df,True,0,mean_start_index,100)
     plt.title(f"Average activity of all on average active neurons pre decision, h0: {h0_for_plot}, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction")
     figure_num += 1
 
     plt.figure(figure_num)
-    sim_met.plot_neurons(activity_df,False,0,mean_dec_index,100)
+    sim_met.plot_neurons(activity_df,False,0,mean_start_index,100)
     plt.title(f"Activity of all on average active neurons pre decision, h0: {h0_for_plot}, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction")
     figure_num += 1
 
     plt.figure(figure_num)
-    sim_met.plot_neurons(activity_df,True,mean_dec_index,0,100)
+    sim_met.plot_neurons(activity_df,True,mean_start_index,mean_end_index,100)
+    plt.title(f"Average activity of all on average active neurons during decision, h0: {h0_for_plot}, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction")
+    figure_num += 1
+
+    plt.figure(figure_num)
+    sim_met.plot_neurons(activity_df,False,mean_start_index,mean_end_index,100)
+    plt.title(f"Activity of all on average active neurons during decision, h0: {h0_for_plot}, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction")
+    figure_num += 1
+
+    plt.figure(figure_num)
+    sim_met.plot_neurons(activity_df,True,mean_end_index,0,100)
     plt.title(f"Average activity of all on average active neurons post decision, h0: {h0_for_plot}, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction")
     figure_num += 1
 
     plt.figure(figure_num)
-    sim_met.plot_neurons(activity_df,False,mean_dec_index,0,100)
+    sim_met.plot_neurons(activity_df,False,mean_end_index,0,100)
     plt.title(f"Activity of all on average active neurons post decision, h0: {h0_for_plot}, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction")
     figure_num += 1
 
@@ -254,8 +270,8 @@ if plot_trajs[0]:
     plt.figure(figsize=(7,7))
     plt.figure(figure_num)
     if plot_trajs[1] == 'scatter':
-        sim_met.plot_traj(x_list,y_list,initialxt,initialyt,sample_size,mean_dec_index-70,mean_dec_index-25)
-    plt.title(f"Trajectory plot, from time: {mean_dec_index-70} to time: {mean_dec_index-25} h0: {h0_for_uneven_sim[0]}, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction")
+        sim_met.plot_traj(x_list,y_list,initialxt,initialyt,sample_size,mean_start_index,mean_end_index)
+    plt.title(f"Trajectory plot, from time: {mean_start_index} to time: {mean_end_index} h0: {h0_for_uneven_sim[0]}, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction")
     figure_num += 1
 
 plt.show()
