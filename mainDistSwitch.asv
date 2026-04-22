@@ -11,9 +11,9 @@ numcpu=5;
 l2=1;
 nagent=1*l2;
 
-hbase=0.2;
+hbase=[0.2]/l2;
 
-beta=100;
+beta=[100];
 L=100;
 
 %number of targets
@@ -67,7 +67,6 @@ ntarget       = size(initialtarget, 2);
 %attraction
 h00s=0.25;
 
-%{
 h00=[0,0,0];
 %h00(20)=1;
 
@@ -80,32 +79,29 @@ for k=1:nagent
     h0(ntarget+k,j)=h00s(j);
 end
 end
-%}
-h0=[0.245,0.255,0];
 
-Nspace = 0.5;     % width of the gauss bump
+
+Nspace = 0.1;     % width of the gauss bump
 
 %h to be a function of distance: distf=0 means no distance dependence and
 %adistef determines the characteristic length of signal decay (taken to be
 %an exponential)
 distf =0;
-adistf=1;
-%{
+adistf=[1 1 2 4 8 16];
 Ni=length(hbase);
 Nj=length(distf);
 Nk=length(Nspace);
 Nr=5;
-%}
+
 N=100;
 
-T=1000;
+T=5000;
 dt = 0.1;        % integration step for ring, also for movement
 v0d=.05;
 
 
 periodicspace=0;
 
-%{
 initposnoise=1;
 for r=1:Nr
 for ng=1:nagent
@@ -113,8 +109,6 @@ initialx(r,1,ng)=L/2;L*rand(1); %a little confused on what this is meant to do
 initialx(r,2,ng)=1*L/10;L*rand(1);
 end
 end
-%}
-initialx = [20,50];
 % 
 %  MyCluster = parcluster
 %  MyCluster.NumWorkers=numcpu
@@ -147,22 +141,21 @@ hcoll=-10;
 allocentricFlag = 0;  
 
 rEgo=0;
-rEgoTarget=0;
+rEgoTarget=[0 0.5 1 2 4];
 Egonumber=1;
-%Nk=length(rEgoTarget);
+Nk=length(rEgoTarget);
 
 %% 4) Run the simulation
-nSamples = 15;
-for s=1:nSamples
-    %[x(:,:,i,j,k,r), target(:,:,:,i,j,k,r), uArray(:,:,:,i,j,k,r), headings(:,:,i,j,k,r)] = ...
-    [x(:,:,:,:)] = ...
-        simulateRingAttractorFlockingv3v2TargetsreanchoringDistanceNumb( ...
-        nagent, ntarget, ...
-        N, T, dt, v0d, v0t, L, ...
-        J(:,:,1:nagent), hbase, beta, ...
-        h0, hcoll, Nspace, collisionzone, ...
-        initialx', initialtarget', ...
-        periodicspace, ...
-        allocentricFlag,distf,adistf,rEgo,rEgoTarget,Egonumber);
-end   
+
+%[x(:,:,i,j,k,r), target(:,:,:,i,j,k,r), uArray(:,:,:,i,j,k,r), headings(:,:,i,j,k,r)] = ...
+[x(:,:,i,j,k,r)] = ...
+    simulateRingAttractorFlockingv3v2TargetsreanchoringDistanceNumb( ...
+    nagent, ntarget, ...
+    N, T, dt, v0d, v0t, L, ...
+    J(:,:,1:nagent), hbase(i), beta, ...
+    h0(:,1), hcoll, Nspace, collisionzone, ...
+    squeeze(initialx(r,:,:))', initialtarget', ...
+    periodicspace, ...
+    allocentricFlag,distf(j),adistf(j),rEgo,rEgoTarget(k),Egonumber);
+        
 save('2tN400')

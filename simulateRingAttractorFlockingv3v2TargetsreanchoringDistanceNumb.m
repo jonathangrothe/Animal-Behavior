@@ -262,7 +262,7 @@ for tStep = 1:T
     end
 
     %% Visualization (optional)
-    if mod(tStep,100)==0
+    if mod(tStep,10)==0
         figure(1)
         figure(1); clf; hold on;
         % Plot agents
