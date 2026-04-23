@@ -16,7 +16,7 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
         alpharing[a,:] = alpharing0
 
     uArray = np.zeros((N, nagents, T+1))
-    u0 = 0.05*np.random.randn(N,nagents) #initialize randomly, change seed
+    u0 = 0.2*np.random.randn(N,nagents) #initialize randomly, change seed
     uArray[:,:,0] = u0
 
     xPos = np.zeros((nagents,T+1))

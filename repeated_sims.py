@@ -32,10 +32,10 @@ def sample_sims(bp, changing_params, n_samples, slice=100, include_trajs=[False,
     success_list = []
     time_list = []
     target_list = []
-    inhib_list = []
-    inhib_times_list = []
     activity_list = [] 
     sum_activity_list = []
+    range_activity_list = []
+    range_argmin_list = []
     decision_points = []
     activity_df = None
     x_list = []
@@ -52,25 +52,22 @@ def sample_sims(bp, changing_params, n_samples, slice=100, include_trajs=[False,
                                                                                  bp['adistf'],bp['J'],bp['beta'],bp['h0'],bp['h_b'],bp['dt'],bp['v0'],bp['v0t'],
                                                                                  bp['sigma'],bp['hColl'],bp['rColl'],bp['initialx'],bp['initialy'],bp['initialxt'],bp['initialyt'],
                                                                                  False,True)
+                # Basic target and time metrics
                 target_reached, time_reached, start = sim_met.get_destination_metrics(xPos,yPos,targetsx,targetsy)
                 target_list.append(target_reached)
                 time_list.append(time_reached)
-                avg_dists_timereached = sim_met.get_avg_distance(xPos, yPos, targetsx, targetsy, time_reached)
-                dist = min(avg_dists_timereached)
-                success_list.append(dist)
-                n_inhib, inhib_times, sum_activity = sim_met.get_neuron_info(activity[:,0,:])
-                inhib_list.append(n_inhib)
-                inhib_times_list.append(inhib_times)
+                # avg_dists_timereached = sim_met.get_avg_distance(xPos, yPos, targetsx, targetsy, time_reached)
+                # dist = min(avg_dists_timereached)
+                # success_list.append(dist)
 
-                # get decision time using sum of neuron activity
-                sum_activity = []
-                for time in range(np.shape(activity)[2]):
-                    sum_activity.append(np.sum(activity[:,0,time]))
+                # Neuron activity metrics
+                sum_activity, range_activity, var_activity, n_inhib_list, n_active_list, neuron_change_rates = sim_met.get_neuron_info(activity[:,0,:])
                 dec_start, dec_end = sim_met.get_decision_time(sum_activity)
                 decision_points.append([dec_start,dec_end]) 
-                #print(dec_end-dec_start) # NEXT UP: ADD THIS AS A METRIC AND PLOT IT OVER SWEEP
-                #sim_met.get_num_active(activity,0,dec_start)
-                # get number of neurons active on average before decision and after decision
+                sum_activity_list.append(sum_activity)
+                range_activity_list.append(range_activity)
+                range_argmin_list.append(np.argmin(range_activity[start:])+start)
+
                 # code for plotting neuron activity: 
                 if include_trajs[0]:
                     xpos_1d = xPos.ravel()
@@ -82,12 +79,7 @@ def sample_sims(bp, changing_params, n_samples, slice=100, include_trajs=[False,
                         x_list.append(xpos_1d)
                         y_list.append(ypos_1d)
 
-
                 if include_activity: # we also want to add a sum of activity list,
-                    sum_activity = []
-                    for time in range(np.shape(activity)[2]):
-                        sum_activity.append(np.sum(activity[:,0,time]))
-                    sum_activity_list.append(sum_activity)
                     for neuron in range(np.shape(activity)[0]):
                         activity_list.append(activity[neuron,0,:])
 
@@ -100,4 +92,4 @@ def sample_sims(bp, changing_params, n_samples, slice=100, include_trajs=[False,
             x_list = np.array(x_list)
             y_list = np.array(y_list)
 
-    return success_list, target_list, time_list, inhib_list, inhib_times_list, decision_points, sum_activity_list, activity_df, x_list, y_list
+    return success_list, target_list, time_list, decision_points, sum_activity_list, range_activity_list, range_argmin_list, activity_df, x_list, y_list

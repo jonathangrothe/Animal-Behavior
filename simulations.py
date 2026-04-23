@@ -112,13 +112,15 @@ ypositions = []
 neuron_activity = []
 mean_decision_points = []
 sum_total_activity = []
+range_total_activity = []
 for item in h0_list:
     change = {'h0':item}
-    success_list, target_list, time_list, inhib_list, inhib_times_list, decision_points, sum_activity_list, activity_df, x_list, y_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
+    success_list, target_list, time_list, decision_points, sum_activity_list, range_activity_list, range_argmin_list, activity_df, x_list, y_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
     xpositions += (x_list)
     ypositions += (y_list)
     neuron_activity.append(activity_df)
     sum_total_activity += sum_activity_list
+    range_total_activity += range_activity_list
     sum_s = 0
     sum_e = 0
     for item in decision_points:
@@ -130,9 +132,6 @@ figure_num = 1
 
     
 # SINGLE SETTING PLOTS
-
-# need to shift this so it plots a heatmap and maybe less of this arbitrary stuff
-# also need to add functionality for plotting multiple rounds in the same run probably and putting them on the same plot so we can see them clearly
 
 # general plotting settings
 n_plots = len(h0_range)
@@ -151,6 +150,17 @@ fig.supxlabel("Time")
 fig.supylabel("Neuron (samples are stacked, 50, 150, etc. are neuron 0)")
 figure_num += 1
 
+# TO DO: compare different measures of the 'decision' interval: right now we're just using the min and the max of the sum of activity
+# some possible candidates: 
+# min/max of the range of activity (taken over a reasonable interval near)
+# Decision end: (much easier I think)
+# decision end as when the sum/range of activity gets within a certain amount of the stable activity level
+# minimum speed (besides the start)
+# Decision start: these need a bit more exploring but they could be interesting
+# when neuron 0 is no longer the most active neuron ?
+# number of neurons active goes down or up ?
+
+
 # sum of all activity plots
 plt.figure(figsize=(10,7))
 fig, ax = plt.subplots(n_plots,1,num=figure_num)
@@ -160,38 +170,17 @@ fig.suptitle(f"Sum of all neuron activity over time, h0: {h0_for_plot}, {"alloce
 fig.supxlabel("Time")
 fig.supylabel("Sum of neuron activity")
 figure_num+=1
-# top active neurons plots (we will see if these are helpful)
-'''
-    plt.figure(figure_num)
-    sim_met.plot_neurons(activity_df,True,0,mean_start_index,100)
-    plt.title(f"Average activity of all on average active neurons pre decision, h0: {h0_for_plot}, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction")
-    figure_num += 1
 
-    plt.figure(figure_num)
-    sim_met.plot_neurons(activity_df,False,0,mean_start_index,100)
-    plt.title(f"Activity of all on average active neurons pre decision, h0: {h0_for_plot}, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction")
-    figure_num += 1
+# range activity plots - modify this - probably don't need to plot everything...
+plt.figure(figsize=(10,7))
+fig, ax = plt.subplots(n_plots,1,num=figure_num)
+for s in range(n_plots):
+    mean_list = sim_met.plot_sum_activity(range_total_activity[s*sample_size:(s+1)*sample_size],ax[s])
+fig.suptitle(f"Range of neuron activity over time, h0: {h0_for_plot}, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction")
+fig.supxlabel("Time")
+fig.supylabel("Range of neuron activity")
+figure_num+=1
 
-    plt.figure(figure_num)
-    sim_met.plot_neurons(activity_df,True,mean_start_index,mean_end_index,100)
-    plt.title(f"Average activity of all on average active neurons during decision, h0: {h0_for_plot}, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction")
-    figure_num += 1
-
-    plt.figure(figure_num)
-    sim_met.plot_neurons(activity_df,False,mean_start_index,mean_end_index,100)
-    plt.title(f"Activity of all on average active neurons during decision, h0: {h0_for_plot}, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction")
-    figure_num += 1
-
-    plt.figure(figure_num)
-    sim_met.plot_neurons(activity_df,True,mean_end_index,0,100)
-    plt.title(f"Average activity of all on average active neurons post decision, h0: {h0_for_plot}, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction")
-    figure_num += 1
-
-    plt.figure(figure_num)
-    sim_met.plot_neurons(activity_df,False,mean_end_index,0,100)
-    plt.title(f"Activity of all on average active neurons post decision, h0: {h0_for_plot}, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction")
-    figure_num += 1
-'''
 #trajectories
 
 if plot_trajs[0]:

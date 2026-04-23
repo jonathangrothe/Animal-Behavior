@@ -126,29 +126,37 @@ def get_avg_distance(xPos, yPos, targetsx, targetsy, last_p=0.25):
     return(np.mean(dists,axis=1))
 
 def get_neuron_info(activity):
-    # NEXT STEPS: use inhibition to accurately categorize a decision interval,
-    # once we have the decision interval for each sample, we can look at interesting goings on in that time
-    # Since we know that only a few neurons can be activated at a time and the rest are inhibited, 
-    # it might be intersting to look at this contrast as a way of classifying the model's behavior (ie: difference between magnitudes of activated and inhibited)
-    # definitely would be interesting to know if there are moments when more are activated at lower levels and if there are moments when only one or two are activated
-    # or if that depends on simulation settings 
     '''
     A function which gets information about neuron activity over the course of the simulation
     info we want: 
-    at each time step: number of neurons activated, max activation, which neuron is most activated
+    sum of activity at each step, the range of activity at each step, variance of activity at each step, number inhibited at each step, number activated at each step,
+    rate of change of each neuron 
+    and maybe not this function, but then we want time step of the minimum range, timesteps the number inhibited/activated changes
     '''
-    n_inhib = 0
-    inhib_index = []
     sum_activity = []
-    tsteps = np.shape(activity)[1] - 100 # I let the sim run for 100 times after reaching the target, but don't want that to impact analysis
+    range_activity = []
+    var_activity = []
+    n_inhib_list = []
+    n_active_list = []
+    neuron_change_rates = []
+    tsteps = np.shape(activity)[1]
     for t in range(tsteps):
-        max_activation = np.max(activity[:,t], axis=0)
         sum_at_t = np.sum(activity[:,t], axis=0)
+        max_activation = np.max(activity[:,t], axis=0)
+        min_activation = np.min(activity[:,t], axis=0)
+        range_at_t = max_activation-min_activation
+        variance_at_t = np.var(activity[:,t])
+        n_inhib = np.count_nonzero(activity[:,t] < 0)
+        n_active = np.count_nonzero(activity[:,t] > 0)
         sum_activity.append(sum_at_t)
-        if max_activation < 0:
-            n_inhib += 1
-            inhib_index.append(t)
-    return n_inhib, inhib_index, sum_activity
+        range_activity.append(range_at_t)
+        var_activity.append(variance_at_t)
+        n_inhib_list.append(n_inhib)
+        n_active_list.append(n_active)
+    for neuron in range(np.shape(activity)[0]):
+        rate_of_change = np.diff(activity[neuron,:])
+        neuron_change_rates.append(rate_of_change)
+    return sum_activity, range_activity, var_activity, n_inhib_list, n_active_list, neuron_change_rates
 
 def get_inhibition_rates(inhib_list,sample_size):
     '''
@@ -175,13 +183,16 @@ def get_decision_time(sum_activity):
     dec_end = np.argmax(sum_activity[dec_start:])+dec_start
     return dec_start, dec_end
 
-def get_num_active(activity, tstart, tstop):
-    '''
-    '''
-    N = np.shape(activity)[0]
-    for neuron in range(N):
-        # average over specified time
-        avg = np.average(activity[neuron,0,tstart:tstop])
+def get_metric_mean_se(metric, sample_size):
+    means = []
+    ses = []
+    n_values = len(metric) //sample_size
+    for i in range(n_values):
+        met_mean = np.mean(metric[i*sample_size:(i+1)*sample_size])
+        met_se = np.std(metric[i*sample_size:(i+1)*sample_size])/np.sqrt(sample_size)
+        means.append(met_mean)
+        ses.append(met_se)
+    return means, ses
 
 def plot_metric(metrics,x,colors,labels,figurenum,size,title,xlabel,ylabel):
     '''

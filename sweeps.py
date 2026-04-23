@@ -95,19 +95,19 @@ base = {'N':N,
 # not plotting trajectories or neurons in this file
 plot_trajs = [False, 'scatter'] 
 plot_neurons = False
-n_lines = 3 
+n_lines = 2 
 uneven = True
-sample_size = 5
+sample_size = 10
 
 base_value = 0.249
-h0_range= np.linspace(0,0.02,num=5)
+h0_range= np.linspace(0,0.003,num=10)
 h0_for_plot = h0_range+base_value
 h0_total_list = []
 
 for n in range(n_lines):
     h0_list = []
     for item in h0_range:
-        h0_list.append([base_value+n*0.001,base_value+n*0.001+item])
+        h0_list.append([base_value+item,base_value+n*0.01+item])
     h0_total_list.append(h0_list)
 print(h0_total_list)
 
@@ -115,22 +115,25 @@ print(h0_total_list)
 time_total_list = []
 correct_total_list = []
 correct_se_list = []
+range_total_list = []
+range_total_se_list = []
 for item in h0_total_list:
     change= {'h0':item}
-    print(f"item: {item}")
-    success_list, target_list, time_list, inhib_list, inhib_times_list, decision_points, sum_activity_list, activity_df, x_list, y_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
+    success_list, target_list, time_list, decision_points, sum_activity_list, range_activity_list, range_argmin_list, activity_df, x_list, y_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
     p_success, se_success, p_correct, se_correct = sim_met.get_success_rate(target_list, sample_size, uneven, 1)
+    range_mean, range_se = sim_met.get_metric_mean_se(range_argmin_list,sample_size)
     time_total_list.append(time_list)
     correct_total_list.append(p_correct)
     correct_se_list.append(se_correct)
+    range_total_list.append(range_mean)
+    range_total_se_list.append(range_se)
 
-
+print(range_total_list)
 figure_num = 1
 
-
-
-colors = ['blue','green','red']
-labels = ['base=0.249','base=0.25','base=0.251']
+# overall plotting settings
+colors = ['blue','green']
+labels = ['even targets','top target is 0.01 better']
 x_label = "h0"
 time_y_label = "Average time to target"
 time_agg_title = f"Average time to target, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction, stopping distance = 0.5"
@@ -147,9 +150,22 @@ if uneven:
         plt.plot(h0_for_plot,correct_total_list[i],color=colors[i], label=labels[i])
         plt.plot(h0_for_plot, np.add(correct_total_list[i],correct_se_list[i]), color = colors[i], label = 'standard error', linestyle = ':')
         plt.plot(h0_for_plot, np.subtract(correct_total_list[i],correct_se_list[i]), color = colors[i], linestyle = ':')
-    plt.legend()
+plt.legend()
 plt.xlabel(x_label)
 plt.ylabel(p_success_y)
 plt.title(p_success_title)
+figure_num += 1
 
+range_y = "Time step with the smallest activation range"
+range_title = f"Time step where the difference between least and most active neuron was smallest: {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction "
+plt.figure(figsize=(10,5))
+plt.figure(figure_num)
+for i in range(len(range_total_list)):
+    plt.plot(h0_for_plot,range_total_list[i],color=colors[i],label=labels[i])
+    plt.plot(h0_for_plot, np.add(range_total_list[i],range_total_se_list[i]), color = colors[i], label = 'standard error', linestyle = ':')
+    plt.plot(h0_for_plot, np.subtract(range_total_list[i],range_total_se_list[i]), color = colors[i], linestyle = ':')
+plt.legend()
+plt.xlabel(x_label)
+plt.ylabel(range_y)
+plt.title(range_title)
 plt.show()
