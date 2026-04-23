@@ -183,38 +183,38 @@ def get_num_active(activity, tstart, tstop):
         # average over specified time
         avg = np.average(activity[neuron,0,tstart:tstop])
 
-def plot_metric(metric,x,color,label,agg=True):
+def plot_metric(metrics,x,colors,labels,figurenum,size,title,xlabel,ylabel):
     '''
     A function which plots an aggregated metric over changing values of a parameter
     Parameters:
-    metric: a list of metrics with n samples per each value of the parameter we are measuring (the y axis)
+    metrics: a list of list of metrics with n samples per each value of the parameter we are measuring (the y axis)
     x: the values of the parameter we are measuring success over (the x axis)
-    title: the title of the plot
-    xlabel: the label of the x-axis
-    ylabel: the label of the y-axis
+    labels: the labels for each metric
     Expected output: 
     A line plot of the metric (y-axis) with standard error lines over x (x-axis)
     '''
     # first step: get the dimesions to line up
     # second step: plot it
+    plt.figure(figsize=size)
+    plt.figure(figurenum)
     n_values = len(x)
-    sample_size = len(metric)//n_values
-    mean_metric = []
-    se_metric = []
-    if agg:
+    sample_size = len(metrics[0])//n_values
+    for m in range(len(metrics)):
+        mean_metric = []
+        se_metric = []
         for value in range(n_values):
-            sample_metric = metric[value*sample_size:(value+1)*sample_size]
+            sample_metric = metrics[m][value*sample_size:(value+1)*sample_size]
             mean_metric.append(np.mean(sample_metric))
             se_metric.append(np.std(sample_metric)/np.sqrt(sample_size))
-        plt.plot(x, mean_metric, color = color, label = label)
-        plt.plot(x, np.add(mean_metric,se_metric), color = color, label = 'standard error', linestyle = ':')
-        plt.plot(x, np.subtract(mean_metric,se_metric), color = color, linestyle = ':')
-        plt.legend()
-    else:
-        for s in range(sample_size):
-            one_run = metric[s::sample_size]
-            plt.plot(x, one_run, color = 'blue', alpha=sample_size*0.01)
-            plt.legend()
+        plt.plot(x, mean_metric, color = colors[m], label = labels[m])
+        plt.plot(x, np.add(mean_metric,se_metric), color = colors[m], label = 'standard error', linestyle = ':')
+        plt.plot(x, np.subtract(mean_metric,se_metric), color = colors[m], linestyle = ':')
+    plt.legend()
+    plt.title(title)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    return figurenum+1
+
 
 def plot_neurons(activity_df, agg=True, tstart=0, tstop=0, N=100, start_neuron=0, end_neuron=100):
     # this function is mostly for me right now, I think this does allow for further analysis, but it might be a little too granular 

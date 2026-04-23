@@ -91,108 +91,68 @@ base = {'N':N,
         'sigma':sigma,
         'beta':beta}
 
-plot_neurons = True
-plot_trajs = [True, 'scatter']
+# plotting settings: controls what kind of simulations we're running
+plot_neurons = False
+plot_trajs = [False, 'scatter']
 plot_sweep = not (plot_neurons or plot_trajs[0])
-h0_for_plot = np.linspace(0.249,0.252,num=15)
-h0_for_uneven_sim = []
-h0_for_even_sim = []
-for item in h0_for_plot:
-    h0_for_uneven_sim.append([item,item+0.01])
-    h0_for_even_sim.append([item,item])
-change_uneven = {'h0':h0_for_uneven_sim}
-change_even = {'h0':h0_for_even_sim}
-change = {'h0':h0_for_uneven_sim}
+n_lines = 3 #number of things we're plotting
 uneven = True
+sample_size = 10
 
-sample_size = 20
+base_value = 0.249
+h0_range= np.linspace(0,0.02,num=30)
+h0_for_plot = h0_range
+h0_total_list = []
 
+for n in range(n_lines):
+    h0_list = []
+    for item in h0_range:
+        print(item)
+        print(base_value+0.001*n)
+        print(base_value+item+0.001*n)
+        h0_list.append([base_value+0.001*n,base_value+item+0.001*n])
+    h0_total_list.append(h0_list)
+print(h0_total_list)
 if plot_sweep:
-    success_list_u, target_list_u, time_list_u, inhib_list_u, inhib_times_list_u, decision_points_u, sum_activity_list_u, activity_df_u, x_list_u, y_list_u  = repeated_sims.sample_sims(base,change_uneven,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
-    p_success_uneven, se_success_uneven, p_correct_uneven, se_correct_uneven = sim_met.get_success_rate(target_list_u, sample_size, uneven, 1)
-    mean_inhib_u = sim_met.get_inhibition_rates(inhib_list_u, sample_size)
-
-    success_list_e, target_list_e, time_list_e, inhib_list_e, inhib_times_list_e, decision_points_e, sum_activity_list_e, activity_df_e, x_list_e, y_list_e  = repeated_sims.sample_sims(base,change_even,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
-    p_success_even, se_success_even, p_correct_even, se_correct_even = sim_met.get_success_rate(target_list_e, sample_size, uneven, 1)
-    mean_inhib_e = sim_met.get_inhibition_rates(inhib_list_e, sample_size)
-else:
-    success_list, target_list, time_list, inhib_list, inhib_times_list, decision_points, sum_activity_list, activity_df, x_list, y_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
-    p_success, se_success, p_correct, se_correct = sim_met.get_success_rate(target_list, sample_size, uneven, 1)
-    mean_inhib = sim_met.get_inhibition_rates(inhib_list, sample_size)
-
+    # defining our metrics of interest: 
+    time_total_list = []
+    correct_total_list = []
+    correct_se_list = []
+    for item in h0_total_list:
+        change= {'h0':item}
+        success_list, target_list, time_list, inhib_list, inhib_times_list, decision_points, sum_activity_list, activity_df, x_list, y_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
+        p_success, se_success, p_correct, se_correct = sim_met.get_success_rate(target_list, sample_size, uneven, 1)
+        time_total_list.append(time_list)
+        correct_total_list.append(p_correct)
+        correct_se_list.append(se_correct)
 figure_num = 1
 
 # SWEEP PLOTS
 
 if plot_sweep:
+    colors = ['blue','green','red']
+    labels = ['base=0.249','base=0.25','base=0.251']
     x_label = "h0"
-    '''
-    dist_y_label = "Average distance to target"
-    dist_title = f" Distance to target over last quarter of simulation, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction"
-    plt.figure(figsize=(10,5))
-    plt.figure(figure_num)
-    sim_met.plot_metric(success_list,h0_for_plot,dist_title,x_label,dist_y_label,False)
-    figure_num += 1
-
-    dist_agg_title = f"Average distance to target over last quarter of simulation, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction"
-    plt.figure(figsize=(10,5))
-    plt.figure(figure_num)
-    sim_met.plot_metric(success_list,h0_for_plot,dist_agg_title,x_label,dist_y_label,True)
-    figure_num += 1
-    '''
     time_y_label = "Average time to target"
-    '''
-    time_title = f"Time to target, {"allocentric" if allocentricFlag==1 else "egocentric"}, stopping distance = 0.5"
-    plt.figure(figsize=(10,5))
-    plt.figure(figure_num)
-    sim_met.plot_metric(time_list,h0_for_plot,time_title,x_label,time_y_label,False)
-    figure_num += 1
-    '''
-
     time_agg_title = f"Average time to target, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction, stopping distance = 0.5"
-    plt.figure(figsize=(10,5))
-    plt.figure(figure_num)
-    sim_met.plot_metric(time_list_u,h0_for_plot,'green','Top target is better',True)
-    sim_met.plot_metric(time_list_e,h0_for_plot,'blue', 'Targets are equal', True)
-    plt.title(time_agg_title)
-    plt.xlabel(x_label)
-    plt.ylabel(time_y_label)
-    figure_num += 1
+    figure_num = sim_met.plot_metric(time_total_list,h0_for_plot,colors,labels,figure_num,(10,5),
+                        time_agg_title,x_label,time_y_label)
 
+    
     p_success_y = "Probability of reaching top target"
     p_success_title = f"Probability of getting within 0.5 units of top target, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction"
     plt.figure(figsize=(10,5))
     plt.figure(figure_num)
     if uneven: 
-        plt.plot(h0_for_plot,p_correct_uneven,color='Green', label="Top target is more attractive")
-        plt.plot(h0_for_plot, np.add(p_correct_uneven,se_correct_uneven), color = 'green', label = 'standard error', linestyle = ':')
-        plt.plot(h0_for_plot, np.subtract(p_correct_uneven,se_correct_uneven), color = 'green', linestyle = ':')
-        plt.plot(h0_for_plot,p_correct_even,color='Blue', label="Targets are even")
-        plt.plot(h0_for_plot, np.add(p_correct_even,se_correct_even), color = 'blue', label = 'standard error', linestyle = ':')
-        plt.plot(h0_for_plot, np.subtract(p_correct_even,se_correct_even), color = 'blue', linestyle = ':')
+        for i in range(len(correct_total_list)):
+            plt.plot(h0_for_plot,correct_total_list[i],color=colors[i], label=labels[i])
+            plt.plot(h0_for_plot, np.add(correct_total_list[i],correct_se_list[i]), color = colors[i], label = 'standard error', linestyle = ':')
+            plt.plot(h0_for_plot, np.subtract(correct_total_list[i],correct_se_list[i]), color = colors[i], linestyle = ':')
         plt.legend()
-    '''
-    if not uneven:
-        plt.plot(h0_for_plot,p_success,color='Blue')
-        plt.plot(h0_for_plot, np.add(p_success,se_success), color = 'blue', label = 'standard error', linestyle = ':')
-        plt.plot(h0_for_plot, np.subtract(p_success,se_success), color = 'blue', linestyle = ':')
-    '''
     plt.xlabel(x_label)
     plt.ylabel(p_success_y)
     plt.title(p_success_title)
     figure_num += 1
-
-    '''
-    n_inhib_y = "Average number of steps where every neuron was inhibited"
-    n_inhib_title = f"Average number of steps where every neuron was inhibited, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction"
-    plt.figure(figsize=(10,5))
-    plt.figure(figure_num)
-    plt.plot(h0_for_plot,mean_inhib,color='red')
-    plt.xlabel(x_label)
-    plt.ylabel(n_inhib_y)
-    plt.title(n_inhib_title)
-    figure_num += 1
-    '''
     
 # SINGLE SETTING PLOTS
 
@@ -271,7 +231,7 @@ if plot_trajs[0]:
     plt.figure(figure_num)
     if plot_trajs[1] == 'scatter':
         sim_met.plot_traj(x_list,y_list,initialxt,initialyt,sample_size,mean_start_index,mean_end_index)
-    plt.title(f"Trajectory plot, from time: {mean_start_index} to time: {mean_end_index} h0: {h0_for_uneven_sim[0]}, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction")
+    plt.title(f"Trajectory plot, from time: {mean_start_index} to time: {mean_end_index} h0: {base_value}, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction")
     figure_num += 1
 
 plt.show()
