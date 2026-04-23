@@ -217,13 +217,10 @@ def plot_metric(metrics,x,colors,labels,figurenum,size,title,xlabel,ylabel):
 
 
 def plot_neurons(activity_df, agg=True, tstart=0, tstop=0, N=100, start_neuron=0, end_neuron=100):
-    # this function is mostly for me right now, I think this does allow for further analysis, but it might be a little too granular 
-    # seems like its hard to know what to plot when it comes to individual neurons, 
-    # a lot of the time leading to the decision point neuron 50 gets more active, which is interesting. Like the bump dissappears and reappears?
     '''
     A function which takes the activity of all the neurons in the ring attractor for one agent and plots them
     parameters: 
-    activity_df: a Nxt dataframe where N is the number of neurons and t is the number of timesteps in the simulation
+    activity_: a Nxt dataframe where N is the number of neurons and t is the number of timesteps in the simulation
     '''
     if tstop == 0:
         tstop = activity_df.shape[1]
@@ -304,6 +301,7 @@ def plot_traj(xPos,yPos,targetsx,targetsy,sample_size,start_ind=0,end_ind=0):
             dist[1:] = np.sqrt(deltax**2 + deltay**2)
             plt.scatter(xPos[sample][start_ind:end_ind],yPos[sample][start_ind:end_ind],c = dist, cmap = 'afmhot_r', alpha=0.5,s=8)
     return None
+
 
 # heat map plotting from vivek's code - very slow to run right now
 def density_map(x, y):
