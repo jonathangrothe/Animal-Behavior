@@ -262,13 +262,13 @@ def plot_neurons(activity_df, agg=True, tstart=0, tstop=0, N=100, start_neuron=0
             lh.set_alpha(1.0)
     return None
 
-def plot_sum_activity(activity_list):
+def plot_sum_activity(activity_list,figure):
     '''
     A function that plots the sum of activity over ONE setting, with each sample a different line?
     '''
     min_len = 5000
     for item in activity_list:
-        plt.plot(item)
+        figure.plot(item)
         if len(item) < min_len:
             min_len = len(item)
     sum_list_truncated = []
@@ -277,7 +277,7 @@ def plot_sum_activity(activity_list):
     mean_list = np.mean(sum_list_truncated,axis=0)
     return mean_list
 
-def plot_traj(xPos,yPos,targetsx,targetsy,sample_size,start_ind=0,end_ind=0):
+def plot_traj(xPos,yPos,targetsx,targetsy,sample_size,figure,start_ind=0,end_ind=0):
     '''
     A function that takes x trajectories and y trajectories and plots them over each other, with a low ish opacity so we can see overlap. 
     Designed to be used over the same simulation settings with a number s of samples.
@@ -290,8 +290,8 @@ def plot_traj(xPos,yPos,targetsx,targetsy,sample_size,start_ind=0,end_ind=0):
             dist = np.zeros(len(xPos[sample][start_ind:]))
             dist[0] =0
             dist[1:] = np.sqrt(deltax**2 + deltay**2)
-            plt.scatter(xPos[sample][start_ind:],yPos[sample][start_ind:],c = dist, cmap = 'afmhot_r', alpha=0.4/sample_size,s=1)
-        plt.scatter(targetsx,targetsy,color='red',s=5)
+            figure.scatter(xPos[sample][start_ind:],yPos[sample][start_ind:],c = dist, cmap = 'afmhot_r', alpha=0.4/sample_size,s=1)
+        figure.scatter(targetsx,targetsy,color='red',s=5)
     else:
         for sample in range(sample_size):
             deltax = np.diff(xPos[sample][start_ind:end_ind])
@@ -299,7 +299,7 @@ def plot_traj(xPos,yPos,targetsx,targetsy,sample_size,start_ind=0,end_ind=0):
             dist = np.zeros(len(xPos[sample][start_ind:end_ind]))
             dist[0] =0
             dist[1:] = np.sqrt(deltax**2 + deltay**2)
-            plt.scatter(xPos[sample][start_ind:end_ind],yPos[sample][start_ind:end_ind],c = dist, cmap = 'afmhot_r', alpha=0.5,s=8)
+            figure.scatter(xPos[sample][start_ind:end_ind],yPos[sample][start_ind:end_ind],c = dist, cmap = 'afmhot_r', alpha=0.5,s=8)
     return None
 
 

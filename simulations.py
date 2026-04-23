@@ -95,7 +95,7 @@ base = {'N':N,
 plot_neurons = True
 plot_trajs = [True, 'scatter']
 uneven = True
-sample_size = 1
+sample_size = 10
 
 base_value = 0.249
 h0_range= [0,0.001,0.002,0.003]
@@ -110,14 +110,21 @@ print(h0_list)
 xpositions = []
 ypositions = []
 neuron_activity = []
-decision_points_list = []
+mean_decision_points = []
+sum_total_activity = []
 for item in h0_list:
     change = {'h0':item}
     success_list, target_list, time_list, inhib_list, inhib_times_list, decision_points, sum_activity_list, activity_df, x_list, y_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
     xpositions += (x_list)
     ypositions += (y_list)
     neuron_activity.append(activity_df)
-    decision_points_list += (decision_points)
+    sum_total_activity += sum_activity_list
+    sum_s = 0
+    sum_e = 0
+    for item in decision_points:
+        sum_s+=item[0]
+        sum_e+=item[1]
+    mean_decision_points.append([round(sum_s/sample_size),round(sum_e/sample_size)])
 
 figure_num = 1
 
@@ -127,25 +134,33 @@ figure_num = 1
 # need to shift this so it plots a heatmap and maybe less of this arbitrary stuff
 # also need to add functionality for plotting multiple rounds in the same run probably and putting them on the same plot so we can see them clearly
 
-if plot_neurons:  
-    n_plots = len(h0_range)
-    fig, ax = plt.subplots(n_plots,1)
-    plt.figure(figsize=(12,7))
-    plt.figure(figure_num)
-    for s in range(n_plots):
-        rolled= np.roll(neuron_activity[s].values, shift=50, axis=0)
-        print(rolled.shape)
-        ax[s].imshow(rolled,cmap='viridis',aspect='auto')
-        ax[s].axvline(x=300, color='red', linestyle='--')
-        ax[s].axvline(x=400, color='red', linestyle='--')
-    figure_num += 1
+# general plotting settings
+n_plots = len(h0_range)
 
-    plt.figure(figure_num)
-    mean_list = sim_met.plot_sum_activity(sum_activity_list)
-    plt.title(f"Sum of all neuron activity over time, h0: {h0_for_plot}, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction")
-    plt.xlabel("Time")
-    plt.ylabel("Sum of neuron activity")
-    figure_num+=1
+# neuron heat maps
+plt.figure(figsize=(10,7))
+fig, ax = plt.subplots(n_plots,1,num=figure_num)
+for s in range(n_plots):
+    rolled= np.roll(neuron_activity[s].values, shift=50, axis=0)
+    print(rolled.shape)
+    ax[s].imshow(rolled,cmap='viridis',aspect='auto')
+    ax[s].axvline(x=mean_decision_points[s][0], color='red', linestyle='--')
+    ax[s].axvline(x=mean_decision_points[s][1], color='red', linestyle='--')
+fig.suptitle("Neuron activity")
+fig.supxlabel("Time")
+fig.supylabel("Neuron (samples are stacked, 50, 150, etc. are neuron 0)")
+figure_num += 1
+
+# sum of all activity plots
+plt.figure(figsize=(10,7))
+fig, ax = plt.subplots(n_plots,1,num=figure_num)
+for s in range(n_plots):
+    mean_list = sim_met.plot_sum_activity(sum_total_activity[s*sample_size:(s+1)*sample_size],ax[s])
+fig.suptitle(f"Sum of all neuron activity over time, h0: {h0_for_plot}, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction")
+fig.supxlabel("Time")
+fig.supylabel("Sum of neuron activity")
+figure_num+=1
+# top active neurons plots (we will see if these are helpful)
 '''
     plt.figure(figure_num)
     sim_met.plot_neurons(activity_df,True,0,mean_start_index,100)
@@ -177,26 +192,23 @@ if plot_neurons:
     plt.title(f"Activity of all on average active neurons post decision, h0: {h0_for_plot}, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction")
     figure_num += 1
 '''
+#trajectories
 
 if plot_trajs[0]:
     n_plots = len(h0_range)
-    plt.figure(figsize=(7,7))
-    plt.figure(figure_num)
-    if plot_trajs[1] == 'heat':
-        img = sim_met.plot_from_density(x_list, y_list, 30)
-        plt.imshow(img)
+    plt.figure(figsize=(12,6))
+    fig, ax = plt.subplots(1,n_plots,num=figure_num)
     if plot_trajs[1] == 'scatter':
-        for p in range(n_plots):
-            sim_met.plot_traj(xpositions[p*sample_size:(p+1)*sample_size],ypositions[p*sample_size:(p+1)*sample_size],initialxt,initialyt,sample_size)
-    plt.title(f"Trajectory plot, h0: {h0_for_plot}, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction")
+        for s in range(n_plots):
+            sim_met.plot_traj(xpositions[s*sample_size:(s+1)*sample_size],ypositions[s*sample_size:(s+1)*sample_size],initialxt,initialyt,sample_size,ax[s],0,0)
+    fig.suptitle(f"Trajectory plot, h0: {h0_for_plot}, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction")
     figure_num += 1
 
-'''
-    plt.figure(figsize=(7,7))
-    plt.figure(figure_num)
+    plt.figure(figsize=(12,6))
+    fig, ax = plt.subplots(1,n_plots,num=figure_num)
     if plot_trajs[1] == 'scatter':
-        sim_met.plot_traj(x_list,y_list,initialxt,initialyt,sample_size,mean_start_index,mean_end_index)
-    plt.title(f"Trajectory plot, from time: {mean_start_index} to time: {mean_end_index} h0: {base_value}, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction")
-    figure_num += 1
-'''
+        for s in range(n_plots):
+            sim_met.plot_traj(xpositions[s*sample_size:(s+1)*sample_size],ypositions[s*sample_size:(s+1)*sample_size],initialxt,initialyt,sample_size,ax[s],mean_decision_points[s][0],mean_decision_points[s][1])
+    fig.suptitle(f"Trajectory plot during the decision, h0: {base_value}, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction")
+
 plt.show()
