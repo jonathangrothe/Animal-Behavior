@@ -52,7 +52,7 @@ for i in range(N):
     J[i,i] = 0.0
     J = np.squeeze(J)
 
-allocentricFlag = 0 # 1 is allo, 0 is ego
+allocentricFlag = 0 # 1 is allo, 0 is ego 
 h0s = [0.25,0.25] # attraction vector, first are attraction for targets, then agents
 h_b = 0.2
 sigma = 0.5
@@ -95,16 +95,16 @@ base = {'N':N,
 plot_neurons = True
 plot_trajs = [True, 'scatter']
 uneven = True
-sample_size = 1
+sample_size = 10
 
-base_value = 0.249
-h0_range= [0.249,0.249*1.05,.249*1.1,.249*1.2,.249*1.35]
+base_value = 0.25
+h0_range= [base_value,base_value+0.025,base_value+0.05,base_value+0.09]
 h0_for_plot = h0_range
 
 
 h0_list = []
 for item in h0_range:
-    h0_list.append([[base_value,item]])
+    h0_list.append([[base_value,round(item,2)]])
 print(h0_list)
 
 xpositions = []
@@ -140,13 +140,17 @@ plt.figure(figsize=(10,7))
 fig, ax = plt.subplots(n_plots,1,num=figure_num)
 for s in range(n_plots):
     rolled= np.roll(neuron_activity[s].values, shift=50, axis=0)
-    print(rolled.shape)
-    ax[s].imshow(rolled,cmap='viridis',aspect='auto')
-    ax[s].axvline(x=mean_decision_points[s][0], color='red', linestyle='--')
-    ax[s].axvline(x=mean_decision_points[s][1], color='red', linestyle='--')
+    # get most inhibited in stable state
+    # get most activated in stable state
+    col_min = np.min(neuron_activity[s].iloc[:,40:])
+    col_max = np.max(neuron_activity[s].iloc[:,40:])
+    ax[s].imshow(rolled,cmap='viridis',aspect='auto',vmin=col_min,vmax=col_max)
+    ax[s].set_ylabel(f"h0: {h0_list[s][0]}")
+    #ax[s].axvline(x=mean_decision_points[s][0], color='red', linestyle='--')
+    #ax[s].axvline(x=mean_decision_points[s][1], color='red', linestyle='--')
 fig.suptitle("Neuron activity")
 fig.supxlabel("Time")
-fig.supylabel("Neuron (samples are stacked, 50, 150, etc. are neuron 0)")
+fig.supylabel("Neuron (50 is forward)")
 figure_num += 1
 
 # TO DO: compare different measures of the 'decision' interval: right now we're just using the min and the max of the sum of activity
@@ -180,15 +184,6 @@ fig.supxlabel("Time")
 fig.supylabel("Range of neuron activity")
 figure_num+=1
 
-plt.figure(figsize=(10,7))
-fig, ax = plt.subplots(n_plots,1,num=figure_num)
-for s in range(n_plots):
-    mean_list = sim_met.plot_neurons(neuron_activity[s],ax[s],True,mean_decision_points[s][0]+30,0)
-fig.suptitle(f"Range of neuron activity over time, h0: {h0_for_plot}, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction")
-fig.supxlabel("Time")
-fig.supylabel("Range of neuron activity")
-figure_num+=1
-
 #trajectories
 
 if plot_trajs[0]:
@@ -198,9 +193,11 @@ if plot_trajs[0]:
     if plot_trajs[1] == 'scatter':
         for s in range(n_plots):
             sim_met.plot_traj(xpositions[s*sample_size:(s+1)*sample_size],ypositions[s*sample_size:(s+1)*sample_size],initialxt,initialyt,sample_size,ax[s],0,0)
-    fig.suptitle(f"Trajectory plot, h0: {h0_for_plot}, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction")
+            ax[s].set_title(f"h0: {h0_list[s][0]}")
+    fig.suptitle(f"Trajectory plot, {"allocentric" if allocentricFlag==1 else "egocentric"}")
     figure_num += 1
 
+'''
     plt.figure(figsize=(12,6))
     fig, ax = plt.subplots(1,n_plots,num=figure_num)
     if plot_trajs[1] == 'scatter':
@@ -208,6 +205,7 @@ if plot_trajs[0]:
             sim_met.plot_traj(xpositions[s*sample_size:(s+1)*sample_size],ypositions[s*sample_size:(s+1)*sample_size],initialxt,initialyt,sample_size,ax[s],mean_decision_points[s][0],mean_decision_points[s][1])
     fig.suptitle(f"Trajectory plot during the decision, h0: {base_value}, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction")
     figure_num += 1
+'''
 
 
 plt.show()

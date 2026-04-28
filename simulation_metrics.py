@@ -180,7 +180,12 @@ def get_decision_time(sum_activity):
     returns the index of when the sum of activity gets past a threshold (thresh) of the final sum
     '''
     dec_start = np.argmin(sum_activity)
-    dec_end = np.argmax(sum_activity[dec_start:])+dec_start
+    dec_end = dec_start
+    while np.abs(sum_activity[dec_end]-sum_activity[dec_start]) < 0.5:
+        dec_end+=1
+        if dec_end == len(sum_activity):
+            dec_end = dec_end -1
+            break
     return dec_start, dec_end
 
 def get_metric_mean_se(metric, sample_size):

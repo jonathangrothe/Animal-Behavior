@@ -168,19 +168,21 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
             cx_d = 0
             cy_d = 0
             for i in range(N):
-                val = fAct(uArray[i,a,tstep+1],beta)
+                val = fAct(uArray[i,a,tstep+1],beta) 
                 if val < 0:
                     val = 0
                 cx_d = cx_d + val * np.cos(alpharing[a,i])
                 cy_d = cy_d + val * np.sin(alpharing[a,i])
             newx = oldx + dt * v0 * cx_d
             newy = oldy + dt * v0 * cy_d
-            if tstep % 10 == 0:
-                print(f"center x: {cx_d} at time: {tstep}")
-                print(f"center y: {cy_d} at time: {tstep}")
-            if cx_d < 0.01 and np.abs(cy_d) < 0.01:
-                print(f"center x: {cx_d} at time step: {tstep}")
-                print(f"center y: {cy_d} at time step: {tstep}")
+            '''
+            if np.abs(cy_d)/np.abs(cx_d) > 2:
+                print(f"time: {tstep+1}")
+                print(f"center x: {cx_d}")
+                print(f"center y: {cy_d}")
+                print(f"most active neuron: {np.argmax(uArray[:,a,tstep+1])}")
+                print(f"activation of most active neuron: {np.max(uArray[:,a,tstep+1])}")
+            '''
             if periodic_flag == 1:
                 newx = np.mod(newx,L)
                 newy = np.mod(newy,L)

@@ -97,10 +97,10 @@ plot_trajs = [False, 'scatter']
 plot_neurons = False
 n_lines = 2 
 uneven = True
-sample_size = 50
+sample_size = 10
 
 base_value = 0.25
-h0_range= np.linspace(1,1.35,num=200)
+h0_range= np.linspace(1,2.5,num=20)
 h0_for_plot = h0_range
 h0_total_list = []
 
