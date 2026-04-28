@@ -95,16 +95,16 @@ base = {'N':N,
 plot_neurons = True
 plot_trajs = [True, 'scatter']
 uneven = True
-sample_size = 10
+sample_size = 1
 
 base_value = 0.249
-h0_range= [0,0.001,0.002,0.003]
+h0_range= [0.249,0.249*1.05,.249*1.1,.249*1.2,.249*1.35]
 h0_for_plot = h0_range
 
 
 h0_list = []
 for item in h0_range:
-    h0_list.append([[base_value+item,base_value+item+0.01]])
+    h0_list.append([[base_value,item]])
 print(h0_list)
 
 xpositions = []
@@ -125,7 +125,7 @@ for item in h0_list:
     sum_e = 0
     for item in decision_points:
         sum_s+=item[0]
-        sum_e+=item[1]
+        sum_e+=item[1]+5
     mean_decision_points.append([round(sum_s/sample_size),round(sum_e/sample_size)])
 
 figure_num = 1
@@ -135,7 +135,6 @@ figure_num = 1
 
 # general plotting settings
 n_plots = len(h0_range)
-
 # neuron heat maps
 plt.figure(figsize=(10,7))
 fig, ax = plt.subplots(n_plots,1,num=figure_num)
@@ -181,6 +180,15 @@ fig.supxlabel("Time")
 fig.supylabel("Range of neuron activity")
 figure_num+=1
 
+plt.figure(figsize=(10,7))
+fig, ax = plt.subplots(n_plots,1,num=figure_num)
+for s in range(n_plots):
+    mean_list = sim_met.plot_neurons(neuron_activity[s],ax[s],True,mean_decision_points[s][0]+30,0)
+fig.suptitle(f"Range of neuron activity over time, h0: {h0_for_plot}, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction")
+fig.supxlabel("Time")
+fig.supylabel("Range of neuron activity")
+figure_num+=1
+
 #trajectories
 
 if plot_trajs[0]:
@@ -199,5 +207,7 @@ if plot_trajs[0]:
         for s in range(n_plots):
             sim_met.plot_traj(xpositions[s*sample_size:(s+1)*sample_size],ypositions[s*sample_size:(s+1)*sample_size],initialxt,initialyt,sample_size,ax[s],mean_decision_points[s][0],mean_decision_points[s][1])
     fig.suptitle(f"Trajectory plot during the decision, h0: {base_value}, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction")
+    figure_num += 1
+
 
 plt.show()

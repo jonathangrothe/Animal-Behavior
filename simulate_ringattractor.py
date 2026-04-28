@@ -137,7 +137,6 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
             faNow = fAct(uaNow,beta)
             faPos = faNow.copy()
             faPos[faPos < 0] = 0
-
             #calculate centers
             cx = 0
             cy = 0
@@ -146,7 +145,8 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
                 cy = cy + (faPos[i] * np.sin(alpharing[a,i]))
             newAngle = 0
             #if the centers are close to zero use old heading 
-            if (np.abs(cx) < 1e-9) and (np.abs(cy) < 1e-9):
+            if (np.abs(cx) < 1e-9) or (np.abs(cy) < 1e-9):
+                print(f"no heading update at time: {tstep}, ")
                 newAngle = headings[a,tstep]
             else:
                 newAngle = np.atan2(cy,cx)
@@ -175,7 +175,12 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
                 cy_d = cy_d + val * np.sin(alpharing[a,i])
             newx = oldx + dt * v0 * cx_d
             newy = oldy + dt * v0 * cy_d
-
+            if tstep % 10 == 0:
+                print(f"center x: {cx_d} at time: {tstep}")
+                print(f"center y: {cy_d} at time: {tstep}")
+            if cx_d < 0.01 and np.abs(cy_d) < 0.01:
+                print(f"center x: {cx_d} at time step: {tstep}")
+                print(f"center y: {cy_d} at time step: {tstep}")
             if periodic_flag == 1:
                 newx = np.mod(newx,L)
                 newy = np.mod(newy,L)

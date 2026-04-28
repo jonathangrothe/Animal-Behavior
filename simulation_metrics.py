@@ -227,7 +227,7 @@ def plot_metric(metrics,x,colors,labels,figurenum,size,title,xlabel,ylabel):
     return figurenum+1
 
 
-def plot_neurons(activity_df, agg=True, tstart=0, tstop=0, N=100, start_neuron=0, end_neuron=100):
+def plot_neurons(activity_df, figure, agg=True, tstart=0, tstop=0, N=100, start_neuron=0, end_neuron=100):
     '''
     A function which takes the activity of all the neurons in the ring attractor for one agent and plots them
     parameters: 
@@ -249,26 +249,26 @@ def plot_neurons(activity_df, agg=True, tstart=0, tstop=0, N=100, start_neuron=0
         if mean_over_sims > 0:
             average_activity_list.append(mean_over_sims)
             active_neuron_list.append(neuron)
-
+    print(active_neuron_list)
     # for each neuron we want to plot: 
     # iterate through each sim, plot first one with label, then plot rest without, use different color for different neurons
     colors = plt.cm.viridis(np.linspace(0,1,len(active_neuron_list)))
     if agg:
         for neuron in range(len(active_neuron_list)):
             # get mean activity of every 100th neuron starting at this one
-            plt.plot(np.mean(activity_df.iloc[active_neuron_list[neuron]::N],axis=0),alpha = 0.6, label = f"neuron: {active_neuron_list[neuron]+start_neuron}", color=colors[neuron])
-            plt.legend()
+            figure.plot(np.mean(activity_df.iloc[active_neuron_list[neuron]::N],axis=0),alpha = 0.6, label = f"neuron: {active_neuron_list[neuron]+start_neuron}", color=colors[neuron])
+            #figure.legend()
                 
     else:
         for neuron in range(len(active_neuron_list)):
             for sim in range(sample_size):
                 if sim == 0:
-                    plt.plot(activity_df.iloc[active_neuron_list[neuron]+((sim)*N)], alpha = 0.6/sample_size, label = f"neuron: {active_neuron_list[neuron]+start_neuron}", color=colors[neuron])
+                    figure.plot(activity_df.iloc[active_neuron_list[neuron]+((sim)*N)], alpha = 0.6/sample_size, label = f"neuron: {active_neuron_list[neuron]+start_neuron}", color=colors[neuron])
                 else: 
 
-                    plt.plot(activity_df.iloc[active_neuron_list[neuron]+((sim)*N)], alpha = 0.6/sample_size, color = colors[neuron])
+                    figure.plot(activity_df.iloc[active_neuron_list[neuron]+((sim)*N)], alpha = 0.6/sample_size, color = colors[neuron])
 
-        leg = plt.legend()
+        leg = figure.legend()
         for lh in leg.legend_handles: 
             lh.set_alpha(1.0)
     return None

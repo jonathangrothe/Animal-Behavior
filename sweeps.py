@@ -97,19 +97,18 @@ plot_trajs = [False, 'scatter']
 plot_neurons = False
 n_lines = 2 
 uneven = True
-sample_size = 10
+sample_size = 50
 
-base_value = 0.249
-h0_range= np.linspace(0,0.003,num=10)
-h0_for_plot = h0_range+base_value
+base_value = 0.25
+h0_range= np.linspace(1,1.35,num=200)
+h0_for_plot = h0_range
 h0_total_list = []
 
 for n in range(n_lines):
     h0_list = []
     for item in h0_range:
-        h0_list.append([base_value+item,base_value+n*0.01+item])
+        h0_list.append([base_value+n*0.03,(base_value+n*0.03)*item])
     h0_total_list.append(h0_list)
-print(h0_total_list)
 
 # defining our metrics of interest: 
 time_total_list = []
@@ -128,13 +127,12 @@ for item in h0_total_list:
     range_total_list.append(range_mean)
     range_total_se_list.append(range_se)
 
-print(range_total_list)
 figure_num = 1
 
 # overall plotting settings
-colors = ['blue','green']
-labels = ['even targets','top target is 0.01 better']
-x_label = "h0"
+colors = ['blue','red']
+labels = ['base: 0.25','base: 0.28']
+x_label = "difference between targets"
 time_y_label = "Average time to target"
 time_agg_title = f"Average time to target, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction, stopping distance = 0.5"
 figure_num = sim_met.plot_metric(time_total_list,h0_for_plot,colors,labels,figure_num,(10,5),
