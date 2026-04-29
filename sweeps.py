@@ -52,7 +52,7 @@ for i in range(N):
     J[i,i] = 0.0
     J = np.squeeze(J)
 
-allocentricFlag = 0 # 1 is allo, 0 is ego
+allocentricFlag = 1 # 1 is allo, 0 is ego
 h0s = [0.25,0.25] # attraction vector, first are attraction for targets, then agents
 h_b = 0.2
 sigma = 0.5
@@ -95,12 +95,12 @@ base = {'N':N,
 # not plotting trajectories or neurons in this file
 plot_trajs = [False, 'scatter'] 
 plot_neurons = False
-n_lines = 2 
+n_lines = 3
 uneven = True
-sample_size = 10
+sample_size = 150
 
-base_value = 0.25
-h0_range= np.linspace(1,2.5,num=20)
+base_value = 0.2
+h0_range= np.linspace(1,1.00011,num=100)
 h0_for_plot = h0_range
 h0_total_list = []
 
@@ -130,8 +130,8 @@ for item in h0_total_list:
 figure_num = 1
 
 # overall plotting settings
-colors = ['blue','red']
-labels = ['base: 0.25','base: 0.28']
+colors = ['green','blue','red']
+labels = ['base: 0.2','base: 0.25','base: 0.3']
 x_label = "difference between targets"
 time_y_label = "Average time to target"
 time_agg_title = f"Average time to target, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction, stopping distance = 0.5"
@@ -153,7 +153,8 @@ plt.xlabel(x_label)
 plt.ylabel(p_success_y)
 plt.title(p_success_title)
 figure_num += 1
-
+plt.show()
+'''
 range_y = "Time step with the smallest activation range"
 range_title = f"Time step where the difference between least and most active neuron was smallest: {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction "
 plt.figure(figsize=(10,5))
@@ -167,3 +168,4 @@ plt.xlabel(x_label)
 plt.ylabel(range_y)
 plt.title(range_title)
 plt.show()
+'''
