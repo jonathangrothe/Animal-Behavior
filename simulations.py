@@ -96,13 +96,24 @@ plot_neurons = True
 plot_trajs = [True, 'scatter']
 uneven = True
 sample_size = 15
+min_list = []
+max_list = []
+for i in range(5):
+    low = 0.14 + 0.02*np.random.rand()
+    high = 0.35 + 0.02*np.random.rand()
+    boundary_list = repeated_sims.boundary_search(base,low,high,10,0.05,5) # probably also want to return the final step size to get an idea of the scale of the boundary point
+    print(f"boundaries, sim: {i}: {boundary_list}")
+    min_list.append(boundary_list[0])
+    max_list.append(boundary_list[1])
 
-boundary_list = repeated_sims.boundary_search(base,0.15,0.45,10) # probably also want to return the final step size to get an idea of the scale of the boundary point
-print(boundary_list)
-min_val = boundary_list[0]
-max_val = boundary_list[1]
+print(f"min list: {min_list}")
+print(f"max_list: {max_list}")
+min_val = np.mean(min_list)
+max_val = np.mean(max_list)
+
+#min_val  = 0.18744
+#max_val = 0.31773
 intermediate_val = (min_val+max_val)/2
-
 h0_range= [min_val, intermediate_val, max_val]
 h0_for_plot = h0_range
 
