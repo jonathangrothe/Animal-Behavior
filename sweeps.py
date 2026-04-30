@@ -95,29 +95,31 @@ base = {'N':N,
 # not plotting trajectories or neurons in this file
 plot_trajs = [False, 'scatter'] 
 plot_neurons = False
-n_lines = 3
+n_lines = 5
 uneven = True
-sample_size = 150
-
+sample_size = 10
 base_value = 0.2
-h0_range= np.linspace(1,1.00011,num=100)
+finish_value = 0.36
+h0_range= np.linspace(base_value,finish_value,num=10)
 h0_for_plot = h0_range
 h0_total_list = []
-
+beta_list = [7,10,15,25,50]
 for n in range(n_lines):
-    h0_list = []
+    h0_list= []
     for item in h0_range:
-        h0_list.append([base_value+n*0.03,(base_value+n*0.03)*item])
+        h0_list.append([item,item])
     h0_total_list.append(h0_list)
-
+print(h0_total_list)
 # defining our metrics of interest: 
 time_total_list = []
 correct_total_list = []
 correct_se_list = []
 range_total_list = []
 range_total_se_list = []
-for item in h0_total_list:
-    change= {'h0':item}
+for index in range(len(h0_total_list)):
+    change= {'h0':h0_total_list[index]}
+    base['beta'] = beta_list[index]
+    print(f'beta: {beta_list[index]}')
     success_list, target_list, time_list, decision_points, sum_activity_list, range_activity_list, range_argmin_list, activity_df, x_list, y_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
     p_success, se_success, p_correct, se_correct = sim_met.get_success_rate(target_list, sample_size, uneven, 1)
     range_mean, range_se = sim_met.get_metric_mean_se(range_argmin_list,sample_size)
@@ -130,8 +132,8 @@ for item in h0_total_list:
 figure_num = 1
 
 # overall plotting settings
-colors = ['green','blue','red']
-labels = ['base: 0.2','base: 0.25','base: 0.3']
+colors = ['green','blue','purple','red','orange']
+labels = ['beta: 7','beta: 10','beta: 15', 'beta: 25', 'beta: 50']
 x_label = "difference between targets"
 time_y_label = "Average time to target"
 time_agg_title = f"Average time to target, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction, stopping distance = 0.5"
@@ -141,18 +143,20 @@ figure_num = sim_met.plot_metric(time_total_list,h0_for_plot,colors,labels,figur
     
 p_success_y = "Probability of reaching top target"
 p_success_title = f"Probability of getting within 0.5 units of top target, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction"
-plt.figure(figsize=(10,5))
-plt.figure(figure_num)
+plt.figure(figsize=(12,7))
+fig, ax = plt.subplots(n_lines,1,num=figure_num)
 if uneven: 
     for i in range(len(correct_total_list)):
-        plt.plot(h0_for_plot,correct_total_list[i],color=colors[i], label=labels[i])
-        plt.plot(h0_for_plot, np.add(correct_total_list[i],correct_se_list[i]), color = colors[i], label = 'standard error', linestyle = ':')
-        plt.plot(h0_for_plot, np.subtract(correct_total_list[i],correct_se_list[i]), color = colors[i], linestyle = ':')
-plt.legend()
-plt.xlabel(x_label)
-plt.ylabel(p_success_y)
-plt.title(p_success_title)
+        ax[i].plot(h0_for_plot,correct_total_list[i],color=colors[i], label=labels[i])
+        ax[i].plot(h0_for_plot, np.add(correct_total_list[i],correct_se_list[i]), color = colors[i], label = 'standard error', linestyle = ':')
+        ax[i].plot(h0_for_plot, np.subtract(correct_total_list[i],correct_se_list[i]), color = colors[i], linestyle = ':')
+        ax[i].set_title(f"beta: {beta_list[i]}")
+#plt.legend()
+fig.supxlabel(x_label)
+fig.supylabel(p_success_y)
+fig.suptitle(p_success_title)
 figure_num += 1
+plt.tight_layout()
 plt.show()
 '''
 range_y = "Time step with the smallest activation range"

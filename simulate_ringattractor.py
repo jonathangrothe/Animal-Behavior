@@ -146,7 +146,7 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
             newAngle = 0
             #if the centers are close to zero use old heading 
             if (np.abs(cx) < 1e-9) or (np.abs(cy) < 1e-9):
-                print(f"no heading update at time: {tstep}, ")
+                #print(f"no heading update at time: {tstep}, ")
                 newAngle = headings[a,tstep]
             else:
                 newAngle = np.atan2(cy,cx)

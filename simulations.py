@@ -52,7 +52,7 @@ for i in range(N):
     J[i,i] = 0.0
     J = np.squeeze(J)
 
-allocentricFlag = 0 # 1 is allo, 0 is ego 
+allocentricFlag = 1 # 1 is allo, 0 is ego 
 h0s = [0.25,0.25] # attraction vector, first are attraction for targets, then agents
 h_b = 0.2
 sigma = 0.5
@@ -95,16 +95,21 @@ base = {'N':N,
 plot_neurons = True
 plot_trajs = [True, 'scatter']
 uneven = True
-sample_size = 10
+sample_size = 15
 
-base_value = 0.25
-h0_range= [base_value,base_value+0.025,base_value+0.05,base_value+0.09]
+boundary_list = repeated_sims.boundary_search(base,0.15,0.45,10) # probably also want to return the final step size to get an idea of the scale of the boundary point
+print(boundary_list)
+min_val = boundary_list[0]
+max_val = boundary_list[1]
+intermediate_val = (min_val+max_val)/2
+
+h0_range= [min_val, intermediate_val, max_val]
 h0_for_plot = h0_range
 
 
 h0_list = []
 for item in h0_range:
-    h0_list.append([[base_value,round(item,2)]])
+    h0_list.append([[item,item]])
 print(h0_list)
 
 xpositions = []
