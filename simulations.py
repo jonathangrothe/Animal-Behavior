@@ -56,7 +56,7 @@ allocentricFlag = 1 # 1 is allo, 0 is ego
 h0s = [0.25,0.25] # attraction vector, first are attraction for targets, then agents
 h_b = 0.2
 sigma = 0.5
-beta = 100
+beta = 12
 
 
 # -------- Running the simulation --------
@@ -98,10 +98,11 @@ uneven = True
 sample_size = 15
 min_list = []
 max_list = []
+
 for i in range(5):
-    low = 0.14 + 0.02*np.random.rand()
-    high = 0.35 + 0.02*np.random.rand()
-    boundary_list = repeated_sims.boundary_search(base,low,high,10,0.05,5) # probably also want to return the final step size to get an idea of the scale of the boundary point
+    low = 0.12 + 0.03*np.random.rand()
+    high = 0.4 + 0.03*np.random.rand()
+    boundary_list, range_list = repeated_sims.boundary_search(base,low,high,10,0.5,5) # probably also want to return the final step size to get an idea of the scale of the boundary point
     print(f"boundaries, sim: {i}: {boundary_list}")
     min_list.append(boundary_list[0])
     max_list.append(boundary_list[1])
@@ -111,16 +112,26 @@ print(f"max_list: {max_list}")
 min_val = np.mean(min_list)
 max_val = np.mean(max_list)
 
-#min_val  = 0.18744
-#max_val = 0.31773
-intermediate_val = (min_val+max_val)/2
-h0_range= [min_val, intermediate_val, max_val]
-h0_for_plot = h0_range
+# for beta=100
+#min_val  = 0.18744, 0.18796
+#max_val = 0.31773, 0.31986
+
+# for beta=25
+#min_val = 0.17808 - minimum difference 0.17812
+#max_val = 0.33376
+
+# for beta=12
+#min_val = 0.19036
+#max_val = 0.33710
+
+#intermediate_val = (min_val+max_val)/2
+h0_range= [np.min(min_list), np.max(min_list)]
+h0_for_plot = [h0_range]
 
 
 h0_list = []
 for item in h0_range:
-    h0_list.append([[item,item]])
+    h0_list.append([[0.25,item]])
 print(h0_list)
 
 xpositions = []

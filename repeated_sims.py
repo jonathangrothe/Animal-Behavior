@@ -95,7 +95,7 @@ def sample_sims(bp, changing_params, n_samples, include_trajs=[False, "scatter"]
 
     return success_list, target_list, time_list, decision_points, sum_activity_list, range_activity_list, range_argmin_list, activity_df, x_list, y_list
 
-def boundary_search(bp,base_min,base_max,sample_size,boundary_prob=0.05,n_in_bounds=10):
+def boundary_search(bp,base_min,base_max,sample_size,boundary_prob=0.05,n_in_bounds=5):
     '''
     A function that performs a modified binary search to find the target attractiveness value which produces a probability close to the boundary_prob
     Binary search until we are out of 0 and 1, because that will be the majority of cases, 
@@ -116,6 +116,7 @@ def boundary_search(bp,base_min,base_max,sample_size,boundary_prob=0.05,n_in_bou
     this should probably be used in combination with our sweeps to most effeciently get boundaries. 
     '''
     boundary_list = []
+    found_range = []
     for i in range(2):
         print(i)
         found = False
@@ -123,8 +124,6 @@ def boundary_search(bp,base_min,base_max,sample_size,boundary_prob=0.05,n_in_bou
         max_val = base_max
         value = (min_val+max_val)/2
         bp['h0'] = [value,value]
-        close = False
-        close_counter = 0
         while not found:
             target_list = []
             print(f"h0: {bp['h0']}")
@@ -143,44 +142,27 @@ def boundary_search(bp,base_min,base_max,sample_size,boundary_prob=0.05,n_in_bou
                 if item != -1:
                     n_reached += 1
             print(f"n reached: {n_reached}")
-            if not close:
-                if n_reached == 0:
-                    if i == 0:
-                        min_val = value
-                    else:
-                        max_val = value
-                    value = (min_val + max_val)/2
-                    bp['h0'] = [value,value]
-                if n_reached == sample_size:
-                    if i == 0:
-                        max_val = value
-                    else:
-                        min_val = value
-                    value = (min_val + max_val)/2
-                    bp['h0'] = [value,value]
-                if 0 < n_reached < sample_size:
-                    close = True
-            if close:
-                close_counter += 1
-                curr_range = max_val - min_val
+            if n_reached == 0:
                 if i == 0:
-                    start_point = ((sample_size-n_reached)/(2*sample_size))*curr_range+min_val
-                    predicted = start_point - boundary_prob*(curr_range/2)
-                    print(f"predicted: {predicted}") # how many iterations once we get here? 5?
-                    bp['h0'] = [predicted,predicted]
-                    max_val = predicted + (1/2*(1-close_counter/(n_in_bounds+5)))*curr_range
-                    min_val = predicted - (1/2*(1-close_counter/(n_in_bounds+5)))*curr_range
-                    if close_counter > n_in_bounds:
-                        boundary_list.append(predicted)
-                        found = True
-                if i == 1:
-                    start_point = max_val-((sample_size-n_reached)/(2*sample_size))*curr_range
-                    predicted = start_point - boundary_prob*(curr_range/2)
-                    print(f"predicted: {predicted}") 
-                    bp['h0'] = [predicted,predicted]
-                    max_val = predicted + (1/2*(1-close_counter/(n_in_bounds+5)))*curr_range
-                    min_val = predicted - (1/2*(1-close_counter/(n_in_bounds+5)))*curr_range
-                    if close_counter > n_in_bounds:
-                        boundary_list.append(predicted)
-                        found = True
-    return boundary_list
+                    min_val = value
+                else:
+                    max_val = value
+                value = (min_val + max_val)/2
+                bp['h0'] = [value,value]
+            if n_reached == sample_size:
+                if i == 0:
+                    max_val = value
+                else:
+                    min_val = value
+                value = (min_val + max_val)/2
+                bp['h0'] = [value,value]
+            if 0 < n_reached < sample_size:
+                # we know we're in the range, so if we our current range is appropriately small, we're good? with an error reported?
+                curr_range = max_val - min_val
+                value = (min_val+max_val)/2
+                boundary_list.append(value)
+                found_range.append(curr_range)
+                break
+    print(boundary_list)
+    print(found_range)
+    return boundary_list, found_range
