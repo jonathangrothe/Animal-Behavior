@@ -54,9 +54,9 @@ for i in range(N):
 
 allocentricFlag = 1 # 1 is allo, 0 is ego 
 h0s = [0.25,0.25] # attraction vector, first are attraction for targets, then agents
-h_b = 0.2
+h_b = 0
 sigma = 0.5
-beta = 12
+beta = 100
 
 
 # -------- Running the simulation --------
@@ -98,24 +98,30 @@ uneven = True
 sample_size = 15
 min_list = []
 max_list = []
+min_range_list = []
+max_range_list = []
+
 
 for i in range(5):
-    low = 0.12 + 0.03*np.random.rand()
-    high = 0.4 + 0.03*np.random.rand()
+    low = 0 + 0.01*np.random.rand()
+    high = 0.2 + 0.1*np.random.rand()
     boundary_list, range_list = repeated_sims.boundary_search(base,low,high,10,0.5,5) # probably also want to return the final step size to get an idea of the scale of the boundary point
     print(f"boundaries, sim: {i}: {boundary_list}")
     min_list.append(boundary_list[0])
     max_list.append(boundary_list[1])
+    min_range_list.append(range_list[0])
+    max_range_list.append(range_list[1])
 
 print(f"min list: {min_list}")
 print(f"max_list: {max_list}")
 min_val = np.mean(min_list)
 max_val = np.mean(max_list)
+min_range = np.mean(min_range_list)
+max_range = np.mean(max_range_list)
 
 # for beta=100
 #min_val  = 0.18744, 0.18796
 #max_val = 0.31773, 0.31986
-
 # for beta=25
 #min_val = 0.17808 - minimum difference 0.17812
 #max_val = 0.33376
@@ -123,15 +129,17 @@ max_val = np.mean(max_list)
 # for beta=12
 #min_val = 0.19036
 #max_val = 0.33710
+min_val = float(round(0.1,5))
+max_val = float(round(0.4,5))
+intermediate_val = float(round((min_val+max_val)/2,5))
 
-#intermediate_val = (min_val+max_val)/2
-h0_range= [np.min(min_list), np.max(min_list)]
+h0_range= [min_val,intermediate_val,max_val]
 h0_for_plot = [h0_range]
 
 
 h0_list = []
 for item in h0_range:
-    h0_list.append([[0.25,item]])
+    h0_list.append([[item,item]])
 print(h0_list)
 
 xpositions = []
@@ -162,11 +170,11 @@ figure_num = 1
 
 # general plotting settings
 n_plots = len(h0_range)
-# neuron heat maps
+# neuron heat maps - maybe just do one example for each?
 plt.figure(figsize=(10,7))
 fig, ax = plt.subplots(n_plots,1,num=figure_num)
 for s in range(n_plots):
-    rolled= np.roll(neuron_activity[s].values, shift=50, axis=0)
+    rolled= np.roll(neuron_activity[s].iloc[0:100,:].values, shift=50, axis=0)
     # get most inhibited in stable state
     # get most activated in stable state
     col_min = np.min(neuron_activity[s].iloc[:,40:])
@@ -175,7 +183,7 @@ for s in range(n_plots):
     ax[s].set_ylabel(f"h0: {h0_list[s][0]}")
     #ax[s].axvline(x=mean_decision_points[s][0], color='red', linestyle='--')
     #ax[s].axvline(x=mean_decision_points[s][1], color='red', linestyle='--')
-fig.suptitle("Neuron activity")
+fig.suptitle(f"Example neuron activity from one simulation, {"allocentric" if allocentricFlag==1 else "egocentric"}, beta: {beta}, hb: {h_b}, sigma: {sigma}") 
 fig.supxlabel("Time")
 fig.supylabel("Neuron (50 is forward)")
 figure_num += 1
@@ -192,6 +200,7 @@ figure_num += 1
 
 
 # sum of all activity plots
+'''
 plt.figure(figsize=(10,7))
 fig, ax = plt.subplots(n_plots,1,num=figure_num)
 for s in range(n_plots):
@@ -210,7 +219,7 @@ fig.suptitle(f"Range of neuron activity over time, h0: {h0_for_plot}, {"allocent
 fig.supxlabel("Time")
 fig.supylabel("Range of neuron activity")
 figure_num+=1
-
+'''
 #trajectories
 
 if plot_trajs[0]:
@@ -221,7 +230,7 @@ if plot_trajs[0]:
         for s in range(n_plots):
             sim_met.plot_traj(xpositions[s*sample_size:(s+1)*sample_size],ypositions[s*sample_size:(s+1)*sample_size],initialxt,initialyt,sample_size,ax[s],0,0)
             ax[s].set_title(f"h0: {h0_list[s][0]}")
-    fig.suptitle(f"Trajectory plot, {"allocentric" if allocentricFlag==1 else "egocentric"}")
+    fig.suptitle(f"Trajectory plot, {"allocentric" if allocentricFlag==1 else "egocentric"}, beta: {beta}, hb: {h_b}, sigma: {sigma}")
     figure_num += 1
 
 '''

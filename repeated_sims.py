@@ -142,21 +142,21 @@ def boundary_search(bp,base_min,base_max,sample_size,boundary_prob=0.05,n_in_bou
                 if item != -1:
                     n_reached += 1
             print(f"n reached: {n_reached}")
-            if n_reached == 0:
+            if n_reached < int(0.2*sample_size):
                 if i == 0:
                     min_val = value
                 else:
                     max_val = value
                 value = (min_val + max_val)/2
                 bp['h0'] = [value,value]
-            if n_reached == sample_size:
+            if n_reached > int(0.8*sample_size):
                 if i == 0:
                     max_val = value
                 else:
                     min_val = value
                 value = (min_val + max_val)/2
                 bp['h0'] = [value,value]
-            if 0 < n_reached < sample_size:
+            if int(0.2*sample_size) < n_reached < int(0.8*sample_size):
                 # we know we're in the range, so if we our current range is appropriately small, we're good? with an error reported?
                 curr_range = max_val - min_val
                 value = (min_val+max_val)/2
