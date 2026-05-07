@@ -95,7 +95,7 @@ def sample_sims(bp, changing_params, n_samples, include_trajs=[False, "scatter"]
 
     return success_list, target_list, time_list, decision_points, sum_activity_list, range_activity_list, range_argmin_list, activity_df, x_list, y_list
 
-def boundary_search(bp,base_min,base_max,sample_size,boundary_prob=0.05,n_in_bounds=5):
+def boundary_search(bp,base_min,base_max,sample_size,min_search,boundary_prob=0.05,n_in_bounds=5):
     '''
     A function that performs a modified binary search to find the target attractiveness value which produces a probability close to the boundary_prob
     Binary search until we are out of 0 and 1, because that will be the majority of cases, 
@@ -117,52 +117,50 @@ def boundary_search(bp,base_min,base_max,sample_size,boundary_prob=0.05,n_in_bou
     '''
     boundary_list = []
     found_range = []
-    for i in range(2):
-        print(i)
-        found = False
-        min_val = base_min
-        max_val = base_max
-        value = (min_val+max_val)/2
-        bp['h0'] = [value,value]
-        while not found:
-            target_list = []
-            print(f"h0: {bp['h0']}")
-            print(f"min: {min_val}")
-            print(f"max: {max_val}")
-            for s in range(sample_size):
-                headings, xPos, yPos, targetsx, targetsy, activity = sim_ra.simulate_ring_attractor(bp['N'],bp['L'],bp['T'],bp['ntargets'],bp['nagents'],bp['allocentricFlag'],
-                                                                                    bp['periodicFlag'],bp['rEgo'],bp['rEgoTarget'],bp['Egonumber'],bp['distf'],
-                                                                                    bp['adistf'],bp['J'],bp['beta'],bp['h0'],bp['h_b'],bp['dt'],bp['v0'],bp['v0t'],
-                                                                                    bp['sigma'],bp['hColl'],bp['rColl'],bp['initialx'],bp['initialy'],bp['initialxt'],bp['initialyt'],
-                                                                                    False,True)
-                target_reached, time_reached, start = sim_met.get_destination_metrics(xPos,yPos,targetsx,targetsy)
-                target_list.append(target_reached)
-            n_reached = 0
-            for item in target_list:
-                if item != -1:
-                    n_reached += 1
-            print(f"n reached: {n_reached}")
-            if n_reached < int(0.2*sample_size):
-                if i == 0:
-                    min_val = value
-                else:
-                    max_val = value
-                value = (min_val + max_val)/2
-                bp['h0'] = [value,value]
-            if n_reached > int(0.8*sample_size):
-                if i == 0:
-                    max_val = value
-                else:
-                    min_val = value
-                value = (min_val + max_val)/2
-                bp['h0'] = [value,value]
-            if int(0.2*sample_size) < n_reached < int(0.8*sample_size):
-                # we know we're in the range, so if we our current range is appropriately small, we're good? with an error reported?
-                curr_range = max_val - min_val
-                value = (min_val+max_val)/2
-                boundary_list.append(value)
-                found_range.append(curr_range)
-                break
+    found = False
+    min_val = base_min
+    max_val = base_max
+    value = (min_val+max_val)/2
+    bp['h0'] = [value,value]
+    while not found:
+        target_list = []
+        print(f"h0: {bp['h0']}")
+        print(f"min: {min_val}")
+        print(f"max: {max_val}")
+        for s in range(sample_size):
+            headings, xPos, yPos, targetsx, targetsy, activity = sim_ra.simulate_ring_attractor(bp['N'],bp['L'],bp['T'],bp['ntargets'],bp['nagents'],bp['allocentricFlag'],
+                                                                                                bp['periodicFlag'],bp['rEgo'],bp['rEgoTarget'],bp['Egonumber'],bp['distf'],
+                                                                                                bp['adistf'],bp['J'],bp['beta'],bp['h0'],bp['h_b'],bp['dt'],bp['v0'],bp['v0t'],
+                                                                                                bp['sigma'],bp['hColl'],bp['rColl'],bp['initialx'],bp['initialy'],bp['initialxt'],bp['initialyt'],
+                                                                                                False,True)
+            target_reached, time_reached, start = sim_met.get_destination_metrics(xPos,yPos,targetsx,targetsy)
+            target_list.append(target_reached)
+        n_reached = 0
+        for item in target_list:
+            if item != -1:
+                n_reached += 1
+        print(f"n reached: {n_reached}")
+        if n_reached < int(0.2*sample_size):
+            if min_search:
+                min_val = value
+            else:
+                max_val = value
+            value = (min_val + max_val)/2
+            bp['h0'] = [value,value]
+        if n_reached > int(0.8*sample_size):
+            if min_search:
+                max_val = value
+            else:
+                min_val = value
+            value = (min_val + max_val)/2
+            bp['h0'] = [value,value]
+        if int(0.2*sample_size) < n_reached < int(0.8*sample_size):
+            # we know we're in the range, so if we our current range is appropriately small, we're good? with an error reported?
+            curr_range = max_val - min_val
+            value = (min_val+max_val)/2
+            boundary_list.append(value)
+            found_range.append(curr_range)
+            break
     print(boundary_list)
     print(found_range)
     return boundary_list, found_range

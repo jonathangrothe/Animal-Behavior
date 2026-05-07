@@ -54,9 +54,9 @@ for i in range(N):
 
 allocentricFlag = 1 # 1 is allo, 0 is ego 
 h0s = [0.25,0.25] # attraction vector, first are attraction for targets, then agents
-h_b = 0
+h_b = 0.2
 sigma = 0.5
-beta = 100
+beta = 9.5
 
 
 # -------- Running the simulation --------
@@ -95,7 +95,7 @@ base = {'N':N,
 plot_neurons = True
 plot_trajs = [True, 'scatter']
 uneven = True
-sample_size = 15
+sample_size = 30
 min_list = []
 max_list = []
 min_range_list = []
@@ -103,14 +103,17 @@ max_range_list = []
 
 
 for i in range(5):
-    low = 0 + 0.01*np.random.rand()
-    high = 0.2 + 0.1*np.random.rand()
-    boundary_list, range_list = repeated_sims.boundary_search(base,low,high,10,0.5,5) # probably also want to return the final step size to get an idea of the scale of the boundary point
-    print(f"boundaries, sim: {i}: {boundary_list}")
-    min_list.append(boundary_list[0])
-    max_list.append(boundary_list[1])
-    min_range_list.append(range_list[0])
-    max_range_list.append(range_list[1])
+    min_low = 0.19 - 0.05 + 0.01*np.random.rand()
+    min_high = 0.19 + 0.05 + 0.01*np.random.rand()
+    max_low = 0.33 - 0.05 + 0.01*np.random.rand()
+    max_high = 0.34 +0.05 + 0.01*np.random.rand()
+    min_est,range_min = repeated_sims.boundary_search(base,min_low,min_high,10,True,0.5,5) # probably also want to return the final step size to get an idea of the scale of the boundary point
+    max_est, range_max = repeated_sims.boundary_search(base,max_low,max_high,10,False,0.5,5)
+    print(f"boundaries, sim: {i}: {min_est,max_est}")
+    min_list.append(min_est)
+    max_list.append(max_est)
+    min_range_list.append(range_min)
+    max_range_list.append(range_max)
 
 print(f"min list: {min_list}")
 print(f"max_list: {max_list}")
@@ -129,8 +132,7 @@ max_range = np.mean(max_range_list)
 # for beta=12
 #min_val = 0.19036
 #max_val = 0.33710
-min_val = float(round(0.1,5))
-max_val = float(round(0.4,5))
+
 intermediate_val = float(round((min_val+max_val)/2,5))
 
 h0_range= [min_val,intermediate_val,max_val]
@@ -151,6 +153,7 @@ range_total_activity = []
 for item in h0_list:
     change = {'h0':item}
     success_list, target_list, time_list, decision_points, sum_activity_list, range_activity_list, range_argmin_list, activity_df, x_list, y_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
+    print(target_list)
     xpositions += (x_list)
     ypositions += (y_list)
     neuron_activity.append(activity_df)

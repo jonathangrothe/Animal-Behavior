@@ -222,9 +222,15 @@ def plot_metric(metrics,x,colors,labels,figurenum,size,title,xlabel,ylabel):
             sample_metric = metrics[m][value*sample_size:(value+1)*sample_size]
             mean_metric.append(np.mean(sample_metric))
             se_metric.append(np.std(sample_metric)/np.sqrt(sample_size))
-        plt.plot(x, mean_metric, color = colors[m], label = labels[m])
-        plt.plot(x, np.add(mean_metric,se_metric), color = colors[m], label = 'standard error', linestyle = ':')
-        plt.plot(x, np.subtract(mean_metric,se_metric), color = colors[m], linestyle = ':')
+        if m == 0 or m == (len(metrics)-1):
+            plt.plot(x, mean_metric, color = colors[m], label = labels[int(bool(m))])
+            plt.plot(x, np.add(mean_metric,se_metric), color = colors[m], label = 'standard error', linestyle = ':')
+            plt.plot(x, np.subtract(mean_metric,se_metric), color = colors[m], linestyle = ':')
+        else:
+            plt.plot(x, mean_metric, color = colors[m])
+            plt.plot(x, np.add(mean_metric,se_metric), color = colors[m], linestyle = ':')
+            plt.plot(x, np.subtract(mean_metric,se_metric), color = colors[m], linestyle = ':')
+
     plt.legend()
     plt.title(title)
     plt.xlabel(xlabel)

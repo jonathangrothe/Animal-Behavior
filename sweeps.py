@@ -5,6 +5,7 @@ import pandas as pd
 import simulate_ringattractor as sim_ra
 import simulation_metrics as sim_met
 import repeated_sims
+from scipy.optimize import curve_fit
 
 # --------  PARAMETERS --------
 
@@ -96,34 +97,38 @@ base = {'N':N,
 # not plotting trajectories or neurons in this file
 plot_trajs = [False, 'scatter'] 
 plot_neurons = False
-n_lines = 4
 uneven = True
-sample_size = 50
+sample_size = 10
 start = 0
 finish = 0.00005
-h0_range= np.linspace(start,finish,num=100)
+h0_range= np.linspace(start,finish,num=15)
 h0_for_plot = h0_range
 h0_total_list = []
-#beta_list = [9.5,10,12,20,100] 
-# --------- TO DO -------- try over betas and h0s (and also a sanity check sigma and hb)
-base_h0_list = [0.22,0.235,0.25,0.265]
+beta_list = [12] #9.5, 10, 12, 20, 52, 180 ? 
+base_h0_list = np.linspace(0.1925,0.335,num=16) # 0.22 to 0.31 - 0.1925-0.335
+n_plots = len(beta_list)
+n_lines = len(base_h0_list)
 for n in range(n_lines):
-    h0_list= []
-    for item in h0_range:
-        h0_list.append([base_h0_list[n],base_h0_list[n]+item])
-    h0_total_list.append(h0_list)
-
+    for p in range(n_plots):
+        h0_list = []
+        for item in h0_range:
+            h0_list.append([base_h0_list[n],base_h0_list[n]+item])
+        h0_total_list.append(h0_list)
 # defining our metrics of interest: 
 time_total_list = []
 correct_total_list = []
 correct_se_list = []
 range_total_list = []
 range_total_se_list = []
-jnd_list = []
+jnd_list1 = []
+jnd_list2 = []
+
+
 for index in range(len(h0_total_list)):
     change= {'h0':h0_total_list[index]}
-    #base['beta'] = beta_list[index]
-    print(f'base h0: {base_h0_list[index]}')
+    base['beta'] = beta_list[index%n_plots ] 
+    print(f'beta: {base['beta']}')
+    print(f'base h0: {base_h0_list[int(index*(1/n_plots))]}') 
     success_list, target_list, time_list, decision_points, sum_activity_list, range_activity_list, range_argmin_list, activity_df, x_list, y_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
     p_success, se_success, p_correct, se_correct = sim_met.get_success_rate(target_list, sample_size, uneven, 1)
     range_mean, range_se = sim_met.get_metric_mean_se(range_argmin_list,sample_size)
@@ -132,68 +137,62 @@ for index in range(len(h0_total_list)):
     correct_se_list.append(se_correct)
     range_total_list.append(range_mean)
     range_total_se_list.append(range_se)
-    
-    # calculating when JND occurs: when we consistently reach the best target
-    n_cons = 0
+    # here take the jnd using a few measures
+    ind_jnd1 = -1
+    ind_jnd2 = -1
+    jnd2_counter = 0
     for index in range(len(p_correct)):
-        if p_correct[index] >= 0.95:
-            n_cons += 1
-        else: 
-            n_cons = 0
-        if n_cons > 2:
-            jnd_list.append(index)
-            print(f"index of jnd: {index}")
-            break
-
-# -------- TO DO ----------
-
-# need to look more into weber/fechners law to calculate this correctly, 
-# and maybe figure out how to estimate errors
-i0_estimate = 0.1781
-for index in range(len(base_h0_list)):
-    intensity = base_h0_list[index]
-    kw_estimate = ((math.exp(0.5)-1)*intensity)/(intensity+i0_estimate)
-    print(f"delta i of jnd: {h0_range[jnd_list[index]]}")
-    print(f"kw estimate using {i0_estimate} as i0: {kw_estimate}")
-
-
+        if ind_jnd1 == -1 and p_correct[index] == 1:
+            ind_jnd1 = index
+        if ind_jnd2 == -1 and p_correct[index] >= 0.9:
+            jnd2_counter += 1 
+            if jnd2_counter >= 3:
+                ind_jnd2 = index
+    jnd_list1.append(ind_jnd1)
+    jnd_list2.append(ind_jnd2)
+    
+        
+print(jnd_list1)
+print(jnd_list2)
 figure_num = 1
 
-# overall plotting settings
-colors = ['green','blue','purple','red']
-labels = [f'base h0: {base_h0_list[0]}',f'base h0: {base_h0_list[1]}',f'base h0: {base_h0_list[2]}',f'base h0: {base_h0_list[3]}']
-x_label = "atraction of top target"
-time_y_label = "Average time to target"
-time_agg_title = f"Average time to target, {"allocentric" if allocentricFlag==1 else "egocentric"}, beta: {beta}, stopping distance = 0.5"
-figure_num = sim_met.plot_metric(time_total_list,h0_for_plot,colors,labels,figure_num,(6,8),
-                    time_agg_title,x_label,time_y_label)
 
+# overall plotting settings
+cmap = plt.get_cmap('viridis')
+colors = cmap(np.linspace(0, 1, n_lines))
+labels = []
+for item in base_h0_list:
+    labels.append(f'base h0: {item}') 
     
-p_success_y = "Probability of reaching top target"
-p_success_title = f"Probability of getting within 0.5 units of top target, {"allocentric" if allocentricFlag==1 else "egocentric"}, beta: {beta}"
-if n_lines > 1:
-    plt.figure(figsize=(6,8))
-    fig, ax = plt.subplots(n_lines,1,num=figure_num)
-else:
-    plt.figure(figure_num)
-for i in range(len(correct_total_list)):
-    if n_lines > 1:
-        ax[i].plot(h0_for_plot,correct_total_list[i],color=colors[i], label=labels[i])
-        ax[i].plot(h0_for_plot, np.add(correct_total_list[i],correct_se_list[i]), color = colors[i], label = 'standard error', linestyle = ':')
-        ax[i].plot(h0_for_plot, np.subtract(correct_total_list[i],correct_se_list[i]), color = colors[i], linestyle = ':')
-        ax[i].set_title(f"base h0: {base_h0_list[i]}")
-    else:
-        plt.plot(h0_for_plot,correct_total_list[0],'blue','probability of reaching top target')
-        plt.plot(h0_for_plot, np.add(correct_total_list[0],correct_se_list[0]), color = 'blue', label = 'standard error', linestyle = ':')
-        plt.plot(h0_for_plot, np.subtract(correct_total_list[0],correct_se_list[0]), color = 'blue', linestyle = ':')
-#plt.legend()
-if n_lines > 1:
+for p in range(n_plots):
+    x_label = "difference in atraction"
+    time_y_label = "Average time to target"
+    time_agg_title = f"Average time to target, {"allocentric" if allocentricFlag==1 else "egocentric"}, beta: {beta_list[0]}"
+    figure_num = sim_met.plot_metric(time_total_list[p::n_plots],h0_for_plot,colors,labels,figure_num,(6,8),
+                        time_agg_title,x_label,time_y_label)
+
+    p_success_y = "Probability of reaching top target"
+    p_success_title = f"Probability of getting within 0.5 units of top target, {"allocentric" if allocentricFlag==1 else "egocentric"}, beta: {beta_list[0]}"
+
+    plt.figure(figsize=(8,8))
+    fig, ax = plt.subplots(4,4,num=figure_num)
+    axes_flat = ax.flatten()
+    current_correct_list = correct_total_list[p::n_plots]
+    current_se_list = correct_se_list[p::n_plots]
+    for i in range(len(current_correct_list)):
+        axes_flat[i].plot(h0_for_plot,current_correct_list[i],color=colors[i], label=labels[i])
+        axes_flat[i].plot(h0_for_plot, np.add(current_correct_list[i],current_se_list[i]), color = colors[i], linestyle = ':')
+        axes_flat[i].plot(h0_for_plot, np.subtract(current_correct_list[i],current_se_list[i]), color = colors[i], linestyle = ':')
+        axes_flat[i].set_title(f"base h0: {round(base_h0_list[i],5)}")
+
     fig.supxlabel(x_label)
     fig.supylabel(p_success_y)
     fig.suptitle(p_success_title)
-figure_num += 1
-plt.tight_layout()
+    figure_num += 1
+    plt.tight_layout()
+
 plt.show()
+
 '''
 range_y = "Time step with the smallest activation range"
 range_title = f"Time step where the difference between least and most active neuron was smallest: {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction "
