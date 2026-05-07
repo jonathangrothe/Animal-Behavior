@@ -215,6 +215,7 @@ def plot_metric(metrics,x,colors,labels,figurenum,size,title,xlabel,ylabel):
     plt.figure(figurenum)
     n_values = len(x)
     sample_size = len(metrics[0])//n_values
+    mean_metric_list = []
     for m in range(len(metrics)):
         mean_metric = []
         se_metric = []
@@ -230,12 +231,13 @@ def plot_metric(metrics,x,colors,labels,figurenum,size,title,xlabel,ylabel):
             plt.plot(x, mean_metric, color = colors[m])
             plt.plot(x, np.add(mean_metric,se_metric), color = colors[m], linestyle = ':')
             plt.plot(x, np.subtract(mean_metric,se_metric), color = colors[m], linestyle = ':')
+        mean_metric_list.append(mean_metric)
 
     plt.legend()
     plt.title(title)
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
-    return figurenum+1
+    return figurenum+1, mean_metric_list
 
 
 def plot_neurons(activity_df, figure, agg=True, tstart=0, tstop=0, N=100, start_neuron=0, end_neuron=100):

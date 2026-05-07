@@ -98,14 +98,14 @@ base = {'N':N,
 plot_trajs = [False, 'scatter'] 
 plot_neurons = False
 uneven = True
-sample_size = 10
+sample_size = 25
 start = 0
-finish = 0.00005
-h0_range= np.linspace(start,finish,num=15)
+finish = 0.00015
+h0_range= np.linspace(start,finish,num=10)
 h0_for_plot = h0_range
 h0_total_list = []
-beta_list = [12] #9.5, 10, 12, 20, 52, 180 ? 
-base_h0_list = np.linspace(0.1925,0.335,num=16) # 0.22 to 0.31 - 0.1925-0.335
+beta_list = [9.5] # 9.5: 0.2195-0.315, 10: 0.2115-0.3218, 12: 0.1925-0.335, 20: 0.181-0.3385, 52: 0.1862-0.322, 180: 0.192-0.315 ? 
+base_h0_list = np.linspace(0.2195,0.315,num=16) # 0.22 to 0.31 - 0.1925-0.335
 n_plots = len(beta_list)
 n_lines = len(base_h0_list)
 for n in range(n_lines):
@@ -154,6 +154,16 @@ for index in range(len(h0_total_list)):
         
 print(jnd_list1)
 print(jnd_list2)
+
+correct_df = pd.DataFrame(correct_total_list)
+correct_df.index = base_h0_list
+correct_df.columns = h0_range
+
+
+# compile the data we want from each run into a dataframe
+# we want: p_correct and time, and we would prefer if they are labeled with simulation settings
+
+
 figure_num = 1
 
 
@@ -168,8 +178,11 @@ for p in range(n_plots):
     x_label = "difference in atraction"
     time_y_label = "Average time to target"
     time_agg_title = f"Average time to target, {"allocentric" if allocentricFlag==1 else "egocentric"}, beta: {beta_list[0]}"
-    figure_num = sim_met.plot_metric(time_total_list[p::n_plots],h0_for_plot,colors,labels,figure_num,(6,8),
+    figure_num, mean_time = sim_met.plot_metric(time_total_list[p::n_plots],h0_for_plot,colors,labels,figure_num,(6,8),
                         time_agg_title,x_label,time_y_label)
+    time_df = pd.DataFrame(mean_time)
+    time_df.index = base_h0_list
+    time_df.columns = h0_range
 
     p_success_y = "Probability of reaching top target"
     p_success_title = f"Probability of getting within 0.5 units of top target, {"allocentric" if allocentricFlag==1 else "egocentric"}, beta: {beta_list[0]}"
@@ -191,6 +204,8 @@ for p in range(n_plots):
     figure_num += 1
     plt.tight_layout()
 
+time_df.to_csv(f"time_df_beta{beta_list[0]}.csv")
+correct_df.to_csv(f"pcorrect_df_beta{beta_list[0]}.csv")
 plt.show()
 
 '''

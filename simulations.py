@@ -56,7 +56,7 @@ allocentricFlag = 1 # 1 is allo, 0 is ego
 h0s = [0.25,0.25] # attraction vector, first are attraction for targets, then agents
 h_b = 0.2
 sigma = 0.5
-beta = 9.5
+beta = 436
 
 
 # -------- Running the simulation --------
@@ -101,12 +101,12 @@ max_list = []
 min_range_list = []
 max_range_list = []
 
-
+'''
 for i in range(5):
-    min_low = 0.19 - 0.05 + 0.01*np.random.rand()
-    min_high = 0.19 + 0.05 + 0.01*np.random.rand()
-    max_low = 0.33 - 0.05 + 0.01*np.random.rand()
-    max_high = 0.34 +0.05 + 0.01*np.random.rand()
+    min_low = 0.19- 0.04 + 0.01*np.random.rand()
+    min_high = 0.19 + 0.04 + 0.01*np.random.rand()
+    max_low = 0.31 - 0.04 + 0.01*np.random.rand()
+    max_high = 0.31 + 0.04 + 0.01*np.random.rand()
     min_est,range_min = repeated_sims.boundary_search(base,min_low,min_high,10,True,0.5,5) # probably also want to return the final step size to get an idea of the scale of the boundary point
     max_est, range_max = repeated_sims.boundary_search(base,max_low,max_high,10,False,0.5,5)
     print(f"boundaries, sim: {i}: {min_est,max_est}")
@@ -121,7 +121,7 @@ min_val = np.mean(min_list)
 max_val = np.mean(max_list)
 min_range = np.mean(min_range_list)
 max_range = np.mean(max_range_list)
-
+'''
 # for beta=100
 #min_val  = 0.18744, 0.18796
 #max_val = 0.31773, 0.31986
@@ -132,16 +132,15 @@ max_range = np.mean(max_range_list)
 # for beta=12
 #min_val = 0.19036
 #max_val = 0.33710
+#intermediate_val = float(round((min_val+max_val)/2,5))
 
-intermediate_val = float(round((min_val+max_val)/2,5))
-
-h0_range= [min_val,intermediate_val,max_val]
+h0_range= [0.192,0.2002,0.2084,0.2166,0.2248]
 h0_for_plot = [h0_range]
 
 
 h0_list = []
 for item in h0_range:
-    h0_list.append([[item,item]])
+    h0_list.append([[item,item+0.00005]])
 print(h0_list)
 
 xpositions = []
