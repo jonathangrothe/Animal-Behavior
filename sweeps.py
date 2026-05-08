@@ -98,14 +98,14 @@ base = {'N':N,
 plot_trajs = [False, 'scatter'] 
 plot_neurons = False
 uneven = True
-sample_size = 25
+sample_size = 30
 start = 0
-finish = 0.00015
-h0_range= np.linspace(start,finish,num=10)
+finish = 0.00002
+h0_range= np.linspace(start,finish,num=100)
 h0_for_plot = h0_range
 h0_total_list = []
-beta_list = [9.5] # 9.5: 0.2195-0.315, 10: 0.2115-0.3218, 12: 0.1925-0.335, 20: 0.181-0.3385, 52: 0.1862-0.322, 180: 0.192-0.315 ? 
-base_h0_list = np.linspace(0.2195,0.315,num=16) # 0.22 to 0.31 - 0.1925-0.335
+beta_list = [9.5] # 9.5: 0.215-0.32, 10: 0.208-0.325, 12: 0.189-0.339, 20: 0.177-0.338, 52: 0.182-0.325, 180: 0.189-0.326 ? 
+base_h0_list = np.linspace(0.215,0.32,num=16) # 0.22 to 0.31 - 0.1925-0.335
 n_plots = len(beta_list)
 n_lines = len(base_h0_list)
 for n in range(n_lines):
@@ -178,14 +178,14 @@ for p in range(n_plots):
     x_label = "difference in atraction"
     time_y_label = "Average time to target"
     time_agg_title = f"Average time to target, {"allocentric" if allocentricFlag==1 else "egocentric"}, beta: {beta_list[0]}"
-    figure_num, mean_time = sim_met.plot_metric(time_total_list[p::n_plots],h0_for_plot,colors,labels,figure_num,(6,8),
+    figure_num, mean_time = sim_met.plot_metric(time_total_list[p::n_plots],h0_for_plot,colors,labels,figure_num,(8,8),
                         time_agg_title,x_label,time_y_label)
     time_df = pd.DataFrame(mean_time)
     time_df.index = base_h0_list
     time_df.columns = h0_range
 
     p_success_y = "Probability of reaching top target"
-    p_success_title = f"Probability of getting within 0.5 units of top target, {"allocentric" if allocentricFlag==1 else "egocentric"}, beta: {beta_list[0]}"
+    p_success_title = f"Probability of reaching top target, {"allocentric" if allocentricFlag==1 else "egocentric"}, beta: {beta_list[0]}"
 
     plt.figure(figsize=(8,8))
     fig, ax = plt.subplots(4,4,num=figure_num)
@@ -196,7 +196,7 @@ for p in range(n_plots):
         axes_flat[i].plot(h0_for_plot,current_correct_list[i],color=colors[i], label=labels[i])
         axes_flat[i].plot(h0_for_plot, np.add(current_correct_list[i],current_se_list[i]), color = colors[i], linestyle = ':')
         axes_flat[i].plot(h0_for_plot, np.subtract(current_correct_list[i],current_se_list[i]), color = colors[i], linestyle = ':')
-        axes_flat[i].set_title(f"base h0: {round(base_h0_list[i],5)}")
+        axes_flat[i].set_title(f"{round(base_h0_list[i],5)}")
 
     fig.supxlabel(x_label)
     fig.supylabel(p_success_y)

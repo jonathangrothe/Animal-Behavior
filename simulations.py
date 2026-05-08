@@ -56,7 +56,7 @@ allocentricFlag = 1 # 1 is allo, 0 is ego
 h0s = [0.25,0.25] # attraction vector, first are attraction for targets, then agents
 h_b = 0.2
 sigma = 0.5
-beta = 436
+beta = 9.5
 
 
 # -------- Running the simulation --------
@@ -95,7 +95,7 @@ base = {'N':N,
 plot_neurons = True
 plot_trajs = [True, 'scatter']
 uneven = True
-sample_size = 30
+sample_size = 10
 min_list = []
 max_list = []
 min_range_list = []
@@ -122,25 +122,12 @@ max_val = np.mean(max_list)
 min_range = np.mean(min_range_list)
 max_range = np.mean(max_range_list)
 '''
-# for beta=100
-#min_val  = 0.18744, 0.18796
-#max_val = 0.31773, 0.31986
-# for beta=25
-#min_val = 0.17808 - minimum difference 0.17812
-#max_val = 0.33376
 
-# for beta=12
-#min_val = 0.19036
-#max_val = 0.33710
-#intermediate_val = float(round((min_val+max_val)/2,5))
-
-h0_range= [0.192,0.2002,0.2084,0.2166,0.2248]
+h0_range= [0.215,0.23,0.23,0.26,0.26,0.29,0.29,0.31,0.31] #0.215 - 0.32
 h0_for_plot = [h0_range]
 
 
-h0_list = []
-for item in h0_range:
-    h0_list.append([[item,item+0.00005]])
+h0_list = [[[0.215,0.215]],[[0.23,0.230001]],[[0.23,0.230005]],[[0.26,0.260001]],[[0.26,0.260005]],[[0.29,0.290001]],[[0.29,0.290005]],[[0.31,0.310001]],[[0.31,0.310005]]]
 print(h0_list)
 
 xpositions = []
@@ -172,78 +159,41 @@ figure_num = 1
 
 # general plotting settings
 n_plots = len(h0_range)
+ncols = 3
+nrows = 3
 # neuron heat maps - maybe just do one example for each?
-plt.figure(figsize=(10,7))
-fig, ax = plt.subplots(n_plots,1,num=figure_num)
+plt.figure(figsize=(14.4375,7))
+fig, ax = plt.subplots(nrows*2,3,num=figure_num)
+axes_flat = ax.flatten()
 for s in range(n_plots):
-    rolled= np.roll(neuron_activity[s].iloc[0:100,:].values, shift=50, axis=0)
-    # get most inhibited in stable state
-    # get most activated in stable state
+    # figure out way to plot neuron heatmap directly below corresponding trajectory
+    sim_met.plot_traj(xpositions[s*sample_size:(s+1)*sample_size],ypositions[s*sample_size:(s+1)*sample_size],initialxt,initialyt,sample_size,axes_flat[s],0,0)
+    axes_flat[s].set_title(f"h0: {h0_list[s][0]}")
+    rolled= np.roll(neuron_activity[s].dropna().iloc[0:100,:].values, shift=50, axis=0)
     col_min = np.min(neuron_activity[s].iloc[:,40:])
     col_max = np.max(neuron_activity[s].iloc[:,40:])
-    ax[s].imshow(rolled,cmap='viridis',aspect='auto',vmin=col_min,vmax=col_max)
-    ax[s].set_ylabel(f"h0: {h0_list[s][0]}")
-    #ax[s].axvline(x=mean_decision_points[s][0], color='red', linestyle='--')
-    #ax[s].axvline(x=mean_decision_points[s][1], color='red', linestyle='--')
-fig.suptitle(f"Example neuron activity from one simulation, {"allocentric" if allocentricFlag==1 else "egocentric"}, beta: {beta}, hb: {h_b}, sigma: {sigma}") 
-fig.supxlabel("Time")
-fig.supylabel("Neuron (50 is forward)")
+    axes_flat[s].imshow(rolled,cmap='viridis',aspect='auto',vmin=col_min,vmax=col_max)
+    axes_flat[s].set_title(f"h0: {h0_list[s][0]}")
+#fig.suptitle(f"Example neuron activity from one simulation, {"allocentric" if allocentricFlag==1 else "egocentric"}, beta: {beta}, hb: {h_b}, sigma: {sigma}") 
+#fig.supxlabel("Time")
+#fig.supylabel("Neuron (50 is forward)")
 figure_num += 1
 
-# TO DO: compare different measures of the 'decision' interval: right now we're just using the min and the max of the sum of activity
-# some possible candidates: 
-# min/max of the range of activity (taken over a reasonable interval near)
-# Decision end: (much easier I think)
-# decision end as when the sum/range of activity gets within a certain amount of the stable activity level
-# minimum speed (besides the start)
-# Decision start: these need a bit more exploring but they could be interesting
-# when neuron 0 is no longer the most active neuron ?
-# number of neurons active goes down or up ?
 
 
-# sum of all activity plots
-'''
-plt.figure(figsize=(10,7))
-fig, ax = plt.subplots(n_plots,1,num=figure_num)
-for s in range(n_plots):
-    mean_list = sim_met.plot_sum_activity(sum_total_activity[s*sample_size:(s+1)*sample_size],ax[s])
-fig.suptitle(f"Sum of all neuron activity over time, h0: {h0_for_plot}, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction")
-fig.supxlabel("Time")
-fig.supylabel("Sum of neuron activity")
-figure_num+=1
-
-# range activity plots - modify this - probably don't need to plot everything...
-plt.figure(figsize=(10,7))
-fig, ax = plt.subplots(n_plots,1,num=figure_num)
-for s in range(n_plots):
-    mean_list = sim_met.plot_sum_activity(range_total_activity[s*sample_size:(s+1)*sample_size],ax[s])
-fig.suptitle(f"Range of neuron activity over time, h0: {h0_for_plot}, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction")
-fig.supxlabel("Time")
-fig.supylabel("Range of neuron activity")
-figure_num+=1
-'''
 #trajectories
-
+''''
 if plot_trajs[0]:
     n_plots = len(h0_range)
-    plt.figure(figsize=(12,6))
-    fig, ax = plt.subplots(1,n_plots,num=figure_num)
+    plt.figure(figsize=(14.475,7))
+    fig, ax = plt.subplots(2,5,num=figure_num)
+    axes_flat = ax.flatten()
     if plot_trajs[1] == 'scatter':
         for s in range(n_plots):
-            sim_met.plot_traj(xpositions[s*sample_size:(s+1)*sample_size],ypositions[s*sample_size:(s+1)*sample_size],initialxt,initialyt,sample_size,ax[s],0,0)
-            ax[s].set_title(f"h0: {h0_list[s][0]}")
-    fig.suptitle(f"Trajectory plot, {"allocentric" if allocentricFlag==1 else "egocentric"}, beta: {beta}, hb: {h_b}, sigma: {sigma}")
-    figure_num += 1
-
-'''
-    plt.figure(figsize=(12,6))
-    fig, ax = plt.subplots(1,n_plots,num=figure_num)
-    if plot_trajs[1] == 'scatter':
-        for s in range(n_plots):
-            sim_met.plot_traj(xpositions[s*sample_size:(s+1)*sample_size],ypositions[s*sample_size:(s+1)*sample_size],initialxt,initialyt,sample_size,ax[s],mean_decision_points[s][0],mean_decision_points[s][1])
-    fig.suptitle(f"Trajectory plot during the decision, h0: {base_value}, {"allocentric" if allocentricFlag==1 else "egocentric"}, {"uneven" if uneven else "even"} attraction")
+            sim_met.plot_traj(xpositions[s*sample_size:(s+1)*sample_size],ypositions[s*sample_size:(s+1)*sample_size],initialxt,initialyt,sample_size,axes_flat[s],0,0)
+            axes_flat[s].set_title(f"h0: {h0_list[s][0]}")
+    #fig.suptitle(f"Trajectory plot, {"allocentric" if allocentricFlag==1 else "egocentric"}, beta: {beta}, hb: {h_b}, sigma: {sigma}")
     figure_num += 1
 '''
-
 
 plt.show()

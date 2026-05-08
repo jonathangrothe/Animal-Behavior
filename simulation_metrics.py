@@ -224,7 +224,7 @@ def plot_metric(metrics,x,colors,labels,figurenum,size,title,xlabel,ylabel):
             mean_metric.append(np.mean(sample_metric))
             se_metric.append(np.std(sample_metric)/np.sqrt(sample_size))
         if m == 0 or m == (len(metrics)-1):
-            plt.plot(x, mean_metric, color = colors[m], label = labels[int(bool(m))])
+            plt.plot(x, mean_metric, color = colors[m], label = labels[m])
             plt.plot(x, np.add(mean_metric,se_metric), color = colors[m], label = 'standard error', linestyle = ':')
             plt.plot(x, np.subtract(mean_metric,se_metric), color = colors[m], linestyle = ':')
         else:
@@ -309,12 +309,14 @@ def plot_traj(xPos,yPos,targetsx,targetsy,sample_size,figure,start_ind=0,end_ind
     '''
     if end_ind == 0:
         for sample in range(sample_size):
+            '''
             deltax = np.diff(xPos[sample][start_ind:])
             deltay = np.diff(yPos[sample][start_ind:])
             dist = np.zeros(len(xPos[sample][start_ind:]))
             dist[0] =0
             dist[1:] = np.sqrt(deltax**2 + deltay**2)
-            figure.scatter(xPos[sample][start_ind:],yPos[sample][start_ind:],c = dist, cmap = 'afmhot_r', alpha=0.4/sample_size,s=1)
+            '''
+            figure.scatter(xPos[sample][start_ind:],yPos[sample][start_ind:], alpha=0.4/sample_size,s=1)
         figure.scatter(targetsx,targetsy,color='red',s=5)
     else:
         for sample in range(sample_size):
