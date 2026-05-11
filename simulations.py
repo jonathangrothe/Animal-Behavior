@@ -56,7 +56,7 @@ allocentricFlag = 1 # 1 is allo, 0 is ego
 h0s = [0.25,0.25] # attraction vector, first are attraction for targets, then agents
 h_b = 0.2
 sigma = 0.5
-beta = 9.5
+beta = 12
 
 
 # -------- Running the simulation --------
@@ -123,11 +123,11 @@ min_range = np.mean(min_range_list)
 max_range = np.mean(max_range_list)
 '''
 
-h0_range= [0.215,0.23,0.23,0.26,0.26,0.29,0.29,0.31,0.31] #0.215 - 0.32
+h0_range= [0.28,0.29,0.3,0.31] #0.215 - 0.32
 h0_for_plot = [h0_range]
 
 
-h0_list = [[[0.215,0.215]],[[0.23,0.230001]],[[0.23,0.230005]],[[0.26,0.260001]],[[0.26,0.260005]],[[0.29,0.290001]],[[0.29,0.290005]],[[0.31,0.310001]],[[0.31,0.310005]]]
+h0_list = [[[0.28,0.28002]],[[0.29,0.29002]],[[0.3,0.30002]],[[0.31,0.31002]]]
 print(h0_list)
 
 xpositions = []
@@ -159,11 +159,11 @@ figure_num = 1
 
 # general plotting settings
 n_plots = len(h0_range)
-ncols = 3
-nrows = 3
+ncols = 2
+nrows = 2
 # neuron heat maps - maybe just do one example for each?
 plt.figure(figsize=(14.4375,7))
-fig, ax = plt.subplots(nrows*2,3,num=figure_num)
+fig, ax = plt.subplots(nrows*2,ncols,num=figure_num)
 axes_flat = ax.flatten()
 for s in range(n_plots):
     # figure out way to plot neuron heatmap directly below corresponding trajectory
