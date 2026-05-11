@@ -56,7 +56,7 @@ allocentricFlag = 1 # 1 is allo, 0 is ego
 h0s = [0.25,0.25] # attraction vector, first are attraction for targets, then agents
 h_b = 0.2
 sigma = 0.5
-beta = 9.5
+beta = 12
 
 
 # -------- Running the simulation --------
@@ -123,11 +123,11 @@ min_range = np.mean(min_range_list)
 max_range = np.mean(max_range_list)
 '''
 
-h0_range= [0.215,0.235,0.235,0.285,0.285,0.30] #0.215 - 0.32
+h0_range= [0.19,0.205,0.205,0.27,0.27,0.335] #0.215 - 0.32
 h0_for_plot = [h0_range]
 
 
-h0_list = [[[0.215,0.215]],[[0.235,0.235]],[[0.235,0.235004]],[[0.285,0.285]],[[0.285,0.285004]],[[0.31,0.31]]]
+h0_list = [[[0.19,0.19]],[[0.205,0.205]],[[0.205,0.20501]],[[0.27,0.27]],[[0.27,0.27001]],[[0.335,0.335]]]
 print(h0_list)
 
 xpositions = []
@@ -136,10 +136,26 @@ neuron_activity = []
 mean_decision_points = []
 sum_total_activity = []
 range_total_activity = []
+indices_list_forheatmap = []
 for item in h0_list:
     change = {'h0':item}
     success_list, target_list, time_list, decision_points, sum_activity_list, range_activity_list, range_argmin_list, activity_df, x_list, y_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
     print(target_list)
+    # if its the first one, get a failure
+    # if its the third one get a success
+    # if its the fifth one get a bad decision
+    if item == h0_list[2]:
+        for t in range(len(target_list)):
+            if target_list[t] == 1:
+                indices_list_forheatmap.append(t)
+                break
+
+    if item == h0_list[4]:
+        for t in range(len(target_list)):
+            if target_list[t] == 0:
+                indices_list_forheatmap.append(t)
+                break
+
     xpositions += (x_list)
     ypositions += (y_list)
     neuron_activity.append(activity_df)
@@ -151,7 +167,7 @@ for item in h0_list:
         sum_s+=item[0]
         sum_e+=item[1]+5
     mean_decision_points.append([round(sum_s/sample_size),round(sum_e/sample_size)])
-
+print(indices_list_forheatmap)
 figure_num = 1
 
     
@@ -162,7 +178,7 @@ n_plots = len(h0_range)
 ncols = 3
 nrows = 2
 # neuron heat maps - maybe just do one example for each? 
-plt.figure(layout='constrained',figsize=(14.4375,7))
+plt.figure(layout='constrained',figsize=(14,9))
 fig, ax = plt.subplots(nrows,ncols,num=figure_num)
 axes_flat = ax.flatten()
 for s in range(n_plots):
@@ -170,24 +186,42 @@ for s in range(n_plots):
     axes_flat[s].set_title(f"h0: {h0_list[s][0]}")
 figure_num += 1
 
-plt.figure(figsize=(10,4))
+# failure
+plt.figure(figsize=(10.42,3.84))
 plt.figure(figure_num)
-# find times when the agent goes to each target, ideally with notably different decision points
 rolled= np.roll(neuron_activity[0].dropna().iloc[0:100,:].values, shift=50, axis=0)
 col_min = np.min(neuron_activity[0].iloc[:,40:])
 col_max = np.max(neuron_activity[0].iloc[:,40:])
+print(f"col min: {col_min}, col max: {col_max}")
 plt.imshow(rolled,cmap='viridis',aspect='auto',vmin=col_min,vmax=col_max)
 plt.title(f"h0: {h0_list[0][0]}")
 figure_num+=1
 
-plt.figure(figsize=(10,4))
+# reaches better
+index = indices_list_forheatmap[0]
+plt.figure(figsize=(10.42,3.84))
 plt.figure(figure_num)
-# find times when the agent goes to each target, ideally with notably different decision points
-rolled= np.roll(neuron_activity[5].dropna().iloc[0:100,:].values, shift=50, axis=0)
-col_min = np.min(neuron_activity[5].iloc[:,40:])
-col_max = np.max(neuron_activity[5].iloc[:,40:])
+print(neuron_activity[2].iloc[index*100:(index+1)*100])
+rolled= np.roll(neuron_activity[2].dropna(axis=1).iloc[index*100:(index+1)*100,:].values, shift=50, axis=0)
+print(rolled)
+col_min = np.min(neuron_activity[2].iloc[:,40:])
+col_max = np.max(neuron_activity[2].iloc[:,40:])
+print(f"col min: {col_min}, col max: {col_max}")
 plt.imshow(rolled,cmap='viridis',aspect='auto',vmin=col_min,vmax=col_max)
-plt.title(f"h0: {h0_list[5][0]}")
+plt.title(f"h0: {h0_list[2][0]}")
+figure_num += 1
 
+# reaches worse
+index = indices_list_forheatmap[1]
+plt.figure(figsize=(10.42,3.84))
+plt.figure(figure_num)
+print(neuron_activity[4].iloc[index*100:(index+1)*100,:])
+rolled= np.roll(neuron_activity[4].dropna(axis=1).iloc[index*100:(index+1)*100,:].values, shift=50, axis=0)
+print(rolled)
+col_min = np.min(neuron_activity[4].iloc[:,40:])
+col_max = np.max(neuron_activity[4].iloc[:,40:])
+print(f"col min: {col_min}, col max: {col_max}")
+plt.imshow(rolled,cmap='viridis',aspect='auto',vmin=col_min,vmax=col_max)
+plt.title(f"h0: {h0_list[4][0]}")
 
 plt.show()
