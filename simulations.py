@@ -56,7 +56,7 @@ allocentricFlag = 1 # 1 is allo, 0 is ego
 h0s = [0.25,0.25] # attraction vector, first are attraction for targets, then agents
 h_b = 0.2
 sigma = 0.5
-beta = 12
+beta = 9.5
 
 
 # -------- Running the simulation --------
@@ -95,7 +95,7 @@ base = {'N':N,
 plot_neurons = True
 plot_trajs = [True, 'scatter']
 uneven = True
-sample_size = 10
+sample_size = 50
 min_list = []
 max_list = []
 min_range_list = []
@@ -123,11 +123,11 @@ min_range = np.mean(min_range_list)
 max_range = np.mean(max_range_list)
 '''
 
-h0_range= [0.28,0.29,0.3,0.31] #0.215 - 0.32
+h0_range= [0.215,0.235,0.235,0.285,0.285,0.30] #0.215 - 0.32
 h0_for_plot = [h0_range]
 
 
-h0_list = [[[0.28,0.28002]],[[0.29,0.29002]],[[0.3,0.30002]],[[0.31,0.31002]]]
+h0_list = [[[0.215,0.215]],[[0.235,0.235]],[[0.235,0.235004]],[[0.285,0.285]],[[0.285,0.285004]],[[0.31,0.31]]]
 print(h0_list)
 
 xpositions = []
@@ -159,41 +159,35 @@ figure_num = 1
 
 # general plotting settings
 n_plots = len(h0_range)
-ncols = 2
+ncols = 3
 nrows = 2
-# neuron heat maps - maybe just do one example for each?
-plt.figure(figsize=(14.4375,7))
-fig, ax = plt.subplots(nrows*2,ncols,num=figure_num)
+# neuron heat maps - maybe just do one example for each? 
+plt.figure(layout='constrained',figsize=(14.4375,7))
+fig, ax = plt.subplots(nrows,ncols,num=figure_num)
 axes_flat = ax.flatten()
 for s in range(n_plots):
-    # figure out way to plot neuron heatmap directly below corresponding trajectory
     sim_met.plot_traj(xpositions[s*sample_size:(s+1)*sample_size],ypositions[s*sample_size:(s+1)*sample_size],initialxt,initialyt,sample_size,axes_flat[s],0,0)
     axes_flat[s].set_title(f"h0: {h0_list[s][0]}")
-    rolled= np.roll(neuron_activity[s].dropna().iloc[0:100,:].values, shift=50, axis=0)
-    col_min = np.min(neuron_activity[s].iloc[:,40:])
-    col_max = np.max(neuron_activity[s].iloc[:,40:])
-    axes_flat[s].imshow(rolled,cmap='viridis',aspect='auto',vmin=col_min,vmax=col_max)
-    axes_flat[s].set_title(f"h0: {h0_list[s][0]}")
-#fig.suptitle(f"Example neuron activity from one simulation, {"allocentric" if allocentricFlag==1 else "egocentric"}, beta: {beta}, hb: {h_b}, sigma: {sigma}") 
-#fig.supxlabel("Time")
-#fig.supylabel("Neuron (50 is forward)")
 figure_num += 1
 
+plt.figure(figsize=(10,4))
+plt.figure(figure_num)
+# find times when the agent goes to each target, ideally with notably different decision points
+rolled= np.roll(neuron_activity[0].dropna().iloc[0:100,:].values, shift=50, axis=0)
+col_min = np.min(neuron_activity[0].iloc[:,40:])
+col_max = np.max(neuron_activity[0].iloc[:,40:])
+plt.imshow(rolled,cmap='viridis',aspect='auto',vmin=col_min,vmax=col_max)
+plt.title(f"h0: {h0_list[0][0]}")
+figure_num+=1
 
+plt.figure(figsize=(10,4))
+plt.figure(figure_num)
+# find times when the agent goes to each target, ideally with notably different decision points
+rolled= np.roll(neuron_activity[5].dropna().iloc[0:100,:].values, shift=50, axis=0)
+col_min = np.min(neuron_activity[5].iloc[:,40:])
+col_max = np.max(neuron_activity[5].iloc[:,40:])
+plt.imshow(rolled,cmap='viridis',aspect='auto',vmin=col_min,vmax=col_max)
+plt.title(f"h0: {h0_list[5][0]}")
 
-#trajectories
-''''
-if plot_trajs[0]:
-    n_plots = len(h0_range)
-    plt.figure(figsize=(14.475,7))
-    fig, ax = plt.subplots(2,5,num=figure_num)
-    axes_flat = ax.flatten()
-    if plot_trajs[1] == 'scatter':
-        for s in range(n_plots):
-            sim_met.plot_traj(xpositions[s*sample_size:(s+1)*sample_size],ypositions[s*sample_size:(s+1)*sample_size],initialxt,initialyt,sample_size,axes_flat[s],0,0)
-            axes_flat[s].set_title(f"h0: {h0_list[s][0]}")
-    #fig.suptitle(f"Trajectory plot, {"allocentric" if allocentricFlag==1 else "egocentric"}, beta: {beta}, hb: {h_b}, sigma: {sigma}")
-    figure_num += 1
-'''
 
 plt.show()

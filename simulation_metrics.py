@@ -316,7 +316,7 @@ def plot_traj(xPos,yPos,targetsx,targetsy,sample_size,figure,start_ind=0,end_ind
             dist[0] =0
             dist[1:] = np.sqrt(deltax**2 + deltay**2)
             '''
-            figure.scatter(xPos[sample][start_ind:],yPos[sample][start_ind:], alpha=0.4/sample_size,s=1)
+            figure.scatter(xPos[sample][start_ind:],yPos[sample][start_ind:],color='blue',alpha=0.1/sample_size,s=1)
         figure.scatter(targetsx,targetsy,color='red',s=5)
     else:
         for sample in range(sample_size):
