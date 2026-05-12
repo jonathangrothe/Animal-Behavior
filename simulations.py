@@ -8,15 +8,15 @@ import repeated_sims
 # --------  PARAMETERS --------
 
 L = 100 # width of grid
-ntargets = 2
+ntargets = 3
 nagents = 1
 initialx = np.zeros(nagents)
 initialy = np.zeros(nagents)
 for a in range(nagents):
-    initialx[a] = 20
+    initialx[a] = 50
     initialy[a] = 50
-initialxt = [80,80]
-initialyt = [20,80]
+initialxt = [50,(50-20*np.sqrt(3)),(50+20*np.sqrt(3))]
+initialyt = [90,30,30]
 
 # number of time steps
 T = 5000
@@ -52,11 +52,11 @@ for i in range(N):
     J[i,i] = 0.0
     J = np.squeeze(J)
 
-allocentricFlag = 0 # 1 is allo, 0 is ego 
-h0s = [0.25,0.25] # attraction vector, first are attraction for targets, then agents
+allocentricFlag = 1 # 1 is allo, 0 is ego 
+h0s = [0.25,0.25,0.25] # attraction vector, first are attraction for targets, then agents
 h_b = 0.2
 sigma = 0.5
-beta = 9.5
+beta = 20
 
 
 # -------- Running the simulation --------
@@ -103,8 +103,8 @@ max_range_list = []
 
 '''
 for i in range(5):
-    min_low = 0.21- 0.04 + 0.01*np.random.rand()
-    min_high = 0.21 + 0.04 + 0.01*np.random.rand()
+    min_low = 0.19- 0.04 + 0.01*np.random.rand()
+    min_high = 0.19 + 0.04 + 0.01*np.random.rand()
     max_low = 0.32 - 0.04 + 0.01*np.random.rand()
     max_high = 0.32 + 0.04 + 0.01*np.random.rand()
     min_est,range_min = repeated_sims.boundary_search(base,min_low,min_high,10,True,0.5,5) # probably also want to return the final step size to get an idea of the scale of the boundary point
@@ -123,11 +123,12 @@ min_range = np.mean(min_range_list)
 max_range = np.mean(max_range_list)
 int_val = round((min_val+max_val)/2,5)
 '''
-h0_range= [0.21616,0.26867,0.32118] #0.215 - 0.32
+
+h0_range= [0.22,0.23,0.24] #0.215 - 0.32
 h0_for_plot = [h0_range]
 
 
-h0_list = [[[0.21616,0.21616]],[[0.26867,0.26867]],[[0.32118,0.32118]]]
+h0_list = [[[0.22,0.22,0.22]],[[0.23,0.23,0.23]],[[0.24,0.24,0.24]]]
 print(h0_list)
 
 xpositions = []
@@ -141,22 +142,12 @@ for item in h0_list:
     change = {'h0':item}
     success_list, target_list, time_list, decision_points, sum_activity_list, range_activity_list, range_argmin_list, activity_df, x_list, y_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
     print(target_list)
-    # if its the first one, get a failure
-    # if its the third one get a success
-    # if its the fifth one get a bad decision
-    '''
-    if item == h0_list[2]:
-        for t in range(len(target_list)):
-            if target_list[t] == 1:
-                indices_list_forheatmap.append(t)
-                break
+    # always get the top target
+    for t in range(len(target_list)):
+        if target_list[t] == 0:
+            indices_list_forheatmap.append(t)
+            break
 
-    if item == h0_list[4]:
-        for t in range(len(target_list)):
-            if target_list[t] == 0:
-                indices_list_forheatmap.append(t)
-                break
-    '''
     xpositions += (x_list)
     ypositions += (y_list)
     neuron_activity.append(activity_df)
@@ -174,9 +165,6 @@ figure_num = 1
     
 # SINGLE SETTING PLOTS
 
-# want: one plot with all the trajectories a certain beta can recreate
-# one plot with a sample of interesting trajectories with the corresponding heatmaps
-
 # general plotting settings
 n_plots = len(h0_range)
 ncols = 3
@@ -185,11 +173,11 @@ nrows = 1
 plt.figure(layout='constrained',figsize=(10,4))
 fig, ax = plt.subplots(nrows,ncols,num=figure_num)
 axes_flat = ax.flatten()
-for s in range(n_plots):
+for s in range(n_plots): #UPDATE INDICES WITH INDICES_FORHEATMAP List
     sim_met.plot_traj(xpositions[s*sample_size:(s+1)*sample_size],ypositions[s*sample_size:(s+1)*sample_size],initialxt,initialyt,sample_size,axes_flat[s],0,0)
     axes_flat[s].set_title(f"h0: {h0_list[s][0]}")
 figure_num += 1
-plt.savefig('trajectories_beta20.png')
+#plt.savefig('trajectories_beta20.png')
 
 for a in range(n_plots):
     plt.figure(figsize=(8,4))
@@ -201,7 +189,7 @@ for a in range(n_plots):
     print(f"max: {col_max}")
     plt.imshow(rolled,cmap='viridis',aspect='auto',vmin=col_min,vmax=col_max)
     plt.title(f"h0: {h0_list[a][0]}")
-    plt.savefig(f'heatmap_{h0_list[a][0]}_beta20.png')
+    #plt.savefig(f'heatmap_{h0_list[a][0]}_beta20.png')
     figure_num+=1
 
 
