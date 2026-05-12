@@ -56,7 +56,7 @@ allocentricFlag = 1 # 1 is allo, 0 is ego
 h0s = [0.25,0.25] # attraction vector, first are attraction for targets, then agents
 h_b = 0.2
 sigma = 0.5
-beta = 12
+beta = 20
 
 
 # -------- Running the simulation --------
@@ -123,11 +123,11 @@ min_range = np.mean(min_range_list)
 max_range = np.mean(max_range_list)
 '''
 
-h0_range= [0.19,0.205,0.205,0.27,0.27,0.335] #0.215 - 0.32
+h0_range= [0.177,0.187,0.187,0.26,0.26,0.327] #0.215 - 0.32
 h0_for_plot = [h0_range]
 
 
-h0_list = [[[0.19,0.19]],[[0.205,0.205]],[[0.205,0.20501]],[[0.27,0.27]],[[0.27,0.27001]],[[0.335,0.335]]]
+h0_list = [[[0.177,0.177]],[[0.187,0.187]],[[0.187,0.18701]],[[0.26,0.26]],[[0.26,0.26001]],[[0.327,0.327]]]
 print(h0_list)
 
 xpositions = []
