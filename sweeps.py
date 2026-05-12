@@ -54,7 +54,7 @@ for i in range(N):
     J[i,i] = 0.0
     J = np.squeeze(J)
 
-allocentricFlag = 1 # 1 is allo, 0 is ego
+allocentricFlag = 0 # 1 is allo, 0 is ego
 h0s = [0.25,0.25] # attraction vector, first are attraction for targets, then agents
 h_b = 0.2
 sigma = 0.5
@@ -105,7 +105,7 @@ h0_range= np.linspace(start,finish,num=150)
 h0_for_plot = h0_range
 h0_total_list = []
 beta_list = [20] # 9.5: 0.215-0.32, 10: 0.208-0.325, 12: 0.189-0.339, 20: 0.177-0.338, 52: 0.182-0.325, 180: 0.189-0.326 ? 
-base_h0_list = np.linspace(0.177,0.338,num=16) # 0.22 to 0.31 - 0.1925-0.335
+base_h0_list = np.linspace(0.176,0.3405,num=16) # 0.22 to 0.31 - 0.1925-0.335
 n_plots = len(beta_list)
 n_lines = len(base_h0_list)
 for n in range(n_lines):
@@ -204,8 +204,8 @@ for p in range(n_plots):
     figure_num += 1
     plt.tight_layout()
 
-time_df.to_csv(f"time_df_beta{beta_list[0]}.csv")
-correct_df.to_csv(f"pcorrect_df_beta{beta_list[0]}.csv")
+time_df.to_csv(f"time_df_beta{beta_list[0]}_egocentric.csv")
+correct_df.to_csv(f"pcorrect_df_beta{beta_list[0]}_egocentric.csv")
 plt.show()
 
 '''

@@ -52,11 +52,11 @@ for i in range(N):
     J[i,i] = 0.0
     J = np.squeeze(J)
 
-allocentricFlag = 1 # 1 is allo, 0 is ego 
+allocentricFlag = 0 # 1 is allo, 0 is ego 
 h0s = [0.25,0.25] # attraction vector, first are attraction for targets, then agents
 h_b = 0.2
 sigma = 0.5
-beta = 20
+beta = 9.5
 
 
 # -------- Running the simulation --------
@@ -95,7 +95,7 @@ base = {'N':N,
 plot_neurons = True
 plot_trajs = [True, 'scatter']
 uneven = True
-sample_size = 50
+sample_size = 30
 min_list = []
 max_list = []
 min_range_list = []
@@ -103,10 +103,10 @@ max_range_list = []
 
 '''
 for i in range(5):
-    min_low = 0.19- 0.04 + 0.01*np.random.rand()
-    min_high = 0.19 + 0.04 + 0.01*np.random.rand()
-    max_low = 0.31 - 0.04 + 0.01*np.random.rand()
-    max_high = 0.31 + 0.04 + 0.01*np.random.rand()
+    min_low = 0.21- 0.04 + 0.01*np.random.rand()
+    min_high = 0.21 + 0.04 + 0.01*np.random.rand()
+    max_low = 0.32 - 0.04 + 0.01*np.random.rand()
+    max_high = 0.32 + 0.04 + 0.01*np.random.rand()
     min_est,range_min = repeated_sims.boundary_search(base,min_low,min_high,10,True,0.5,5) # probably also want to return the final step size to get an idea of the scale of the boundary point
     max_est, range_max = repeated_sims.boundary_search(base,max_low,max_high,10,False,0.5,5)
     print(f"boundaries, sim: {i}: {min_est,max_est}")
@@ -121,13 +121,13 @@ min_val = np.mean(min_list)
 max_val = np.mean(max_list)
 min_range = np.mean(min_range_list)
 max_range = np.mean(max_range_list)
+int_val = round((min_val+max_val)/2,5)
 '''
-
-h0_range= [0.177,0.187,0.187,0.26,0.26,0.327] #0.215 - 0.32
+h0_range= [0.21616,0.26867,0.32118] #0.215 - 0.32
 h0_for_plot = [h0_range]
 
 
-h0_list = [[[0.177,0.177]],[[0.187,0.187]],[[0.187,0.18701]],[[0.26,0.26]],[[0.26,0.26001]],[[0.327,0.327]]]
+h0_list = [[[0.21616,0.21616]],[[0.26867,0.26867]],[[0.32118,0.32118]]]
 print(h0_list)
 
 xpositions = []
@@ -144,6 +144,7 @@ for item in h0_list:
     # if its the first one, get a failure
     # if its the third one get a success
     # if its the fifth one get a bad decision
+    '''
     if item == h0_list[2]:
         for t in range(len(target_list)):
             if target_list[t] == 1:
@@ -155,7 +156,7 @@ for item in h0_list:
             if target_list[t] == 0:
                 indices_list_forheatmap.append(t)
                 break
-
+    '''
     xpositions += (x_list)
     ypositions += (y_list)
     neuron_activity.append(activity_df)
@@ -167,61 +168,41 @@ for item in h0_list:
         sum_s+=item[0]
         sum_e+=item[1]+5
     mean_decision_points.append([round(sum_s/sample_size),round(sum_e/sample_size)])
-print(indices_list_forheatmap)
+#print(indices_list_forheatmap)
 figure_num = 1
 
     
 # SINGLE SETTING PLOTS
 
+# want: one plot with all the trajectories a certain beta can recreate
+# one plot with a sample of interesting trajectories with the corresponding heatmaps
+
 # general plotting settings
 n_plots = len(h0_range)
 ncols = 3
-nrows = 2
+nrows = 1
 # neuron heat maps - maybe just do one example for each? 
-plt.figure(layout='constrained',figsize=(14,9))
+plt.figure(layout='constrained',figsize=(10,4))
 fig, ax = plt.subplots(nrows,ncols,num=figure_num)
 axes_flat = ax.flatten()
 for s in range(n_plots):
     sim_met.plot_traj(xpositions[s*sample_size:(s+1)*sample_size],ypositions[s*sample_size:(s+1)*sample_size],initialxt,initialyt,sample_size,axes_flat[s],0,0)
     axes_flat[s].set_title(f"h0: {h0_list[s][0]}")
 figure_num += 1
+plt.savefig('trajectories_beta20.png')
 
-# failure
-plt.figure(figsize=(10.42,3.84))
-plt.figure(figure_num)
-rolled= np.roll(neuron_activity[0].dropna().iloc[0:100,:].values, shift=50, axis=0)
-col_min = np.min(neuron_activity[0].iloc[:,40:])
-col_max = np.max(neuron_activity[0].iloc[:,40:])
-print(f"col min: {col_min}, col max: {col_max}")
-plt.imshow(rolled,cmap='viridis',aspect='auto',vmin=col_min,vmax=col_max)
-plt.title(f"h0: {h0_list[0][0]}")
-figure_num+=1
+for a in range(n_plots):
+    plt.figure(figsize=(8,4))
+    plt.figure(figure_num)
+    rolled= np.roll(neuron_activity[a].dropna(axis=1).iloc[0:100,:].values, shift=50, axis=0)
+    col_min = np.min(neuron_activity[a].iloc[:,40:])
+    col_max = np.max(neuron_activity[a].iloc[:,40:])
+    print(f"min: {col_min}")
+    print(f"max: {col_max}")
+    plt.imshow(rolled,cmap='viridis',aspect='auto',vmin=col_min,vmax=col_max)
+    plt.title(f"h0: {h0_list[a][0]}")
+    plt.savefig(f'heatmap_{h0_list[a][0]}_beta20.png')
+    figure_num+=1
 
-# reaches better
-index = indices_list_forheatmap[0]
-plt.figure(figsize=(10.42,3.84))
-plt.figure(figure_num)
-print(neuron_activity[2].iloc[index*100:(index+1)*100])
-rolled= np.roll(neuron_activity[2].dropna(axis=1).iloc[index*100:(index+1)*100,:].values, shift=50, axis=0)
-print(rolled)
-col_min = np.min(neuron_activity[2].iloc[:,40:])
-col_max = np.max(neuron_activity[2].iloc[:,40:])
-print(f"col min: {col_min}, col max: {col_max}")
-plt.imshow(rolled,cmap='viridis',aspect='auto',vmin=col_min,vmax=col_max)
-plt.title(f"h0: {h0_list[2][0]}")
-figure_num += 1
-
-# reaches worse
-index = indices_list_forheatmap[1]
-plt.figure(figsize=(10.42,3.84))
-plt.figure(figure_num)
-print(neuron_activity[4].iloc[index*100:(index+1)*100,:])
-rolled= np.roll(neuron_activity[4].dropna(axis=1).iloc[index*100:(index+1)*100,:].values, shift=50, axis=0)
-print(rolled)
-col_min = np.min(neuron_activity[4].iloc[:,40:])
-col_max = np.max(neuron_activity[4].iloc[:,40:])
-print(f"col min: {col_min}, col max: {col_max}")
-plt.imshow(rolled,cmap='viridis',aspect='auto',vmin=col_min,vmax=col_max)
-plt.title(f"h0: {h0_list[4][0]}")
 
 plt.show()
