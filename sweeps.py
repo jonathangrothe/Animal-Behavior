@@ -98,10 +98,10 @@ base = {'N':N,
 plot_trajs = [False, 'scatter'] 
 plot_neurons = False
 uneven = True
-sample_size = 30
+sample_size = 15
 start = 0
-finish = 0.00003
-h0_range= np.linspace(start,finish,num=150)
+finish = 0.0003
+h0_range= np.linspace(start,finish,num=15)
 h0_for_plot = h0_range
 h0_total_list = []
 beta_list = [20] # 9.5: 0.215-0.32, 10: 0.208-0.325, 12: 0.189-0.339, 20: 0.177-0.338, 52: 0.182-0.325, 180: 0.189-0.326 ? 
