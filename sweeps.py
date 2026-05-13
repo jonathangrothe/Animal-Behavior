@@ -98,10 +98,10 @@ base = {'N':N,
 plot_trajs = [False, 'scatter'] 
 plot_neurons = False
 uneven = True
-sample_size = 15
+sample_size = 30
 start = 0
-finish = 0.0003
-h0_range= np.linspace(start,finish,num=15)
+finish = 0.003
+h0_range= np.linspace(start,finish,num=150)
 h0_for_plot = h0_range
 h0_total_list = []
 beta_list = [20] # 9.5: 0.215-0.32, 10: 0.208-0.325, 12: 0.189-0.339, 20: 0.177-0.338, 52: 0.182-0.325, 180: 0.189-0.326 ? 
@@ -204,8 +204,8 @@ for p in range(n_plots):
     figure_num += 1
     plt.tight_layout()
 
-time_df.to_csv(f"time_df_beta{beta_list[0]}_egocentric.csv")
-correct_df.to_csv(f"pcorrect_df_beta{beta_list[0]}_egocentric.csv")
+#time_df.to_csv(f"time_df_beta{beta_list[0]}_egocentric.csv")
+#correct_df.to_csv(f"pcorrect_df_beta{beta_list[0]}_egocentric.csv")
 plt.show()
 
 '''

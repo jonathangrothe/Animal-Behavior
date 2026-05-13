@@ -25,7 +25,10 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
     for a in range(nagents):
         xPos[a,0] = initialx[a]
         yPos[a,0] = initialy[a]
-        headings[a,0] = 2*math.pi*np.random.rand()
+        if allocentricFlag == 0: # Ego should randomly initialize heading, allo should not (for making neurons interpretable)
+            headings[a,0] = 2*math.pi*np.random.rand() 
+        else:
+            headings[a,0] = 0
         alpharing[a,:] = np.mod(alpharing[a,:]+headings[a,0], 2*np.pi)
 
     targetXPos = np.zeros((ntargets, T+1))

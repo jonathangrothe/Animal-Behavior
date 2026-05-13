@@ -306,17 +306,21 @@ def plot_traj(xPos,yPos,targetsx,targetsy,sample_size,figure,start_ind=0,end_ind
     A function that takes x trajectories and y trajectories and plots them over each other, with a low ish opacity so we can see overlap. 
     Designed to be used over the same simulation settings with a number s of samples.
     Need: to color by velocity
+    return:
+    The times when it is going relatively slowly... ?
     '''
     if end_ind == 0:
         for sample in range(sample_size):
-            '''
             deltax = np.diff(xPos[sample][start_ind:])
             deltay = np.diff(yPos[sample][start_ind:])
             dist = np.zeros(len(xPos[sample][start_ind:]))
             dist[0] =0
             dist[1:] = np.sqrt(deltax**2 + deltay**2)
-            '''
-            figure.scatter(xPos[sample][start_ind:],yPos[sample][start_ind:],color='blue',alpha=0.1/sample_size,s=1)
+            minima_indices, _ = find_peaks(-dist[40:])
+            print(f"local minima: {minima_indices}")
+            figure.scatter(xPos[sample][start_ind:],yPos[sample][start_ind:],color='blue',alpha=0.5/sample_size,s=1)
+            for item in minima_indices:
+                figure.scatter(xPos[sample][item],yPos[sample][item],color='red',alpha=0.5/sample_size,s=15)
         figure.scatter(targetsx,targetsy,color='red',s=5)
     else:
         for sample in range(sample_size):
@@ -326,7 +330,7 @@ def plot_traj(xPos,yPos,targetsx,targetsy,sample_size,figure,start_ind=0,end_ind
             dist[0] =0
             dist[1:] = np.sqrt(deltax**2 + deltay**2)
             figure.scatter(xPos[sample][start_ind:end_ind],yPos[sample][start_ind:end_ind],c = dist, cmap = 'afmhot_r', alpha=0.5,s=8)
-    return None
+    return minima_indices
 
 
 # heat map plotting from vivek's code - very slow to run right now
