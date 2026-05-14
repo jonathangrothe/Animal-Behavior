@@ -8,15 +8,15 @@ import repeated_sims
 # --------  PARAMETERS --------
 
 L = 100 # width of grid
-ntargets = 2
+ntargets = 3
 nagents = 1
 initialx = np.zeros(nagents)
 initialy = np.zeros(nagents)
 for a in range(nagents):
     initialx[a] = 20
     initialy[a] = 50
-initialxt = [80,80]
-initialyt = [20,80]
+initialxt = [65,90,65]
+initialyt = [20,50,80]
 
 # number of time steps
 T = 5000
@@ -55,8 +55,8 @@ for i in range(N):
 allocentricFlag = 1 # 1 is allo, 0 is ego 
 h0s = [0.25,0.25,0.25] # attraction vector, first are attraction for targets, then agents
 h_b = 0.2
-sigma = 0.5 #0.25 works for three target (sometimes)
-beta = 20 #100 works for double
+sigma = 0.25 #0.25 works for three target (sometimes)
+beta = 200 #100 works for double
 
 
 # -------- Running the simulation --------
@@ -95,7 +95,7 @@ base = {'N':N,
 plot_neurons = True
 plot_trajs = [True, 'scatter']
 uneven = True
-sample_size = 30
+sample_size = 10
 min_list = []
 max_list = []
 min_range_list = []
@@ -129,11 +129,8 @@ int_val = round((min_val+max_val)/2,5)
 # p(t=0|go to top), p(t=0|go to bottom), ....
 # p(t=0|top, back) p(t=0|bottom, back), ....
 # to get where it bifurcates pre decison we need a range of where it slows (we do this in traj code) and then to get its position at that time
-h0_range= [0.25,0.25] #0.215 - 0.32
-h0_for_plot = [h0_range]
 
-
-h0_list = [[[0.32,0.32]],[[0.32,0.32]]]
+h0_list = [[[0.22,0.22,0.22]],[[0.2205,0.2205,0.2205]],[[0.221,0.221,0.221]]]
 print(h0_list)
 
 xpositions = []
@@ -170,19 +167,25 @@ figure_num = 1
     
 # SINGLE SETTING PLOTS
 # general plotting settings
-n_plots = len(h0_range)
-ncols = 2
+n_plots = len(h0_list)
+ncols = 3
 nrows = 1
 # neuron heat maps - maybe just do one example for each? 
 plt.figure(layout='constrained',figsize=(10,5))
 fig, ax = plt.subplots(nrows,ncols,num=figure_num)
 axes_flat = ax.flatten()
 for s in range(n_plots): #UPDATE INDICES WITH INDICES_FORHEATMAP List
-    sim_met.plot_traj(xpositions[s*sample_size:(s+1)*sample_size],ypositions[s*sample_size:(s+1)*sample_size],initialxt,initialyt,sample_size,axes_flat[s],0,0)
-    #for item in minima_indices:
-        #print(f"index: {item}")
-        #print(f"xpos at index: {xpositions[s*sample_size:(s+1)*sample_size][0][item]}")
-        #print(f"ypos at index: {ypositions[s*sample_size:(s+1)*sample_size][0][item]}")
+    dec_points_list = sim_met.plot_traj(xpositions[s*sample_size:(s+1)*sample_size],ypositions[s*sample_size:(s+1)*sample_size],initialxt,initialyt,sample_size,axes_flat[s],0,0)
+    print(pd.DataFrame(dec_points_list))
+    # work with the coordinates from here, cluster them to find approximate true decision point, drop outliers
+    # then we can calculate probabilities of reaching each point given the path traveled
+    # which will then allow us to sweep the three target case
+    '''
+    for item in minima_indices:
+        print(f"index: {item}")
+        print(f"xpos at index: {xpositions[s*sample_size:(s+1)*sample_size][0][item]}")
+        print(f"ypos at index: {ypositions[s*sample_size:(s+1)*sample_size][0][item]}")
+    '''
     axes_flat[s].set_title(f"h0: {h0_list[s][0]}")
 figure_num += 1
 #plt.savefig('trajectories_beta20.png')
@@ -193,8 +196,8 @@ for a in range(n_plots):
     rolled= np.roll(neuron_activity[a].dropna(axis=1).iloc[0:100,:].values, shift=50, axis=0)
     col_min = np.min(neuron_activity[a].iloc[:,40:])
     col_max = np.max(neuron_activity[a].iloc[:,40:])
-    print(f"min: {col_min}")
-    print(f"max: {col_max}")
+    #print(f"min: {col_min}")
+    #print(f"max: {col_max}")
     plt.imshow(rolled,cmap='viridis',aspect='auto',vmin=col_min,vmax=col_max)
     plt.title(f"h0: {h0_list[a][0]}")
     #plt.savefig(f'heatmap_{h0_list[a][0]}_beta20.png')

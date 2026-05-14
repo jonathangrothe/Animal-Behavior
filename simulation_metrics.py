@@ -56,17 +56,41 @@ def get_destination_metrics(xPos, yPos, targetsx, targetsy , stopping_distance =
             break
     return target_reached, time_target_reached, movement_start
 
-def get_peaks(data_arr):
+def get_bifurcation_times(xPos,yPos):
     '''
-    a function which takes a numpy array and finds the top n peaks 
-    designed to be used to find the decision points, could be used with headings, trajectories, or neuron activity
-    (as long as we get the data in the right shape)
+    a function which takes the x positions and y positions and returns an approximate list of time steps where bifurcations occurred
     '''
-    x = np.linspace(0,len(data_arr),num=len(data_arr))
-    diff = np.gradient(data_arr,x)
-    critical_points = np.where(np.diff(np.sign(diff)))[0]
-    print(f"critical points: {critical_points}")
-    return critical_points
+    dec_points = []
+    curr_index = len(xPos)-1
+    complete = False
+    while not complete:
+        print(f"curr index: {curr_index}")
+        inline = True
+        curr_x = xPos[curr_index]
+        curr_y = yPos[curr_index]
+        backtrack = round(curr_index*0.95)
+        backtrack_x = xPos[backtrack]
+        backtrack_y = yPos[backtrack]
+        slope = (curr_y-backtrack_y)/(curr_x-backtrack_x)
+        intercept = curr_y - slope*curr_x
+        tol = np.sqrt(5*np.abs(slope))
+        if tol < 1:
+            tol = 1
+        distance = np.abs(yPos-(slope*xPos+intercept))
+        while inline:
+            if distance[curr_index] > tol:
+                dec_points.append(curr_index)
+                inline = False
+                if len(dec_points) > 2:
+                    curr_index = 0
+                    break
+            else:
+                curr_index = curr_index - 1
+                if curr_index < 40:
+                    break
+        if curr_index < 40:
+            complete = True
+    return dec_points
 
 def get_success_rate(target_list, sample_size, uneven=False, best_index=-1):
     '''
@@ -102,28 +126,6 @@ def get_success_rate(target_list, sample_size, uneven=False, best_index=-1):
         success_prob.append(suc_prob)
         success_se.append(suc_se)
     return success_prob, success_se, correct_prob, correct_se
-
-def get_avg_distance(xPos, yPos, targetsx, targetsy, last_p=0.25):
-    '''
-    A function that returns a 1d numpy array of length ntargets with the average distance to each target
-    over a certain proportion of the simulation
-    Parameters:
-    xPos: all the x positions of the agent(s)
-    yPos: all the y positions of the agent(s)
-    targetsx: all the x positions of the targets
-    targetsy: all the y positions of the targets
-    last_p: the proportion of timesteps of the simulation we will consider, counting backward 
-            default is 0.25, which means we will consider the last quarter of the simulation
-    '''
-    tsteps = len(xPos[0,:])
-    quarter = int(tsteps*last_p)
-    x_last_quarter = xPos[0,-quarter:]
-    y_last_quarter = yPos[0,-quarter:]
-    targetsx_last_quarter = targetsx[:, :quarter]
-    targetsy_last_quarter = targetsy[:,:quarter]
-    dists = np.sqrt((x_last_quarter - targetsx_last_quarter)**2 + 
-                    (y_last_quarter - targetsy_last_quarter)**2)
-    return(np.mean(dists,axis=1))
 
 def get_neuron_info(activity):
     '''
@@ -307,20 +309,47 @@ def plot_traj(xPos,yPos,targetsx,targetsy,sample_size,figure,start_ind=0,end_ind
     Designed to be used over the same simulation settings with a number s of samples.
     Need: to color by velocity
     return:
-    The times when it is going relatively slowly... ?
     '''
+    dec_points_list = []
     if end_ind == 0:
         for sample in range(sample_size):
+            '''
             deltax = np.diff(xPos[sample][start_ind:])
             deltay = np.diff(yPos[sample][start_ind:])
             dist = np.zeros(len(xPos[sample][start_ind:]))
-            dist[0] =0
+            dist[0] = 0
             dist[1:] = np.sqrt(deltax**2 + deltay**2)
-            #minima_indices, _ = find_peaks(-dist[40:])
-            #print(f"local minima: {minima_indices}")
+            minima_indices, properties = find_peaks(-dist[40:],prominence=0)
+            print(f"local minima: {minima_indices}")
+            print(f"prominences: {properties['prominences']}")
+            '''
+            max_ratio = 0
+            prominent_index = 0
+            for i in range(50,len(yPos[sample])-50):
+                backtrack = np.abs(yPos[sample][i-50] - yPos[sample][i])
+                if backtrack < 0.1:
+                    backtrack = 0.1
+                forwardtrack = np.abs(yPos[sample][i] - yPos[sample][i+50])
+                ratio = forwardtrack/backtrack
+                #print(item)
+                #print(f"backtrack: {backtrack}")
+                #print(f"forward track: {forwardtrack}")
+                #print(f"ratio: {forwardtrack/backtrack}")
+                if ratio > max_ratio:
+                    max_ratio = ratio
+                    prominent_index = i    
+            #print(f"max ratio: {max_ratio}")
+            #print(f"index: {prominent_index}")
+            #print(f"backtrack: {yPos[sample][prominent_index-50]}")
+            #print(f"current y: {yPos[sample][prominent_index]}")
+            #print(f"forwardtrack: {yPos[sample][prominent_index+50]}") 
             figure.scatter(xPos[sample][start_ind:],yPos[sample][start_ind:],color='blue',alpha=0.5/sample_size,s=1)
-            #for item in minima_indices:
-                #figure.scatter(xPos[sample][item],yPos[sample][item],color='red',alpha=0.5/sample_size,s=15)
+            #figure.scatter(xPos[sample][prominent_index],yPos[sample][prominent_index],color='red',alpha=0.5,s=15)
+            dec_points = get_bifurcation_times(xPos[sample],yPos[sample])
+            print(dec_points)
+            dec_points_list.append(dec_points)
+            for item in dec_points:
+                figure.scatter(xPos[sample][item],yPos[sample][item], color="green",alpha = 0.1)
         figure.scatter(targetsx,targetsy,color='red',s=5)
     else:
         for sample in range(sample_size):
@@ -330,53 +359,5 @@ def plot_traj(xPos,yPos,targetsx,targetsy,sample_size,figure,start_ind=0,end_ind
             dist[0] =0
             dist[1:] = np.sqrt(deltax**2 + deltay**2)
             figure.scatter(xPos[sample][start_ind:end_ind],yPos[sample][start_ind:end_ind],c = dist, cmap = 'afmhot_r', alpha=0.5,s=8)
-    return None
+    return dec_points_list
 
-
-# heat map plotting from vivek's code - very slow to run right now
-def density_map(x, y):
-    '''
-    Takes x and y values and returns a 2d array corresponding to a 2d histogram.
-    Designed to be used on a trajectory plot, x and y are both intended to be coordinates
-    Parameters:
-    x: x values to consider in 2d hist
-    y: y values to consider in 2d hist
-    Returns:
-    tmp_img: a 2d array with x and y values bucketed into rows respectively. 
-            Range is pre set to 0,100 in each dimension with 500 bins
-    '''
-    blur = (11, 11)
-    h, xedge, yedge, image = plt.hist2d(x, y, bins = 500, density=True, range = [[0,100],[0,100]])
-    tmp_img = np.rot90(cv2.GaussianBlur(h, blur, 0))
-    tmp_img /= np.max(tmp_img)
-    return tmp_img
-
-def plot_from_density(xPos, yPos, window_size):
-    '''
-    A function which takes x positions, y positions, and window size and plots a heat map of the trajectory
-    Parameters: 
-    xPos: an array of x positions. Can include multiple runs as long as x indices are aligned with y indices
-    yPos: an array of y positions
-    window_size: how many positions to aggregate over at a time. 
-                Does not affect how many times we call density_map, just the width of each range of densities
-    '''
-    tmax = len(xPos)
-    for i in range((tmax-window_size)):
-        # calculate the window
-        window_min = i
-        window_max = i + window_size
-        # get the x positions and y positions in the window and map them
-        x = xPos[window_min:window_max+1]
-        y = yPos[window_min:window_max+1]
-        tmp_img = density_map(x, y)
-        if i == 0:
-            img = tmp_img
-        else:
-            img = np.fmax(tmp_img, img)
-    return img
-    
-
-
-# TO DO: PLOT HEADING
-# Will need to get heading from the repeated_sims in like a list of lists or smth
-# should have all the indices of all neurons being inhibited, so we're good there
