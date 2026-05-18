@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.signal import find_peaks
+from scipy import stats
 import cv2
 import matplotlib.pyplot as plt
 
@@ -64,15 +65,28 @@ def get_bifurcation_times(xPos,yPos):
     curr_index = len(xPos)-1
     complete = False
     while not complete:
-        print(f"curr index: {curr_index}")
         inline = True
-        curr_x = xPos[curr_index]
-        curr_y = yPos[curr_index]
         backtrack = round(curr_index*0.95)
-        backtrack_x = xPos[backtrack]
-        backtrack_y = yPos[backtrack]
-        slope = (curr_y-backtrack_y)/(curr_x-backtrack_x)
-        intercept = curr_y - slope*curr_x
+        corr = 1
+        while corr > 0.995:
+            slope, intercept, r_value, p_value, std_err = stats.linregress(xPos[backtrack:curr_index].flatten(), yPos[backtrack:curr_index])
+            print(f"slope: {slope}")
+            print(f"intercept: {intercept}")
+            print(f"p_value: {p_value}")
+            print(f"r_value: {r_value}")
+            print(f"std error: {std_err}")
+            backtrack = backtrack - 15
+            corr = np.abs(r_value)
+            if backtrack < 0:
+                complete = True
+                break
+
+        # now we've got index as backtrack,
+        # append backtrack to decision points
+        # set curr index to backtrack
+        dec_points.append(backtrack)
+        curr_index = backtrack
+        '''
         tol = np.sqrt(5*np.abs(slope))
         if tol < 1:
             tol = 1
@@ -88,9 +102,15 @@ def get_bifurcation_times(xPos,yPos):
                 curr_index = curr_index - 1
                 if curr_index < 40:
                     break
+        '''
         if curr_index < 40:
             complete = True
-    return dec_points
+    dec_points.reverse()
+    # get the x positions, return them
+    dec_pos = []
+    for item in dec_points:
+        dec_pos.append((xPos[item],yPos[item]))
+    return dec_points, dec_pos
 
 def get_success_rate(target_list, sample_size, uneven=False, best_index=-1):
     '''
@@ -303,53 +323,20 @@ def plot_sum_activity(activity_list,figure):
     mean_list = np.mean(sum_list_truncated,axis=0)
     return mean_list
 
-def plot_traj(xPos,yPos,targetsx,targetsy,sample_size,figure,start_ind=0,end_ind=0):
+def plot_traj(xPos,yPos,targetsx,targetsy,sample_size,dec_points,figure,start_ind=0,end_ind=0):
     '''
     A function that takes x trajectories and y trajectories and plots them over each other, with a low ish opacity so we can see overlap. 
     Designed to be used over the same simulation settings with a number s of samples.
     Need: to color by velocity
     return:
     '''
-    dec_points_list = []
     if end_ind == 0:
         for sample in range(sample_size):
-            '''
-            deltax = np.diff(xPos[sample][start_ind:])
-            deltay = np.diff(yPos[sample][start_ind:])
-            dist = np.zeros(len(xPos[sample][start_ind:]))
-            dist[0] = 0
-            dist[1:] = np.sqrt(deltax**2 + deltay**2)
-            minima_indices, properties = find_peaks(-dist[40:],prominence=0)
-            print(f"local minima: {minima_indices}")
-            print(f"prominences: {properties['prominences']}")
-            '''
-            max_ratio = 0
-            prominent_index = 0
-            for i in range(50,len(yPos[sample])-50):
-                backtrack = np.abs(yPos[sample][i-50] - yPos[sample][i])
-                if backtrack < 0.1:
-                    backtrack = 0.1
-                forwardtrack = np.abs(yPos[sample][i] - yPos[sample][i+50])
-                ratio = forwardtrack/backtrack
-                #print(item)
-                #print(f"backtrack: {backtrack}")
-                #print(f"forward track: {forwardtrack}")
-                #print(f"ratio: {forwardtrack/backtrack}")
-                if ratio > max_ratio:
-                    max_ratio = ratio
-                    prominent_index = i    
-            #print(f"max ratio: {max_ratio}")
-            #print(f"index: {prominent_index}")
-            #print(f"backtrack: {yPos[sample][prominent_index-50]}")
-            #print(f"current y: {yPos[sample][prominent_index]}")
-            #print(f"forwardtrack: {yPos[sample][prominent_index+50]}") 
+            dec_time = dec_points[sample]
             figure.scatter(xPos[sample][start_ind:],yPos[sample][start_ind:],color='blue',alpha=0.5/sample_size,s=1)
-            #figure.scatter(xPos[sample][prominent_index],yPos[sample][prominent_index],color='red',alpha=0.5,s=15)
-            dec_points = get_bifurcation_times(xPos[sample],yPos[sample])
-            print(dec_points)
-            dec_points_list.append(dec_points)
-            for item in dec_points:
-                figure.scatter(xPos[sample][item],yPos[sample][item], color="green",alpha = 0.1)
+            print(f"sample: {sample}, time: {dec_time}")
+            print(f"x: {xPos[sample][dec_time]}, y: {yPos[sample][dec_time]}")
+            figure.scatter(xPos[sample][dec_time],yPos[sample][dec_time], color="green",alpha = 0.1)
         figure.scatter(targetsx,targetsy,color='red',s=5)
     else:
         for sample in range(sample_size):
@@ -359,5 +346,5 @@ def plot_traj(xPos,yPos,targetsx,targetsy,sample_size,figure,start_ind=0,end_ind
             dist[0] =0
             dist[1:] = np.sqrt(deltax**2 + deltay**2)
             figure.scatter(xPos[sample][start_ind:end_ind],yPos[sample][start_ind:end_ind],c = dist, cmap = 'afmhot_r', alpha=0.5,s=8)
-    return dec_points_list
+    return None
 

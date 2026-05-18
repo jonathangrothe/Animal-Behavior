@@ -95,7 +95,7 @@ base = {'N':N,
 plot_neurons = True
 plot_trajs = [True, 'scatter']
 uneven = True
-sample_size = 10
+sample_size = 2
 min_list = []
 max_list = []
 min_range_list = []
@@ -130,7 +130,7 @@ int_val = round((min_val+max_val)/2,5)
 # p(t=0|top, back) p(t=0|bottom, back), ....
 # to get where it bifurcates pre decison we need a range of where it slows (we do this in traj code) and then to get its position at that time
 
-h0_list = [[[0.22,0.22,0.22]],[[0.2205,0.2205,0.2205]],[[0.221,0.221,0.221]]]
+h0_list = [[[0.21925,0.21925,0.21925]],[[0.2193,0.2193,0.2193]],[[0.21935,0.21935,0.21935]]]
 print(h0_list)
 
 xpositions = []
@@ -174,18 +174,25 @@ nrows = 1
 plt.figure(layout='constrained',figsize=(10,5))
 fig, ax = plt.subplots(nrows,ncols,num=figure_num)
 axes_flat = ax.flatten()
-for s in range(n_plots): #UPDATE INDICES WITH INDICES_FORHEATMAP List
-    dec_points_list = sim_met.plot_traj(xpositions[s*sample_size:(s+1)*sample_size],ypositions[s*sample_size:(s+1)*sample_size],initialxt,initialyt,sample_size,axes_flat[s],0,0)
-    print(pd.DataFrame(dec_points_list))
-    # work with the coordinates from here, cluster them to find approximate true decision point, drop outliers
-    # then we can calculate probabilities of reaching each point given the path traveled
-    # which will then allow us to sweep the three target case
+for s in range(n_plots):
+    dec_points = []
+    dec_positions = []
+    for sample in range(sample_size):
+        dec_points_list, dec_pos = sim_met.get_bifurcation_times(xpositions[s*sample_size:(s+1)*sample_size][sample],ypositions[s*sample_size:(s+1)*sample_size][sample])
+        dec_points.append(dec_points_list)
+        dec_positions.append(dec_pos)
+    # finding times when too many bifurcations are detected and updating the dataframes accordingly
     '''
-    for item in minima_indices:
-        print(f"index: {item}")
-        print(f"xpos at index: {xpositions[s*sample_size:(s+1)*sample_size][0][item]}")
-        print(f"ypos at index: {ypositions[s*sample_size:(s+1)*sample_size][0][item]}")
+    for i in range(sample_size):
+        last_dec_point = dec_df.iloc[i,2]
+        if np.abs(last_point_max-last_dec_point) > 100:
+            print(f"too many bifurcations detected row {i}")
+            new_list_times = [dec_df.iloc[i,1],dec_df.iloc[i,2],np.nan]
+            print(f"proper bifurcation points: {new_list_times}")
+            dec_df.iloc[i,:] = new_list_times
+    print(dec_df)
     '''
+    sim_met.plot_traj(xpositions[s*sample_size:(s+1)*sample_size],ypositions[s*sample_size:(s+1)*sample_size],initialxt,initialyt,sample_size,dec_points,axes_flat[s],0,0)
     axes_flat[s].set_title(f"h0: {h0_list[s][0]}")
 figure_num += 1
 #plt.savefig('trajectories_beta20.png')
