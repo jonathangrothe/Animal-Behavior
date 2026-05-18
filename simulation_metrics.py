@@ -65,44 +65,21 @@ def get_bifurcation_times(xPos,yPos):
     curr_index = len(xPos)-1
     complete = False
     while not complete:
-        inline = True
-        backtrack = round(curr_index*0.95)
-        corr = 1
-        while corr > 0.995:
-            slope, intercept, r_value, p_value, std_err = stats.linregress(xPos[backtrack:curr_index].flatten(), yPos[backtrack:curr_index])
-            print(f"slope: {slope}")
-            print(f"intercept: {intercept}")
-            print(f"p_value: {p_value}")
-            print(f"r_value: {r_value}")
-            print(f"std error: {std_err}")
-            backtrack = backtrack - 15
-            corr = np.abs(r_value)
+        backtrack = curr_index - 30
+        diff = 0
+        while diff < 1:
+            slope, intercept, r_value, p_value, std_err = stats.linregress(xPos[backtrack:curr_index], yPos[backtrack:curr_index])
+            predicted_backtrack = intercept + slope*xPos[backtrack]
+            diff = np.abs(predicted_backtrack - yPos[backtrack])
+            if diff < 1: 
+                backtrack = backtrack - 1
             if backtrack < 0:
                 complete = True
                 break
+        if not complete:
+            dec_points.append(backtrack)
 
-        # now we've got index as backtrack,
-        # append backtrack to decision points
-        # set curr index to backtrack
-        dec_points.append(backtrack)
         curr_index = backtrack
-        '''
-        tol = np.sqrt(5*np.abs(slope))
-        if tol < 1:
-            tol = 1
-        distance = np.abs(yPos-(slope*xPos+intercept))
-        while inline:
-            if distance[curr_index] > tol:
-                dec_points.append(curr_index)
-                inline = False
-                if len(dec_points) > 2:
-                    curr_index = 0
-                    break
-            else:
-                curr_index = curr_index - 1
-                if curr_index < 40:
-                    break
-        '''
         if curr_index < 40:
             complete = True
     dec_points.reverse()
@@ -112,7 +89,7 @@ def get_bifurcation_times(xPos,yPos):
         dec_pos.append((xPos[item],yPos[item]))
     return dec_points, dec_pos
 
-def get_success_rate(target_list, sample_size, uneven=False, best_index=-1):
+def get_success_rate(target_list, sample_size, ntargets=2, uneven=False, best_index=-1):
     '''
     A function which takes a list of targets over a number of samples, 
     and returns the probability of reaching a target for each sample
@@ -132,9 +109,21 @@ def get_success_rate(target_list, sample_size, uneven=False, best_index=-1):
     success_se = []
     correct_prob = []
     correct_se = []
+    target_probs = []
+    target_ses = []
     for s in range(n_samples):
         sample_list = target_list[s*sample_size:(s+1)*sample_size]
         failures = sample_list.count(-1)
+        probs = []
+        ses = []
+        for i in range (ntargets):
+            times_reached = sample_list.count(i)
+            prob = times_reached/sample_size
+            se = np.sqrt((prob*(1-prob))/sample_size)
+            probs.append(prob)
+            ses.append(se)
+        target_probs.append(probs)
+        target_ses.append(ses)
         if uneven:
             successes = sample_list.count(best_index)
             cor_prob = successes/sample_size
@@ -145,8 +134,7 @@ def get_success_rate(target_list, sample_size, uneven=False, best_index=-1):
         suc_se = np.sqrt((suc_prob*(1-suc_prob))/sample_size)
         success_prob.append(suc_prob)
         success_se.append(suc_se)
-    return success_prob, success_se, correct_prob, correct_se
-
+    return success_prob, success_se, correct_prob, correct_se, target_probs, target_ses
 def get_neuron_info(activity):
     '''
     A function which gets information about neuron activity over the course of the simulation
@@ -195,20 +183,6 @@ def get_inhibition_rates(inhib_list,sample_size):
         mean_n_inhib = np.mean(inhib_list[x*sample_size:(x+1)*sample_size])
         mean_inhib.append(mean_n_inhib)
     return mean_inhib
-
-def get_decision_time(sum_activity):
-    '''
-    takes a list of the sum of all neuron activity, 
-    returns the index of when the sum of activity gets past a threshold (thresh) of the final sum
-    '''
-    dec_start = np.argmin(sum_activity)
-    dec_end = dec_start
-    while np.abs(sum_activity[dec_end]-sum_activity[dec_start]) < 0.5:
-        dec_end+=1
-        if dec_end == len(sum_activity):
-            dec_end = dec_end -1
-            break
-    return dec_start, dec_end
 
 def get_metric_mean_se(metric, sample_size):
     means = []
@@ -334,8 +308,6 @@ def plot_traj(xPos,yPos,targetsx,targetsy,sample_size,dec_points,figure,start_in
         for sample in range(sample_size):
             dec_time = dec_points[sample]
             figure.scatter(xPos[sample][start_ind:],yPos[sample][start_ind:],color='blue',alpha=0.5/sample_size,s=1)
-            print(f"sample: {sample}, time: {dec_time}")
-            print(f"x: {xPos[sample][dec_time]}, y: {yPos[sample][dec_time]}")
             figure.scatter(xPos[sample][dec_time],yPos[sample][dec_time], color="green",alpha = 0.1)
         figure.scatter(targetsx,targetsy,color='red',s=5)
     else:

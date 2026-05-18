@@ -34,9 +34,8 @@ def sample_sims(bp, changing_params, n_samples, include_trajs=[False, "scatter"]
     target_list = []
     activity_list = [] 
     sum_activity_list = []
-    range_activity_list = []
-    range_argmin_list = []
     decision_points = []
+    decision_pos = []
     activity_df = None
     x_list = []
     y_list = []
@@ -51,23 +50,21 @@ def sample_sims(bp, changing_params, n_samples, include_trajs=[False, "scatter"]
                                                                                  bp['periodicFlag'],bp['rEgo'],bp['rEgoTarget'],bp['Egonumber'],bp['distf'],
                                                                                  bp['adistf'],bp['J'],bp['beta'],bp['h0'],bp['h_b'],bp['dt'],bp['v0'],bp['v0t'],
                                                                                  bp['sigma'],bp['hColl'],bp['rColl'],bp['initialx'],bp['initialy'],bp['initialxt'],bp['initialyt'],
-                                                                                 False,True)
+                                                                                 True,True)
                 # Basic target and time metrics
                 target_reached, time_reached, start = sim_met.get_destination_metrics(xPos,yPos,targetsx,targetsy)
                 target_list.append(target_reached)
                 time_list.append(time_reached)
                 all_fail = target_list.count(-1) == len(target_list)
-                # avg_dists_timereached = sim_met.get_avg_distance(xPos, yPos, targetsx, targetsy, time_reached)
-                # dist = min(avg_dists_timereached)
-                # success_list.append(dist)
+
+                # Bifurcation times and locations: 
+                dec_points_list, dec_pos = sim_met.get_bifurcation_times(xPos[0,:],yPos[0,:]) #change this when we get more agents
+                decision_points.append(dec_points_list)
+                decision_pos.append(dec_pos)
 
                 # Neuron activity metrics
                 sum_activity, range_activity, var_activity, n_inhib_list, n_active_list, neuron_change_rates = sim_met.get_neuron_info(activity[:,0,:])
-                dec_start, dec_end = sim_met.get_decision_time(sum_activity)
-                decision_points.append([dec_start,dec_end]) 
                 sum_activity_list.append(sum_activity)
-                range_activity_list.append(range_activity)
-                range_argmin_list.append(np.argmin(range_activity[start:])+start)
 
                 # code for plotting neuron activity: 
                 if include_trajs[0]:
@@ -92,8 +89,8 @@ def sample_sims(bp, changing_params, n_samples, include_trajs=[False, "scatter"]
         if include_trajs[1] == 'heat':
             x_list = np.array(x_list)
             y_list = np.array(y_list)
-
-    return success_list, target_list, time_list, decision_points, sum_activity_list, range_activity_list, range_argmin_list, activity_df, x_list, y_list
+    # change the return to take out range, add in bifurcation times (as df?)
+    return success_list, target_list, time_list, decision_points, decision_pos, sum_activity_list, activity_df, x_list, y_list
 
 def boundary_search(bp,base_min,base_max,sample_size,min_search,boundary_prob=0.05,n_in_bounds=5):
     '''

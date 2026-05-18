@@ -138,33 +138,28 @@ ypositions = []
 neuron_activity = []
 mean_decision_points = []
 sum_total_activity = []
-range_total_activity = []
+decision_points_total = []
+decision_pos_total = []
 indices_list_forheatmap = []
 for item in h0_list:
     change = {'h0':item}
-    success_list, target_list, time_list, decision_points, sum_activity_list, range_activity_list, range_argmin_list, activity_df, x_list, y_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
+    success_list, target_list, time_list, decision_points, decision_pos, sum_activity_list, activity_df, x_list, y_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
     print(target_list)
     # always get the top target
     for t in range(len(target_list)):
         if target_list[t] == 0:
             indices_list_forheatmap.append(t)
             break
-
     xpositions += (x_list)
     ypositions += (y_list)
     neuron_activity.append(activity_df)
     sum_total_activity += sum_activity_list
-    range_total_activity += range_activity_list
-    sum_s = 0
-    sum_e = 0
-    for item in decision_points:
-        sum_s+=item[0]
-        sum_e+=item[1]+5
-    mean_decision_points.append([round(sum_s/sample_size),round(sum_e/sample_size)])
-#print(indices_list_forheatmap)
+    decision_points_total += decision_points
+    decision_pos_total += decision_pos
+
 figure_num = 1
 
-    
+
 # SINGLE SETTING PLOTS
 # general plotting settings
 n_plots = len(h0_list)
@@ -177,22 +172,7 @@ axes_flat = ax.flatten()
 for s in range(n_plots):
     dec_points = []
     dec_positions = []
-    for sample in range(sample_size):
-        dec_points_list, dec_pos = sim_met.get_bifurcation_times(xpositions[s*sample_size:(s+1)*sample_size][sample],ypositions[s*sample_size:(s+1)*sample_size][sample])
-        dec_points.append(dec_points_list)
-        dec_positions.append(dec_pos)
-    # finding times when too many bifurcations are detected and updating the dataframes accordingly
-    '''
-    for i in range(sample_size):
-        last_dec_point = dec_df.iloc[i,2]
-        if np.abs(last_point_max-last_dec_point) > 100:
-            print(f"too many bifurcations detected row {i}")
-            new_list_times = [dec_df.iloc[i,1],dec_df.iloc[i,2],np.nan]
-            print(f"proper bifurcation points: {new_list_times}")
-            dec_df.iloc[i,:] = new_list_times
-    print(dec_df)
-    '''
-    sim_met.plot_traj(xpositions[s*sample_size:(s+1)*sample_size],ypositions[s*sample_size:(s+1)*sample_size],initialxt,initialyt,sample_size,dec_points,axes_flat[s],0,0)
+    sim_met.plot_traj(xpositions[s*sample_size:(s+1)*sample_size],ypositions[s*sample_size:(s+1)*sample_size],initialxt,initialyt,sample_size,decision_points_total[s*sample_size:(s+1)*sample_size],axes_flat[s],0,0)
     axes_flat[s].set_title(f"h0: {h0_list[s][0]}")
 figure_num += 1
 #plt.savefig('trajectories_beta20.png')
