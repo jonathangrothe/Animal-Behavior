@@ -10,15 +10,15 @@ from scipy.optimize import curve_fit
 # --------  PARAMETERS --------
 
 L = 100 # width of grid
-ntargets = 3
+ntargets = 2
 nagents = 1
 initialx = np.zeros(nagents)
 initialy = np.zeros(nagents)
 for a in range(nagents):
     initialx[a] = 20
     initialy[a] = 50
-initialxt = [65,90,65]
-initialyt = [20,50,80]
+initialxt = [80,80]
+initialyt = [20,80]
 
 # number of time steps
 T = 5000
@@ -189,6 +189,5 @@ fig.suptitle(p_success_title)
 figure_num += 1
 plt.tight_layout()
 
-#time_df.to_csv(f"time_df_beta{beta_list[0]}_egocentric.csv")
-#correct_df.to_csv(f"pcorrect_df_beta{beta_list[0]}_egocentric.csv")
+
 plt.show()

@@ -50,7 +50,7 @@ def sample_sims(bp, changing_params, n_samples, include_trajs=[False, "scatter"]
                                                                                  bp['periodicFlag'],bp['rEgo'],bp['rEgoTarget'],bp['Egonumber'],bp['distf'],
                                                                                  bp['adistf'],bp['J'],bp['beta'],bp['h0'],bp['h_b'],bp['dt'],bp['v0'],bp['v0t'],
                                                                                  bp['sigma'],bp['hColl'],bp['rColl'],bp['initialx'],bp['initialy'],bp['initialxt'],bp['initialyt'],
-                                                                                 True,True)
+                                                                                 False,True)
                 # Basic target and time metrics
                 target_reached, time_reached, start = sim_met.get_destination_metrics(xPos,yPos,targetsx,targetsy)
                 target_list.append(target_reached)
@@ -92,7 +92,8 @@ def sample_sims(bp, changing_params, n_samples, include_trajs=[False, "scatter"]
     # change the return to take out range, add in bifurcation times (as df?)
     return success_list, target_list, time_list, decision_points, decision_pos, sum_activity_list, activity_df, x_list, y_list
 
-def boundary_search(bp,base_min,base_max,sample_size,min_search,boundary_prob=0.05,n_in_bounds=5):
+# could be good to get this to be able to search for a certain bifurcation angle ...
+def boundary_search(bp,base_min,base_max,sample_size,min_search,param='h0',boundary_prob=0.2):
     '''
     A function that performs a modified binary search to find the target attractiveness value which produces a probability close to the boundary_prob
     Binary search until we are out of 0 and 1, because that will be the majority of cases, 
@@ -105,12 +106,11 @@ def boundary_search(bp,base_min,base_max,sample_size,min_search,boundary_prob=0.
     base_max: the absolute maximum for h0
     KEEP IN MIND THE MEAN OF BASE_MIN AND BASE_MAX MUST BE IN THE SUCCESS RANGE (or find a way to fix this later)
     sample_size: number of samples to take
+    param: the parameter we are searching over (usually h0)
     boundary_prob: the probability of success we are looking for, defaul to 0.05 to try and find right where it starts to fail
-    n_in_bounds: number of times to search once we have reached a non 0 or 1 probability
     returns:
     boundary_list: a list which contains the smallest* and the largest h0 value where we get really close to this boundary_prob
-    KEEP IN MIND: THIS DOESN'T NECESSARILY DO GREAT WITH DIPS, WHICH IS DEF A PROBLEM IF WE WANT TO RELY ON IT HEAVILY
-    this should probably be used in combination with our sweeps to most effeciently get boundaries. 
+    boundary_range: the range of the region that was being searched when the desired value was found
     '''
     boundary_list = []
     found_range = []
@@ -118,7 +118,10 @@ def boundary_search(bp,base_min,base_max,sample_size,min_search,boundary_prob=0.
     min_val = base_min
     max_val = base_max
     value = (min_val+max_val)/2
-    bp['h0'] = [value,value]
+    if param == 'h0':
+        bp['h0'] = [value,value]
+    if param == 'sigma':
+        bp['sigma'] = value
     while not found:
         target_list = []
         print(f"h0: {bp['h0']}")
@@ -137,21 +140,21 @@ def boundary_search(bp,base_min,base_max,sample_size,min_search,boundary_prob=0.
             if item != -1:
                 n_reached += 1
         print(f"n reached: {n_reached}")
-        if n_reached < int(0.2*sample_size):
+        if n_reached < int(boundary_prob*sample_size):
             if min_search:
                 min_val = value
             else:
                 max_val = value
             value = (min_val + max_val)/2
             bp['h0'] = [value,value]
-        if n_reached > int(0.8*sample_size):
+        if n_reached > int((1-boundary_prob)*sample_size):
             if min_search:
                 max_val = value
             else:
                 min_val = value
             value = (min_val + max_val)/2
             bp['h0'] = [value,value]
-        if int(0.2*sample_size) < n_reached < int(0.8*sample_size):
+        if int(boundary_prob*sample_size) < n_reached < int((1-boundary_prob)*sample_size):
             # we know we're in the range, so if we our current range is appropriately small, we're good? with an error reported?
             curr_range = max_val - min_val
             value = (min_val+max_val)/2
