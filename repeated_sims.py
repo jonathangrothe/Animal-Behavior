@@ -39,6 +39,7 @@ def sample_sims(bp, changing_params, n_samples, include_trajs=[False, "scatter"]
     activity_df = None
     x_list = []
     y_list = []
+    headings_list = []
     for param in changing_params.keys():
         param_value_list = changing_params[param]
         for value in param_value_list:
@@ -76,6 +77,7 @@ def sample_sims(bp, changing_params, n_samples, include_trajs=[False, "scatter"]
                     if include_trajs[1] == 'scatter':
                         x_list.append(xpos_1d)
                         y_list.append(ypos_1d)
+                    headings_list.append(headings)
 
                 if include_activity: # we also want to add a sum of activity list,
                     for neuron in range(np.shape(activity)[0]):
@@ -90,7 +92,7 @@ def sample_sims(bp, changing_params, n_samples, include_trajs=[False, "scatter"]
             x_list = np.array(x_list)
             y_list = np.array(y_list)
     # change the return to take out range, add in bifurcation times (as df?)
-    return success_list, target_list, time_list, decision_points, decision_pos, sum_activity_list, activity_df, x_list, y_list
+    return success_list, target_list, time_list, decision_points, decision_pos, sum_activity_list, activity_df, x_list, y_list, headings_list
 
 # could be good to get this to be able to search for a certain bifurcation angle ...
 def boundary_search(bp,base_min,base_max,sample_size,min_search,param='h0',boundary_prob=0.2):

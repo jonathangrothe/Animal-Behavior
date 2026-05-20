@@ -98,10 +98,10 @@ base = {'N':N,
 plot_trajs = [False, 'scatter'] 
 plot_neurons = False
 uneven = True
-sample_size = 30
-start = 0.15
+sample_size = 90
+start = 0.16
 finish = 0.2
-sigma_range= np.linspace(start,finish,num=30)
+sigma_range= np.linspace(start,finish,num=100)
 #h0_for_plot = h0_range
 h0_total_list = []
 # 9.5: 0.215-0.32, 10: 0.208-0.325, 12: 0.189-0.339, 20: 0.177-0.338, 52: 0.182-0.325, 180: 0.189-0.326 ? 
@@ -125,7 +125,7 @@ for h0 in h0_list:
     base['h0'] = h0
     print(f'beta: {base['beta']}')
     print(f'h0: {base['h0']}')
-    success_list, target_list, time_list, decision_points, decision_pos, sum_activity_list, activity_df, x_list, y_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
+    success_list, target_list, time_list, decision_points, decision_pos, sum_activity_list, activity_df, x_list, y_list, headings_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
     p_success, se_success, p_correct, se_correct, p_target, se_target = sim_met.get_success_rate(target_list, sample_size, ntargets, uneven, 1)
     time_total_list.append(time_list)
     prob_total_list.append(p_target)
@@ -157,7 +157,7 @@ colors_prob = ['blue','green','red']
 labels_prob = ['lower target','middle target','upper target']
     
 
-x_label = "difference in atraction"
+x_label = "sigma"
 time_y_label = "Average time to target"
 time_agg_title = f"Average time to target, {"allocentric" if allocentricFlag==1 else "egocentric"}, beta: {beta}"
 figure_num, mean_time = sim_met.plot_metric(time_total_list,sigma_range,colors_time,labels_time,figure_num,(8,8),
@@ -167,8 +167,8 @@ time_df = pd.DataFrame(mean_time)
 time_df.index = base_h0_list
 time_df.columns = sigma_range
     
-p_success_y = "Probability of reaching top target"
-p_success_title = f"Probability of reaching top target, {"allocentric" if allocentricFlag==1 else "egocentric"}, beta: {beta}"
+p_success_y = "Probability of reaching each target (green middle)"
+p_success_title = f"Probability of reaching each target, {"allocentric" if allocentricFlag==1 else "egocentric"}, beta: {beta}"
 
 plt.figure(figsize=(8,8))
 fig, ax = plt.subplots(2,2,num=figure_num)

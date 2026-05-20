@@ -15,8 +15,8 @@ initialy = np.zeros(nagents)
 for a in range(nagents):
     initialx[a] = 20
     initialy[a] = 50
-initialxt = [65,90,65]
-initialyt = [20,50,80]
+initialxt = [65,80,65]
+initialyt = [30,50,70]
 
 # number of time steps
 T = 5000
@@ -95,7 +95,7 @@ base = {'N':N,
 plot_neurons = True
 plot_trajs = [True, 'scatter']
 uneven = True
-sample_size = 20
+sample_size = 5
 min_list = []
 max_list = []
 min_range_list = []
@@ -130,7 +130,7 @@ int_val = round((min_val+max_val)/2,5)
 # p(t=0|top, back) p(t=0|bottom, back), ....
 # to get where it bifurcates pre decison we need a range of where it slows (we do this in traj code) and then to get its position at that time
 
-h0_list = [[[0.21903,0.21903,0.21903]],[[0.21907,0.21907,0.21907]],[[0.2191,0.2191,0.2191]]]
+h0_list = [[[0.21,0.21,0.21]],[[0.23,0.23,0.23]]]
 print(h0_list)
 
 xpositions = []
@@ -143,7 +143,7 @@ decision_pos_total = []
 indices_list_forheatmap = []
 for item in h0_list:
     change = {'h0':item}
-    success_list, target_list, time_list, decision_points, decision_pos, sum_activity_list, activity_df, x_list, y_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
+    success_list, target_list, time_list, decision_points, decision_pos, sum_activity_list, activity_df, x_list, y_list, headings_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
     print(target_list)
     # always get the top target
     for t in range(len(target_list)):
@@ -163,7 +163,7 @@ figure_num = 1
 # SINGLE SETTING PLOTS
 # general plotting settings
 n_plots = len(h0_list)
-ncols = 3
+ncols = 2
 nrows = 1
 # neuron heat maps - maybe just do one example for each? 
 plt.figure(layout='constrained',figsize=(10,5))

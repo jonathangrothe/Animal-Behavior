@@ -53,9 +53,9 @@ for i in range(N):
     J = np.squeeze(J)
 
 allocentricFlag = 0 # 1 is allo, 0 is ego 
-h0s = [0.25,0.25] # attraction vector, first are attraction for targets, then agents
+h0s = [0.22,0.22] # attraction vector, first are attraction for targets, then agents
 h_b = 0.2
-sigma = 0.25 #0.25 works for three target (sometimes)
+sigma = 0.5 #0.25 works for three target (sometimes)
 beta = 100 #100 works for double
 
 
@@ -95,13 +95,13 @@ base = {'N':N,
 plot_neurons = True
 plot_trajs = [True, 'scatter']
 uneven = True
-sample_size = 10
+sample_size = 1
 min_list = []
 max_list = []
 min_range_list = []
 max_range_list = []
 
-
+'''
 for i in range(5):
     min_low = 0.23- 0.04 + 0.01*np.random.rand()
     min_high = 0.23 + 0.04 + 0.01*np.random.rand()
@@ -114,7 +114,7 @@ for i in range(5):
     max_list.append(max_est)
     min_range_list.append(range_min)
     max_range_list.append(range_max)
-
+'''
 print(f"min list: {min_list}")
 print(f"max_list: {max_list}")
 min_val = np.mean(min_list)
@@ -130,8 +130,9 @@ int_val = round((min_val+max_val)/2,5)
 # p(t=0|top, back) p(t=0|bottom, back), ....
 # to get where it bifurcates pre decison we need a range of where it slows (we do this in traj code) and then to get its position at that time
 
-h0_list = [[[min_val,min_val]],[[int_val, int_val]],[[max_val,max_val]]]
+h0_list = [[[0.26,0.26]],[[0.26,0.2605]]]
 print(h0_list)
+sigma_list = [[0.25],[0.3],[0.35],[0.4],[0.45],[0.5]]
 
 xpositions = []
 ypositions = []
@@ -143,8 +144,7 @@ decision_pos_total = []
 indices_list_forheatmap = []
 for item in h0_list:
     change = {'h0':item}
-    success_list, target_list, time_list, decision_points, decision_pos, sum_activity_list, activity_df, x_list, y_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
-    print(target_list)
+    success_list, target_list, time_list, decision_points, decision_pos, sum_activity_list, activity_df, x_list, y_list, headings_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
     # always get the top target
     for t in range(len(target_list)):
         if target_list[t] == 0:
@@ -157,13 +157,27 @@ for item in h0_list:
     decision_points_total += decision_points
     decision_pos_total += decision_pos
 
+
+positions_df = pd.DataFrame(ypositions[1],xpositions[1])
+y_diff = np.zeros(len(ypositions[1]))
+y_diff[1:] = np.diff(ypositions[1])
+x_diff = np.zeros(len(xpositions[1]))
+x_diff[1:] = np.diff(xpositions[1])
+positions_df['x diff'] = x_diff
+positions_df['y diff'] = y_diff
+print(f"pos: {positions_df}")
+print(f"activity: {neuron_activity[1]}")
+
 figure_num = 1
+
+positions_df.to_csv("positions_ego_df.csv")
+neuron_activity[1].to_csv("activity_ego_df.csv")
 
 
 # SINGLE SETTING PLOTS
 # general plotting settings
 n_plots = len(h0_list)
-ncols = 3
+ncols = 2
 nrows = 1
 # neuron heat maps - maybe just do one example for each? 
 plt.figure(layout='constrained',figsize=(10,5))
@@ -173,7 +187,7 @@ for s in range(n_plots):
     dec_points = []
     dec_positions = []
     sim_met.plot_traj(xpositions[s*sample_size:(s+1)*sample_size],ypositions[s*sample_size:(s+1)*sample_size],initialxt,initialyt,sample_size,decision_points_total[s*sample_size:(s+1)*sample_size],axes_flat[s],0,0)
-    axes_flat[s].set_title(f"h0: {h0_list[s][0]}")
+    axes_flat[s].set_title(f"sigma: {h0_list[s][0]}")
 figure_num += 1
 
 for a in range(n_plots):
@@ -183,7 +197,7 @@ for a in range(n_plots):
     col_min = np.min(neuron_activity[a].iloc[:,40:])
     col_max = np.max(neuron_activity[a].iloc[:,40:])
     plt.imshow(rolled,cmap='viridis',aspect='auto',vmin=col_min,vmax=col_max)
-    plt.title(f"h0: {h0_list[a][0]}")
+    plt.title(f"sigma: {h0_list[a][0]}")
     figure_num+=1
 
 
