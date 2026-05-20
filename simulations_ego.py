@@ -136,6 +136,7 @@ sigma_list = [[0.25],[0.3],[0.35],[0.4],[0.45],[0.5]]
 
 xpositions = []
 ypositions = []
+headings = []
 neuron_activity = []
 mean_decision_points = []
 sum_total_activity = []
@@ -152,6 +153,7 @@ for item in h0_list:
             break
     xpositions += (x_list)
     ypositions += (y_list)
+    headings += (headings_list)
     neuron_activity.append(activity_df)
     sum_total_activity += sum_activity_list
     decision_points_total += decision_points
@@ -159,20 +161,18 @@ for item in h0_list:
 
 
 positions_df = pd.DataFrame(ypositions[1],xpositions[1])
+headings_df = pd.DataFrame(headings[1])
 y_diff = np.zeros(len(ypositions[1]))
 y_diff[1:] = np.diff(ypositions[1])
 x_diff = np.zeros(len(xpositions[1]))
 x_diff[1:] = np.diff(xpositions[1])
 positions_df['x diff'] = x_diff
 positions_df['y diff'] = y_diff
-print(f"pos: {positions_df}")
-print(f"activity: {neuron_activity[1]}")
-
 figure_num = 1
 
 positions_df.to_csv("positions_ego_df.csv")
 neuron_activity[1].to_csv("activity_ego_df.csv")
-
+headings_df.to_csv("headings_ego_df.csv",index=False)
 
 # SINGLE SETTING PLOTS
 # general plotting settings
@@ -187,7 +187,7 @@ for s in range(n_plots):
     dec_points = []
     dec_positions = []
     sim_met.plot_traj(xpositions[s*sample_size:(s+1)*sample_size],ypositions[s*sample_size:(s+1)*sample_size],initialxt,initialyt,sample_size,decision_points_total[s*sample_size:(s+1)*sample_size],axes_flat[s],0,0)
-    axes_flat[s].set_title(f"sigma: {h0_list[s][0]}")
+    axes_flat[s].set_title(f"h0: {h0_list[s][0]}")
 figure_num += 1
 
 for a in range(n_plots):
@@ -197,7 +197,7 @@ for a in range(n_plots):
     col_min = np.min(neuron_activity[a].iloc[:,40:])
     col_max = np.max(neuron_activity[a].iloc[:,40:])
     plt.imshow(rolled,cmap='viridis',aspect='auto',vmin=col_min,vmax=col_max)
-    plt.title(f"sigma: {h0_list[a][0]}")
+    plt.title(f"h0: {h0_list[a][0]}")
     figure_num+=1
 
 

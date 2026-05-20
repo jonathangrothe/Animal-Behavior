@@ -133,6 +133,7 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
             dU = -uaOld + netRing - h_b + Iextern[:,a]
             uaNew = uaOld + dt * dU
             uArray[:,a,tstep+1] = uaNew
+    
 
         # -------- STEP C --------
         for a in range(nagents):
@@ -156,11 +157,17 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
                 if newAngle < 0:
                     newAngle = newAngle + 2*np.pi
             headings[a,tstep+1] = newAngle
-
+        
             if allocentricFlag == 0:
                 alpharing[a,:] = np.mod(alpharing[a,:] - headings[a,tstep] + newAngle,2*np.pi)
             elif Egocentric[a] >= Egonumber:
                 alpharing[a,:] = np.mod(alpharing[a,:]-headings[a,tstep] + newAngle, 2*np.pi)
+        
+            if tstep >= 325 and tstep < 330:
+                print(f"heading: {headings[a,tstep]}")
+                print(f"alpharing: {alpharing}")
+                print(f"cx: {cx}")
+                print(f"cy: {cy}")
 
         # -------- STEP D --------
         for a in range(nagents):
