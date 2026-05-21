@@ -195,6 +195,13 @@ def get_metric_mean_se(metric, sample_size):
         ses.append(met_se)
     return means, ses
 
+def find_bumps(activity):
+    '''
+    A function which takes in the activity data for a simulation and returns a list of bumps at each time point in that simulation
+    (could also plot? or also return data on when the bumps shift)
+    maybe there's also something here about how abrputly the shift occurs ? or when the bumps are most uneven ? also need to look at width and area under bump here, which is tricky
+    '''
+
 def plot_metric(metrics,x,colors,labels,figurenum,size,title,xlabel,ylabel):
     '''
     A function which plots an aggregated metric over changing values of a parameter
