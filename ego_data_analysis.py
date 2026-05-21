@@ -3,15 +3,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 import simulate_ringattractor as sim_ra
 from scipy.signal import find_peaks
+from scipy.integrate import simpson
 
 positions = pd.read_csv("positions_ego_df.csv")
 activity_df = pd.read_csv("activity_ego_df.csv")
-print(activity_df.iloc[0:4,1:])
 activity_to_insert = activity_df.iloc[0:4,1:]
-activity = pd.concat([activity_df,activity_to_insert]).reset_index(drop=True)
+activity = pd.concat([activity_df.iloc[:,1:],activity_to_insert]).reset_index(drop=True)
 headings = pd.read_csv("headings_ego_df.csv")
 
-print(f"activity for plots: {activity}")
 
 headings_diff = np.zeros(len(headings.iloc[0,:]))
 headings_diff[1:] = np.diff(headings.iloc[0,:])
@@ -51,41 +50,83 @@ range_stop = time_max_x_diff +100
 
 activity_range = activity.iloc[:,time_max_x_diff:range_stop]
 
-print(f"activity at neuron 49: {activity.iloc[49,:]}")
-print(f"activity at time 363: {activity.iloc[49,363]}, activity at time 364: {activity.iloc[49,364]}")
+#print(f"activity at neuron 49: {activity.iloc[49,:]}")
+#print(f"activity at time 363: {activity.iloc[49,363]}, activity at time 364: {activity.iloc[49,364]}")
 indices, _ = find_peaks(activity.iloc[49,:])
-print(f"local maxima of neuron 49: {indices}")
+#print(f"local maxima of neuron 49: {indices}")
 
 
 plt.figure(1)
-plt.plot(activity.iloc[:,50])
-plt.title("activity at time 50")
-
-plt.figure(2)
-plt.plot(activity.iloc[:,144])
-plt.title("activity at time 144")
-
-plt.figure(3)
-plt.plot(activity.iloc[:,352])
-plt.title("activity at time 352")
-
-plt.figure(4)
-plt.plot(activity.iloc[:,359])
-plt.title("activity at time 359")
-
-plt.figure(5)
-plt.plot(activity.iloc[:,366])
-plt.title("activity at time 366")
-
-plt.figure(6)
-plt.plot(activity.iloc[:,369])
-plt.title("activity at time 369")
+plt.plot(activity.iloc[:,200])
+plt.title("activity at time 200")
 
 
-
-for i in range(len(headings.iloc[0,:])):
+bump_differences = []
+for i in range(100,400):
     indices_bumps, _ = find_peaks(activity.iloc[:,i])
-    print(f"time: {i}, bump indices: {indices_bumps}")
+    true_bumps = [x for x in indices_bumps if x <= 100]
+    negative_bumps, _ = find_peaks(-activity.iloc[:,i])
+    true_troughs = [x for x in negative_bumps if x <= 100]
+    for index in range(len(true_bumps)): 
+        if true_bumps[index] == 100:
+            true_bumps[index] = 0
+    for index in range(len(true_troughs)): 
+        if true_troughs[index] == 100:
+            true_troughs[index] = 0
+    print(f"time: {i}, bump indices: {true_bumps}, troughs indices: {true_troughs}")
+    # find the trough that is closer between the bumps ? 
+    base_activity = np.max(activity.iloc[negative_bumps,i])
+    #print(f"bump_base_activity: {base_activity}")
+    bump_areas = []
+    if len(true_bumps) ==2:
+        for item in true_bumps: 
+            bump_activity = activity.iloc[item,i]
+            activity_left = bump_activity
+            activity_right = bump_activity
+            left_index = item-1
+            right_index = item+1
+            while activity_left > base_activity:
+                left_index = left_index -1
+                if left_index <= -1:
+                    left_index = 99
+                activity_left = activity.iloc[left_index,i]
+                #print(f"entered, at {left_index}, activity left: {activity_left}")
+            while activity_right > base_activity:
+                right_index = right_index +1
+                if right_index >= 100:
+                    right_index = 0
+                activity_right = activity.iloc[right_index,i]
+                #print(f"entered, at {right_index}, activity right: {activity_right}")
+            #print(f"bump: {item}, left index of bump: {left_index}, right index of bump: {right_index}")
+        # now we have indices we need to integrate with base_activity as 0
+        # and we have to roll over anything that is
+            #print(f"left index: {left_index}")
+            #print(f"right index: {right_index}")
+            if right_index >= left_index:
+                if right_index not in true_troughs: 
+                    right_index = right_index +1
+                if left_index not in true_troughs:
+                    left_index = left_index -1
+                if right_index == 100:
+                    right_index = 0
+                if left_index == -1:
+                    left_index = 99
+                activity_for_integral = activity.iloc[left_index:right_index,i]
+            if right_index < left_index:
+                #print(f"left activity: {activity.iloc[left_index:100,i]}")
+                #print(f"right activity: {activity.iloc[0:right_index+1,i]}")
+                width = 100 - left_index
+                right_index = width + right_index
+                rolled = np.roll(activity.iloc[0:100,i], width,axis=0)
+                activity_for_integral = rolled[0:right_index+1]
+            activity_for_integral = activity_for_integral - base_activity
+            #print(f"activity for integral: {activity_for_integral}")
+            area_simpson = simpson(activity_for_integral)
+            print(f"bump: {item}, total bump area: {area_simpson}")
+            bump_areas.append(area_simpson)
+        bump_differences.append(bump_areas[0]/bump_areas[1])
+
+        
     curr_heading = headings.iloc[0,i]
     neuron_heading = (100/(2*np.pi))*curr_heading
     if curr_heading > np.pi:
@@ -111,7 +152,7 @@ for i in range(len(headings.iloc[0,:])):
         alpharing = np.mod(alpharing, 2*np.pi)
         cx_d = cx_d + val * np.cos(alpharing[n])
         cy_d = cy_d + val * np.sin(alpharing[n])
-
+    '''
     if i in [144,364,366]:
         print(f"time: {i}")
         print(f"center x: {cx_d}, center y: {cy_d}")
@@ -124,9 +165,11 @@ for i in range(len(headings.iloc[0,:])):
         print(f"current: {np.array(curr_activity)}")
         print(f"next: {np.array(next_activity)}")
         print(f"change: {np.array(dtdu)}")
-        
-
-
+        '''
+print(bump_differences)
+plt.figure(2)
+plt.plot(bump_differences)
+# NEED TO CHANGE THIS SO IT HANDLES THE GAPS WHEN THERE ARE NOT EXACTLY TWO WELL DEFINED BUMPS
 
 
 '''

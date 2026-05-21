@@ -3,6 +3,7 @@ from scipy.signal import find_peaks
 from scipy import stats
 import cv2
 import matplotlib.pyplot as plt
+import pandas as pd
 
 # -------- Getting metrics --------
 
@@ -201,6 +202,16 @@ def find_bumps(activity):
     (could also plot? or also return data on when the bumps shift)
     maybe there's also something here about how abrputly the shift occurs ? or when the bumps are most uneven ? also need to look at width and area under bump here, which is tricky
     '''
+    activity_to_insert = activity.iloc[0:4,1:]
+    activity_plus = pd.concat([activity,activity_to_insert]).reset_index(drop=True)
+    tsteps = len(activity.iloc[0,:])
+    bump_list = []
+    for i in range(tsteps):
+        indices_bumps, _ = find_peaks(activity_plus.iloc[:,i])
+        true_bumps = [x for x in indices_bumps if x <= 100]
+        bump_list.append(true_bumps)
+
+    return bump_list
 
 def plot_metric(metrics,x,colors,labels,figurenum,size,title,xlabel,ylabel):
     '''
