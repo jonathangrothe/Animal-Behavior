@@ -4,6 +4,8 @@ import pandas as pd
 import simulate_ringattractor as sim_ra
 import simulation_metrics as sim_met
 import repeated_sims
+import ego_data_analysis as egodata
+import matplotlib.colors as mcolors
 
 # --------  PARAMETERS --------
 
@@ -52,7 +54,7 @@ for i in range(N):
     J[i,i] = 0.0
     J = np.squeeze(J)
 
-allocentricFlag = 0 # 1 is allo, 0 is ego 
+allocentricFlag = 1 # 1 is allo, 0 is ego 
 h0s = [0.22,0.22] # attraction vector, first are attraction for targets, then agents
 h_b = 0.2
 sigma = 0.5 #0.25 works for three target (sometimes)
@@ -95,7 +97,7 @@ base = {'N':N,
 plot_neurons = True
 plot_trajs = [True, 'scatter']
 uneven = True
-sample_size = 1
+sample_size = 10
 min_list = []
 max_list = []
 min_range_list = []
@@ -130,9 +132,9 @@ int_val = round((min_val+max_val)/2,5)
 # p(t=0|top, back) p(t=0|bottom, back), ....
 # to get where it bifurcates pre decison we need a range of where it slows (we do this in traj code) and then to get its position at that time
 
-h0_list = [[[0.26,0.26]],[[0.26,0.2605]]]
+h0_list = [[[0.26,0.26]],[[0.26,0.260005]],[[0.26,0.26005]]]
 print(h0_list)
-sigma_list = [[0.25],[0.3],[0.35],[0.4],[0.45],[0.5]]
+# sigma_list = [[0.25],[0.3],[0.35],[0.4],[0.45],[0.5]]
 
 xpositions = []
 ypositions = []
@@ -159,6 +161,7 @@ for item in h0_list:
     decision_points_total += decision_points
     decision_pos_total += decision_pos
 
+print(np.shape(neuron_activity[0]))
 
 positions_df = pd.DataFrame(ypositions[1],xpositions[1])
 headings_df = pd.DataFrame(headings[1])
@@ -177,28 +180,34 @@ headings_df.to_csv("headings_ego_df.csv",index=False)
 # SINGLE SETTING PLOTS
 # general plotting settings
 n_plots = len(h0_list)
-ncols = 2
+ncols = 3
 nrows = 1
 # neuron heat maps - maybe just do one example for each? 
-plt.figure(layout='constrained',figsize=(10,5))
-fig, ax = plt.subplots(nrows,ncols,num=figure_num)
-axes_flat = ax.flatten()
-for s in range(n_plots):
-    dec_points = []
-    dec_positions = []
-    sim_met.plot_traj(xpositions[s*sample_size:(s+1)*sample_size],ypositions[s*sample_size:(s+1)*sample_size],initialxt,initialyt,sample_size,decision_points_total[s*sample_size:(s+1)*sample_size],axes_flat[s],0,0)
-    axes_flat[s].set_title(f"h0: {h0_list[s][0]}")
-figure_num += 1
+fig = plt.figure(layout='constrained',figsize=(18,9))
+subfigs = fig.subfigures(3, 1, wspace=0.1)
+axs0 = subfigs[0].subplots(nrows,ncols)
+ax0_labels = ['A','D','G','J']
+axs1 = subfigs[1].subplots(nrows,ncols)
+ax1_labels = ['B','E','H','K']
+axs2 = subfigs[2].subplots(nrows,ncols)
+ax2_labels = ['C','F','I','L']
+grey_to_blue = ["#D3D3D3", "#A9A9A9", "#708090", "#4682B4", "#000080"]
+cmap = mcolors.LinearSegmentedColormap.from_list("GreyBlue", grey_to_blue)
 
-for a in range(n_plots):
-    plt.figure(figsize=(5,2.5))
-    plt.figure(figure_num)
-    rolled= np.roll(neuron_activity[a].dropna(axis=1).iloc[0:100,:].values, shift=50, axis=0)
-    col_min = np.min(neuron_activity[a].iloc[:,40:])
-    col_max = np.max(neuron_activity[a].iloc[:,40:])
-    plt.imshow(rolled,cmap='viridis',aspect='auto',vmin=col_min,vmax=col_max)
+for s in range(n_plots):
+    sim_met.plot_traj(xpositions[s*sample_size:(s+1)*sample_size],ypositions[s*sample_size:(s+1)*sample_size],initialxt,initialyt,sample_size,decision_points_total[s*sample_size:(s+1)*sample_size],axs0[s],0,0)
+    axs0[s].set_title(f"h0: {h0_list[s][0]}")
+    axs0[s].annotate(ax0_labels[s], xy=(0.1, 0.9), xycoords="axes fraction")
+
+    rolled= np.roll(neuron_activity[s].dropna(axis=1).iloc[0:100,:].values, shift=50, axis=0)
+    col_min = np.min(neuron_activity[s].iloc[:,40:])
+    col_max = np.max(neuron_activity[s].iloc[:,40:])
+    axs1[s].imshow(rolled,cmap=cmap,aspect='auto',vmin=col_min,vmax=col_max)
+    axs1[s].annotate(ax1_labels[s], xy=(0.1, 0.9), xycoords="axes fraction")
     plt.title(f"h0: {h0_list[a][0]}")
-    figure_num+=1
+
+    egodata.plot_area(neuron_activity[s],axs2[s],(-1.2,11.5))
+    axs2[s].annotate(ax2_labels[s], xy=(0.1, 0.9), xycoords="axes fraction")
 
 
 plt.show()

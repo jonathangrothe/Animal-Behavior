@@ -162,12 +162,6 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
                 alpharing[a,:] = np.mod(alpharing[a,:] - headings[a,tstep] + newAngle,2*np.pi)
             elif Egocentric[a] >= Egonumber:
                 alpharing[a,:] = np.mod(alpharing[a,:]-headings[a,tstep] + newAngle, 2*np.pi)
-        
-            if tstep >= 325 and tstep < 330:
-                print(f"heading: {headings[a,tstep]}")
-                print(f"alpharing: {alpharing}")
-                print(f"cx: {cx}")
-                print(f"cy: {cy}")
 
         # -------- STEP D --------
         for a in range(nagents):
