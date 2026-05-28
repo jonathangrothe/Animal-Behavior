@@ -57,7 +57,7 @@ for i in range(N):
 allocentricFlag = 0 # 1 is allo, 0 is ego
 h0s = [0.25,0.25] # attraction vector, first are attraction for targets, then agents
 h_b = 0.2
-sigma = 0.25
+sigma = 0.37
 beta = 100
 
 
@@ -98,14 +98,14 @@ base = {'N':N,
 plot_trajs = [False, 'scatter'] 
 plot_neurons = False
 uneven = True
-sample_size = 30
+sample_size = 20
 start = 0
-finish = 0.003
-h0_range= np.linspace(start,finish,num=300)
+finish = 0.00003
+h0_range= np.linspace(start,finish,num=15)
 h0_for_plot = h0_range
 h0_total_list = []
 # 9.5: 0.215-0.32, 10: 0.208-0.325, 12: 0.189-0.339, 20: 0.177-0.338, 52: 0.182-0.325, 180: 0.189-0.326 ? 
-base_h0_list = np.linspace(0.2248,0.2745,num=16) # 0.22 to 0.31 - 0.1925-0.335
+base_h0_list = np.linspace(0.203,0.291,num=16) # 0.22 to 0.31 - 0.1925-0.335
 n_lines = len(base_h0_list)
 for n in range(n_lines):
     h0_list = []
@@ -154,7 +154,7 @@ for item in base_h0_list:
 
 x_label = "difference in atraction"
 time_y_label = "Average time to target"
-time_agg_title = f"Average time to target, {"allocentric" if allocentricFlag==1 else "egocentric"}, beta: {beta}"
+time_agg_title = f"Average time to target, {"allocentric" if allocentricFlag==1 else "egocentric"}, beta: {beta}, sigma{sigma}"
 figure_num, mean_time = sim_met.plot_metric(time_total_list,h0_range,colors,labels,figure_num,(8,8),
                         time_agg_title,x_label,time_y_label)
     
@@ -163,7 +163,7 @@ time_df.index = base_h0_list
 time_df.columns = h0_range
     
 p_success_y = "Probability of reaching top target"
-p_success_title = f"Probability of reaching top target, {"allocentric" if allocentricFlag==1 else "egocentric"}, beta: {beta}"
+p_success_title = f"Probability of reaching top target, {"allocentric" if allocentricFlag==1 else "egocentric"}, beta: {beta}, sigma: {sigma}"
 
 plt.figure(figsize=(8,8))
 fig, ax = plt.subplots(4,4,num=figure_num)

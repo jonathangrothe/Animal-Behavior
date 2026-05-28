@@ -16,7 +16,33 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
         alpharing[a,:] = alpharing0
 
     uArray = np.zeros((N, nagents, T+1))
-    u0 = 0.2*np.random.randn(N,nagents) #initialize randomly, change seed
+    u0 = 0.2*np.random.randn(N,nagents) 
+    
+    '''
+    u0 = np.zeros((100,1))
+    for index in range(len(u0)):
+        if index % 20 == 0 or index % 20 == 19:
+            u0[index] = -0.4
+        if index % 20 == 1 or index % 20 == 18:
+            u0[index] = -0.3
+        if index % 20 == 2 or index % 20 == 17:
+            u0[index] = -0.2
+        if index % 20 == 3 or index % 20 == 16:
+            u0[index] = -0.1
+        if index % 20 == 4 or index % 20 == 15:
+            u0[index] = 0
+        if index % 20 == 5 or index % 20 == 14:
+            u0[index] = 0
+        if index % 20 == 6 or index % 20 == 13:
+            u0[index] = 0.1
+        if index % 20 == 7 or index % 20 == 12:
+            u0[index] = 0.2
+        if index % 20 == 8 or index % 20 == 11:
+            u0[index] = 0.3
+        if index % 20 == 9 or index % 20 == 10:
+            u0[index] = 0.4
+    print(u0)
+    '''
     uArray[:,:,0] = u0
 
     xPos = np.zeros((nagents,T+1))
@@ -26,7 +52,8 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
         xPos[a,0] = initialx[a]
         yPos[a,0] = initialy[a]
         if allocentricFlag == 0: # Ego should randomly initialize heading, allo should not (for making neurons interpretable)
-            headings[a,0] = 2*math.pi*np.random.rand() 
+            #headings[a,0] = 2*math.pi*np.random.rand() 
+            headings[a,0] = 0
         else:
             headings[a,0] = 0
         alpharing[a,:] = np.mod(alpharing[a,:]+headings[a,0], 2*np.pi)

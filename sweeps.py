@@ -10,15 +10,15 @@ from scipy.optimize import curve_fit
 # --------  PARAMETERS --------
 
 L = 100 # width of grid
-ntargets = 3
+ntargets = 2
 nagents = 1
 initialx = np.zeros(nagents)
 initialy = np.zeros(nagents)
 for a in range(nagents):
     initialx[a] = 20
     initialy[a] = 50
-initialxt = [65,90,65]
-initialyt = [20,50,80]
+initialxt = [80,80]
+initialyt = [20,80]
 
 # number of time steps
 T = 5000
@@ -57,8 +57,8 @@ for i in range(N):
 allocentricFlag = 1 # 1 is allo, 0 is ego
 h0s = [0.25,0.25] # attraction vector, first are attraction for targets, then agents
 h_b = 0.2
-sigma = 0.25
-beta = 200
+sigma = 0.5
+beta = 20
 
 
 # -------- Running the simulation --------
@@ -98,18 +98,20 @@ base = {'N':N,
 plot_trajs = [False, 'scatter'] 
 plot_neurons = False
 uneven = True
-sample_size = 90
-start = 0.16
-finish = 0.2
-sigma_range= np.linspace(start,finish,num=100)
+sample_size = 5
+start = 0.18
+finish = 0.333
+n_h0 = 5
+h0_range= np.linspace(start,finish,num=n_h0)
 #h0_for_plot = h0_range
 h0_total_list = []
 # 9.5: 0.215-0.32, 10: 0.208-0.325, 12: 0.189-0.339, 20: 0.177-0.338, 52: 0.182-0.325, 180: 0.189-0.326 ? 
-base_h0_list = np.linspace(0.2191,0.2193,num=4) # 0.22 to 0.31 - 0.1925-0.335
-h0_list = []
-for item in base_h0_list:
-    h0_list.append([item,item,item])
-n_lines = len(base_h0_list)
+beta_list = [20,100] # 0.22 to 0.31 - 0.1925-0.335
+for i in range(len(beta_list)):
+    h0_list = []
+    for item in h0_range:
+        h0_list.append([[item,item]])
+    h0_total_list.append(h0_list)
 
 # defining our metrics of interest: 
 time_total_list = []
@@ -119,24 +121,30 @@ decision_points_total = []
 decision_pos_total = []
 
 # we want to sweep over sigmas, so each time we set the h0 and the beta, and have sigma as change
-
-for h0 in h0_list:
-    change= {'sigma':sigma_range}
-    base['h0'] = h0
-    print(f'beta: {base['beta']}')
-    print(f'h0: {base['h0']}')
-    success_list, target_list, time_list, decision_points, decision_pos, sum_activity_list, activity_df, x_list, y_list, headings_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
-    p_success, se_success, p_correct, se_correct, p_target, se_target = sim_met.get_success_rate(target_list, sample_size, ntargets, uneven, 1)
-    time_total_list.append(time_list)
-    prob_total_list.append(p_target)
-    prob_se_list.append(se_target)
-    decision_points_total.append(decision_points)
-    decision_pos_total.append(decision_pos)
+for index in range(len(h0_total_list)):
+    for h0 in h0_total_list[index]:
+        print(f"h0: {h0}")
+        print(f"beta: {beta_list[index]}")
+        change= {'h0':h0}
+        base['beta'] = beta_list[index]
+        success_list, target_list, time_list, decision_points, decision_pos, sum_activity_list, activity_df, x_list, y_list, headings_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
+        p_success, se_success, p_correct, se_correct, p_target, se_target = sim_met.get_success_rate(target_list, sample_size, ntargets, uneven, 1)
+        time_total_list.append(time_list)
+        prob_total_list.append(p_target)
+        prob_se_list.append(se_target)
+        decision_points_total.append(decision_points)
+        decision_pos_total.append(decision_pos)
+        print(f"p target: {p_target}")
+        print(f"decision points: {decision_points}")
+        print(f"decision po: {decision_pos}")
+        print(f"time: {time_list}")
     
 correct_df = pd.DataFrame(prob_total_list)
-correct_df.index = base_h0_list
-correct_df.columns = sigma_range
-print(correct_df)
+#correct_df.index = h0_list
+#correct_df.columns = beta_list
+print(f"correct df: {correct_df}")
+print(f"time_total_list: {time_total_list}")
+print(f"one sim: {time_total_list[0]}")
 print(f"total: {prob_total_list}")
 
 # compile the data we want from each run into a dataframe
@@ -148,25 +156,33 @@ figure_num = 1
 
 # overall plotting settings
 cmap = plt.get_cmap('viridis')
-colors_time = cmap(np.linspace(0, 1, n_lines))
+colors_time = cmap(np.linspace(0, 1, n_h0))
 labels_time = []
-for item in base_h0_list:
-    labels_time.append(f'base h0: {item}') 
+for item in h0_range:
+    labels_time.append(f'h0: {item}') 
 
-colors_prob = ['blue','green','red']
-labels_prob = ['lower target','middle target','upper target']
+colors_prob = ['blue','red']
+#labels_prob = ['lower target','middle target','upper target']
     
 
-x_label = "sigma"
+x_label = "h0"
 time_y_label = "Average time to target"
-time_agg_title = f"Average time to target, {"allocentric" if allocentricFlag==1 else "egocentric"}, beta: {beta}"
-figure_num, mean_time = sim_met.plot_metric(time_total_list,sigma_range,colors_time,labels_time,figure_num,(8,8),
-                        time_agg_title,x_label,time_y_label)
+for index in range(len(beta_list)):
+    time_agg_title = f"Average time to target, {"allocentric" if allocentricFlag==1 else "egocentric"}, beta: {beta_list[index]}, sigma: {sigma}"
+    figure_num, mean_time = sim_met.plot_metric(time_total_list[n_h0*index:n_h0*(index+1)],h0_range,colors_time,labels_time,figure_num,(8,8),
+                            time_agg_title,x_label,time_y_label)
     
 time_df = pd.DataFrame(mean_time)
-time_df.index = base_h0_list
-time_df.columns = sigma_range
-    
+#time_df.index = beta_list
+#time_df.columns = h0_range
+
+dec_time_y_label = "Average time to decision"
+for index in range(len(beta_list)):
+    decision_time_agg_title = f"Average time to bifurcation, {"allocentric" if allocentricFlag==1 else "egocentric"}, beta: {beta_list[index]}, sigma: {sigma}"
+    figure_num, mean_dec_time = sim_met.plot_metric(decision_points_total[n_h0*index:n_h0*(index+1)],h0_range,colors_time,labels_time,figure_num,(8,8),
+                                                    decision_time_agg_title,x_label,dec_time_y_label)
+
+'''
 p_success_y = "Probability of reaching each target (green middle)"
 p_success_title = f"Probability of reaching each target, {"allocentric" if allocentricFlag==1 else "egocentric"}, beta: {beta}"
 
@@ -178,17 +194,17 @@ current_se_list = np.array(prob_se_list)
 print(f"current: {current_prob_list}")
 for i in range(len(current_prob_list)):
     for p in range(ntargets):
-        axes_flat[i].plot(sigma_range,current_prob_list[i][:,p],color=colors_prob[p], label=labels_prob[p])
-        axes_flat[i].plot(sigma_range, np.add(current_prob_list[i][:,p],current_se_list[i][:,p]), color = colors_prob[p], linestyle = ':')
-        axes_flat[i].plot(sigma_range, np.subtract(current_prob_list[i][:,p],current_se_list[i][:,p]), color = colors_prob[p], linestyle = ':')
-        axes_flat[i].set_title(f"{round(base_h0_list[i],5)}")
+        axes_flat[i].plot(h0_range,current_prob_list[i][:,p],color=colors_prob[p])
+        axes_flat[i].plot(h0_range, np.add(current_prob_list[i][:,p],current_se_list[i][:,p]), color = colors_prob[p], linestyle = ':')
+        axes_flat[i].plot(h0_range, np.subtract(current_prob_list[i][:,p],current_se_list[i][:,p]), color = colors_prob[p], linestyle = ':')
+        axes_flat[i].set_title(f"{round(beta_list[i],5)}")
 
 fig.supxlabel(x_label)
 fig.supylabel(p_success_y)
 fig.suptitle(p_success_title)
 figure_num += 1
 plt.tight_layout()
-
+'''
 #time_df.to_csv(f"time_df_beta{beta_list[0]}_egocentric.csv")
 #correct_df.to_csv(f"pcorrect_df_beta{beta_list[0]}_egocentric.csv")
 plt.show()

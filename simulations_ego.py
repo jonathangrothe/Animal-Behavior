@@ -54,10 +54,10 @@ for i in range(N):
     J[i,i] = 0.0
     J = np.squeeze(J)
 
-allocentricFlag = 1 # 1 is allo, 0 is ego 
+allocentricFlag = 0 # 1 is allo, 0 is ego 
 h0s = [0.22,0.22] # attraction vector, first are attraction for targets, then agents
 h_b = 0.2
-sigma = 0.5 #0.25 works for three target (sometimes)
+sigma = 0.37 #0.25 works for three target (sometimes)
 beta = 100 #100 works for double
 
 
@@ -97,13 +97,13 @@ base = {'N':N,
 plot_neurons = True
 plot_trajs = [True, 'scatter']
 uneven = True
-sample_size = 10
+sample_size = 5
 min_list = []
 max_list = []
 min_range_list = []
 max_range_list = []
 
-'''
+
 for i in range(5):
     min_low = 0.23- 0.04 + 0.01*np.random.rand()
     min_high = 0.23 + 0.04 + 0.01*np.random.rand()
@@ -116,7 +116,7 @@ for i in range(5):
     max_list.append(max_est)
     min_range_list.append(range_min)
     max_range_list.append(range_max)
-'''
+
 print(f"min list: {min_list}")
 print(f"max_list: {max_list}")
 min_val = np.mean(min_list)
@@ -132,10 +132,10 @@ int_val = round((min_val+max_val)/2,5)
 # p(t=0|top, back) p(t=0|bottom, back), ....
 # to get where it bifurcates pre decison we need a range of where it slows (we do this in traj code) and then to get its position at that time
 
-h0_list = [[[0.26,0.26]],[[0.26,0.260005]],[[0.26,0.26005]]]
-print(h0_list)
-# sigma_list = [[0.25],[0.3],[0.35],[0.4],[0.45],[0.5]]
-
+h0_list = [[[min_val,min_val]],[[int_val,int_val]],[[max_val,max_val]]]
+#print(h0_list)
+#sigma_list = [[0.25],[0.3],[0.35],[0.4],[0.45],[0.5]]
+#beta_list = [[11],[15],[20],[40],[90],[250]]
 xpositions = []
 ypositions = []
 headings = []
@@ -149,21 +149,23 @@ for item in h0_list:
     change = {'h0':item}
     success_list, target_list, time_list, decision_points, decision_pos, sum_activity_list, activity_df, x_list, y_list, headings_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
     # always get the top target
+    '''
     for t in range(len(target_list)):
         if target_list[t] == 0:
             indices_list_forheatmap.append(t)
             break
+    '''
     xpositions += (x_list)
     ypositions += (y_list)
     headings += (headings_list)
     neuron_activity.append(activity_df)
     sum_total_activity += sum_activity_list
-    decision_points_total += decision_points
-    decision_pos_total += decision_pos
+    #decision_points_total += decision_points
+    #decision_pos_total += decision_pos
 
 print(np.shape(neuron_activity[0]))
 
-positions_df = pd.DataFrame(ypositions[1],xpositions[1])
+positions_df = pd.DataFrame(ypositions[0],xpositions[0])
 headings_df = pd.DataFrame(headings[1])
 y_diff = np.zeros(len(ypositions[1]))
 y_diff[1:] = np.diff(ypositions[1])
@@ -173,9 +175,9 @@ positions_df['x diff'] = x_diff
 positions_df['y diff'] = y_diff
 figure_num = 1
 
-positions_df.to_csv("positions_ego_df.csv")
-neuron_activity[1].to_csv("activity_ego_df.csv")
-headings_df.to_csv("headings_ego_df.csv",index=False)
+positions_df.to_csv("positions_search_ego_df.csv")
+#neuron_activity[1].to_csv("activity_ego_df.csv")
+#headings_df.to_csv("headings_ego_df.csv",index=False)
 
 # SINGLE SETTING PLOTS
 # general plotting settings
@@ -184,13 +186,13 @@ ncols = 3
 nrows = 1
 # neuron heat maps - maybe just do one example for each? 
 fig = plt.figure(layout='constrained',figsize=(18,9))
-subfigs = fig.subfigures(3, 1, wspace=0.1)
+subfigs = fig.subfigures(2, 1, wspace=0.1)
 axs0 = subfigs[0].subplots(nrows,ncols)
-ax0_labels = ['A','D','G','J']
+ax0_labels = ['A','C','E','G','I','K']
 axs1 = subfigs[1].subplots(nrows,ncols)
-ax1_labels = ['B','E','H','K']
-axs2 = subfigs[2].subplots(nrows,ncols)
-ax2_labels = ['C','F','I','L']
+ax1_labels = ['B','D','F','H','J','L']
+#axs2 = subfigs[2].subplots(nrows,ncols)
+#ax2_labels = ['C','F','I','L']
 grey_to_blue = ["#D3D3D3", "#A9A9A9", "#708090", "#4682B4", "#000080"]
 cmap = mcolors.LinearSegmentedColormap.from_list("GreyBlue", grey_to_blue)
 
@@ -204,10 +206,10 @@ for s in range(n_plots):
     col_max = np.max(neuron_activity[s].iloc[:,40:])
     axs1[s].imshow(rolled,cmap=cmap,aspect='auto',vmin=col_min,vmax=col_max)
     axs1[s].annotate(ax1_labels[s], xy=(0.1, 0.9), xycoords="axes fraction")
-    plt.title(f"h0: {h0_list[a][0]}")
+    plt.title(f"beta: {h0_list[s][0]}")
 
-    egodata.plot_area(neuron_activity[s],axs2[s],(-1.2,11.5))
-    axs2[s].annotate(ax2_labels[s], xy=(0.1, 0.9), xycoords="axes fraction")
+    #egodata.plot_area(neuron_activity[s],axs2[s],(-1.2,11.5))
+    #axs2[s].annotate(ax2_labels[s], xy=(0.1, 0.9), xycoords="axes fraction")
 
 
 plt.show()

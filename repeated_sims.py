@@ -52,16 +52,20 @@ def sample_sims(bp, changing_params, n_samples, include_trajs=[False, "scatter"]
                                                                                  bp['adistf'],bp['J'],bp['beta'],bp['h0'],bp['h_b'],bp['dt'],bp['v0'],bp['v0t'],
                                                                                  bp['sigma'],bp['hColl'],bp['rColl'],bp['initialx'],bp['initialy'],bp['initialxt'],bp['initialyt'],
                                                                                  False,True)
-                # Basic target and time metrics
-                target_reached, time_reached, start = sim_met.get_destination_metrics(xPos,yPos,targetsx,targetsy)
-                target_list.append(target_reached)
-                time_list.append(time_reached)
-                all_fail = target_list.count(-1) == len(target_list)
+                
+                # need a skip if there are no targets
 
-                # Bifurcation times and locations: 
-                dec_points_list, dec_pos = sim_met.get_bifurcation_times(xPos[0,:],yPos[0,:]) #change this when we get more agents
-                decision_points.append(dec_points_list)
-                decision_pos.append(dec_pos)
+                if bp['ntargets'] > 0:
+                    # Basic target and time metrics
+                    target_reached, time_reached, start = sim_met.get_destination_metrics(xPos,yPos,targetsx,targetsy)
+                    target_list.append(target_reached)
+                    time_list.append(time_reached)
+                    all_fail = target_list.count(-1) == len(target_list)
+
+                    # Bifurcation times and locations: 
+                    dec_points_list, dec_pos = sim_met.get_bifurcation_times(xPos[0,:],yPos[0,:]) #change this when we get more agents
+                    decision_points.append(dec_points_list)
+                    decision_pos.append(dec_pos)
 
                 # Neuron activity metrics
                 sum_activity, range_activity, var_activity, n_inhib_list, n_active_list, neuron_change_rates = sim_met.get_neuron_info(activity[:,0,:])

@@ -87,7 +87,7 @@ def get_bifurcation_times(xPos,yPos):
     # get the x positions, return them
     dec_pos = []
     for item in dec_points:
-        dec_pos.append((xPos[item],yPos[item]))
+        dec_pos.append([xPos[item],yPos[item]])
     return dec_points, dec_pos
 
 def get_success_rate(target_list, sample_size, ntargets=2, uneven=False, best_index=-1):
@@ -230,6 +230,7 @@ def plot_metric(metrics,x,colors,labels,figurenum,size,title,xlabel,ylabel):
     n_values = len(x)
     sample_size = len(metrics[0])//n_values
     mean_metric_list = []
+    print(len(metrics))
     for m in range(len(metrics)):
         mean_metric = []
         se_metric = []
@@ -315,7 +316,7 @@ def plot_sum_activity(activity_list,figure):
     mean_list = np.mean(sum_list_truncated,axis=0)
     return mean_list
 
-def plot_traj(xPos,yPos,targetsx,targetsy,sample_size,dec_points,figure,start_ind=0,end_ind=0):
+def plot_traj(xPos,yPos,targetsx,targetsy,sample_size,dec_points,figure,plot_dec_point=False,start_ind=0,end_ind=0):
     '''
     A function that takes x trajectories and y trajectories and plots them over each other, with a low ish opacity so we can see overlap. 
     Designed to be used over the same simulation settings with a number s of samples.
@@ -324,9 +325,12 @@ def plot_traj(xPos,yPos,targetsx,targetsy,sample_size,dec_points,figure,start_in
     '''
     if end_ind == 0:
         for sample in range(sample_size):
-            dec_time = dec_points[sample]
-            figure.scatter(xPos[sample][start_ind:],yPos[sample][start_ind:],color='blue',alpha=0.5/sample_size,s=1)
-            figure.scatter(xPos[sample][dec_time],yPos[sample][dec_time], color="green",alpha = 0.1)
+            figure.plot(xPos[sample][start_ind:],yPos[sample][start_ind:],color='blue',alpha=0.5)
+            if plot_dec_point:
+                dec_time = dec_points[sample]
+                figure.scatter(xPos[sample][dec_time],yPos[sample][dec_time], color="green",alpha = 0.1)
+            else:
+                figure.scatter(xPos[sample][0],yPos[sample][0], color='red',alpha=0.8)
         figure.scatter(targetsx,targetsy,color='red',s=5)
     else:
         for sample in range(sample_size):
