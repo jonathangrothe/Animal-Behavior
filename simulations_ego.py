@@ -58,7 +58,7 @@ allocentricFlag = 0 # 1 is allo, 0 is ego
 h0s = [0.22,0.22] # attraction vector, first are attraction for targets, then agents
 h_b = 0.2
 sigma = 0.37 #0.25 works for three target (sometimes)
-beta = 100 #100 works for double
+beta = 20 #100 works for double
 
 
 # -------- Running the simulation --------
@@ -105,10 +105,10 @@ max_range_list = []
 
 
 for i in range(5):
-    min_low = 0.23- 0.04 + 0.01*np.random.rand()
-    min_high = 0.23 + 0.04 + 0.01*np.random.rand()
-    max_low = 0.27 - 0.04 + 0.01*np.random.rand()
-    max_high = 0.27 + 0.04 + 0.01*np.random.rand()
+    min_low = 0.22- 0.04 + 0.01*np.random.rand()
+    min_high = 0.22 + 0.04 + 0.01*np.random.rand()
+    max_low = 0.28 - 0.04 + 0.01*np.random.rand()
+    max_high = 0.28 + 0.04 + 0.01*np.random.rand()
     min_est,range_min = repeated_sims.boundary_search(base,min_low,min_high,10,True,'h0',0.2) # probably also want to return the final step size to get an idea of the scale of the boundary point
     max_est, range_max = repeated_sims.boundary_search(base,max_low,max_high,10,False,'h0',0.2)
     print(f"boundaries, sim: {i}: {min_est,max_est}")

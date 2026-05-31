@@ -87,7 +87,7 @@ def get_bifurcation_times(xPos,yPos):
     # get the x positions, return them
     dec_pos = []
     for item in dec_points:
-        dec_pos.append([xPos[item],yPos[item]])
+        dec_pos.append((xPos[item],yPos[item]))
     return dec_points, dec_pos
 
 def get_success_rate(target_list, sample_size, ntargets=2, uneven=False, best_index=-1):
@@ -213,7 +213,7 @@ def find_bumps(activity):
 
     return bump_list
 
-def plot_metric(metrics,x,colors,labels,figurenum,size,title,xlabel,ylabel):
+def plot_metric(metrics,x,colors,labels,fig,title,xlabel,ylabel):
     '''
     A function which plots an aggregated metric over changing values of a parameter
     Parameters:
@@ -225,8 +225,8 @@ def plot_metric(metrics,x,colors,labels,figurenum,size,title,xlabel,ylabel):
     '''
     # first step: get the dimesions to line up
     # second step: plot it
-    plt.figure(figsize=size)
-    plt.figure(figurenum)
+    #plt.figure(figsize=size)
+    #plt.figure(figurenum)
     n_values = len(x)
     sample_size = len(metrics[0])//n_values
     mean_metric_list = []
@@ -239,20 +239,20 @@ def plot_metric(metrics,x,colors,labels,figurenum,size,title,xlabel,ylabel):
             mean_metric.append(np.mean(sample_metric))
             se_metric.append(np.std(sample_metric)/np.sqrt(sample_size))
         if m == 0 or m == (len(metrics)-1):
-            plt.plot(x, mean_metric, color = colors[m], label = labels[m])
-            plt.plot(x, np.add(mean_metric,se_metric), color = colors[m], label = 'standard error', linestyle = ':')
-            plt.plot(x, np.subtract(mean_metric,se_metric), color = colors[m], linestyle = ':')
+            fig.plot(x, mean_metric, color = colors[m], label = labels[m])
+            fig.plot(x, np.add(mean_metric,se_metric), color = colors[m], label = 'standard error', linestyle = ':')
+            fig.plot(x, np.subtract(mean_metric,se_metric), color = colors[m], linestyle = ':')
         else:
-            plt.plot(x, mean_metric, color = colors[m])
-            plt.plot(x, np.add(mean_metric,se_metric), color = colors[m], linestyle = ':')
-            plt.plot(x, np.subtract(mean_metric,se_metric), color = colors[m], linestyle = ':')
+            fig.plot(x, mean_metric, color = colors[m])
+            fig.plot(x, np.add(mean_metric,se_metric), color = colors[m], linestyle = ':')
+            fig.plot(x, np.subtract(mean_metric,se_metric), color = colors[m], linestyle = ':')
         mean_metric_list.append(mean_metric)
 
-    plt.legend()
-    plt.title(title)
-    plt.xlabel(xlabel)
-    plt.ylabel(ylabel)
-    return figurenum+1, mean_metric_list
+    fig.legend()
+    fig.set_title(title)
+    fig.set_xlabel(xlabel)
+    fig.set_ylabel(ylabel)
+    return 0, mean_metric_list
 
 
 def plot_neurons(activity_df, figure, agg=True, tstart=0, tstop=0, N=100, start_neuron=0, end_neuron=100):

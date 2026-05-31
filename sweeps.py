@@ -98,20 +98,18 @@ base = {'N':N,
 plot_trajs = [False, 'scatter'] 
 plot_neurons = False
 uneven = True
-sample_size = 5
+sample_size = 30
 start = 0.18
-finish = 0.333
-n_h0 = 5
+finish = 0.33
+n_h0 = 50
 h0_range= np.linspace(start,finish,num=n_h0)
 #h0_for_plot = h0_range
 h0_total_list = []
 # 9.5: 0.215-0.32, 10: 0.208-0.325, 12: 0.189-0.339, 20: 0.177-0.338, 52: 0.182-0.325, 180: 0.189-0.326 ? 
-beta_list = [20,100] # 0.22 to 0.31 - 0.1925-0.335
-for i in range(len(beta_list)):
-    h0_list = []
-    for item in h0_range:
-        h0_list.append([[item,item]])
-    h0_total_list.append(h0_list)
+beta_list = [10,12,20,40,100] # 0.22 to 0.31 - 0.1925-0.335
+h0_list = []
+for item in h0_range:
+    h0_list.append([item,item])
 
 # defining our metrics of interest: 
 time_total_list = []
@@ -119,13 +117,15 @@ prob_total_list = []
 prob_se_list = []
 decision_points_total = []
 decision_pos_total = []
+decision_pos_x_total = []
+
+# want to get the x position of the last decision point where y was close to 50
 
 # we want to sweep over sigmas, so each time we set the h0 and the beta, and have sigma as change
-for index in range(len(h0_total_list)):
-    for h0 in h0_total_list[index]:
-        print(f"h0: {h0}")
+for index in range(len(beta_list)):
+        #print(f"h0: {h0_lis}")
         print(f"beta: {beta_list[index]}")
-        change= {'h0':h0}
+        change= {'h0':h0_list}
         base['beta'] = beta_list[index]
         success_list, target_list, time_list, decision_points, decision_pos, sum_activity_list, activity_df, x_list, y_list, headings_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
         p_success, se_success, p_correct, se_correct, p_target, se_target = sim_met.get_success_rate(target_list, sample_size, ntargets, uneven, 1)
@@ -134,18 +134,23 @@ for index in range(len(h0_total_list)):
         prob_se_list.append(se_target)
         decision_points_total.append(decision_points)
         decision_pos_total.append(decision_pos)
-        print(f"p target: {p_target}")
-        print(f"decision points: {decision_points}")
-        print(f"decision po: {decision_pos}")
-        print(f"time: {time_list}")
+        xpos_list = []
+        for item in decision_pos:
+            if len(item) == 0:
+                xpos_list.append(80)
+            if len(item) == 1:
+                xpos_list.append(item[0][0])
+            if len(item) > 1:
+                index_first_dec = 0
+                for index in range(len(item)):
+                    if np.abs(item[index][1]-50) >= 3:
+                        index_first_dec = index - 1
+                xpos_list.append(item[index_first_dec][0])
+        decision_pos_x_total.append(xpos_list)
     
 correct_df = pd.DataFrame(prob_total_list)
 #correct_df.index = h0_list
 #correct_df.columns = beta_list
-print(f"correct df: {correct_df}")
-print(f"time_total_list: {time_total_list}")
-print(f"one sim: {time_total_list[0]}")
-print(f"total: {prob_total_list}")
 
 # compile the data we want from each run into a dataframe
 # we want: p_correct and time, and we would prefer if they are labeled with simulation settings
@@ -156,31 +161,31 @@ figure_num = 1
 
 # overall plotting settings
 cmap = plt.get_cmap('viridis')
-colors_time = cmap(np.linspace(0, 1, n_h0))
+colors_time = cmap(np.linspace(0, 1, len(beta_list)))
 labels_time = []
-for item in h0_range:
-    labels_time.append(f'h0: {item}') 
+for item in beta_list:
+    labels_time.append(f'beta: {item}') 
 
 colors_prob = ['blue','red']
 #labels_prob = ['lower target','middle target','upper target']
     
+fig, axs = plt.subplots(1, 2, figsize=(14, 7),num=1)
 
 x_label = "h0"
 time_y_label = "Average time to target"
-for index in range(len(beta_list)):
-    time_agg_title = f"Average time to target, {"allocentric" if allocentricFlag==1 else "egocentric"}, beta: {beta_list[index]}, sigma: {sigma}"
-    figure_num, mean_time = sim_met.plot_metric(time_total_list[n_h0*index:n_h0*(index+1)],h0_range,colors_time,labels_time,figure_num,(8,8),
+time_agg_title = f"Average time to target, {"allocentric" if allocentricFlag==1 else "egocentric"}, sigma: {sigma}"
+figure_num, mean_time = sim_met.plot_metric(time_total_list,h0_range,colors_time,labels_time,axs[0],
                             time_agg_title,x_label,time_y_label)
     
 time_df = pd.DataFrame(mean_time)
 #time_df.index = beta_list
 #time_df.columns = h0_range
 
-dec_time_y_label = "Average time to decision"
-for index in range(len(beta_list)):
-    decision_time_agg_title = f"Average time to bifurcation, {"allocentric" if allocentricFlag==1 else "egocentric"}, beta: {beta_list[index]}, sigma: {sigma}"
-    figure_num, mean_dec_time = sim_met.plot_metric(decision_points_total[n_h0*index:n_h0*(index+1)],h0_range,colors_time,labels_time,figure_num,(8,8),
-                                                    decision_time_agg_title,x_label,dec_time_y_label)
+    
+dec_posx_y_label = "Average x position at decision"
+decision_posx_agg_title = f"Average x position at bifurcation, {"allocentric" if allocentricFlag==1 else "egocentric"}, sigma: {sigma}"
+figure_num, mean_dec_time = sim_met.plot_metric(decision_pos_x_total,h0_range,colors_time,labels_time,axs[1],
+                                                    decision_posx_agg_title,x_label,dec_posx_y_label)
 
 '''
 p_success_y = "Probability of reaching each target (green middle)"
