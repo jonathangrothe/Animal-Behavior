@@ -176,4 +176,44 @@ def search_helper(nt,h0_bool,val):
         return h0_list
     return val
 
+def target_dist_test(min_val,max_val,nt,target_list,direction):
+    '''
+    a helper function for doing boundary search with three (+ ?) targets that sees how close to evenly distributed they are
+    if they are close to evenly distributed we're good; good enough for now is just reaching every target
+    '''
+    sample_size = len(target_list)
+    for i in range(nt):
+        times_reached = target_list.count(i)
+        if times_reached <= sample_size*0.1:
+            if direction=='min':
+                x=0
+    return (min_val + max_val)/2
+
+def target_range_test(min_val,max_val,target_list,direction,boundary_prob):
+    sample_size = len(target_list)
+    n_reached = 0
+    for item in target_list:
+        if item != -1:
+            n_reached += 1
+    print(f"n reached: {n_reached}")
+    if n_reached < int(boundary_prob*sample_size):
+        if direction=='min':
+            min_val = value
+        else:
+            max_val = value
+        return min_val, max_val
+    if n_reached > int((1-boundary_prob)*sample_size):
+        if direction=='max':
+            max_val = value
+        else:
+            min_val = value
+        return min_val, max_val
+    if int(boundary_prob*sample_size) < n_reached < int((1-boundary_prob)*sample_size):
+        curr_range = max_val - min_val
+        value = (min_val+max_val)/2
+        return value
+
+
+
+    
 

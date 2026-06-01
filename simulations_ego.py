@@ -21,7 +21,7 @@ initialxt = [80,80]
 initialyt = [20,80]
 
 # number of time steps
-T = 5000
+T = 50000
 periodicflag = 0
 rEgo = 0 # radius to switch to egocentric (for when close to another agent)
 rEgoTarget = 0 # radius for switch near target 
@@ -97,7 +97,7 @@ base = {'N':N,
 plot_neurons = True
 plot_trajs = True
 uneven = True
-sample_size = 30
+sample_size = 10
 min_list = []
 max_list = []
 min_range_list = []

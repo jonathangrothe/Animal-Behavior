@@ -54,7 +54,7 @@ for i in range(N):
     J[i,i] = 0.0
     J = np.squeeze(J)
 
-allocentricFlag = 1 # 1 is allo, 0 is ego
+allocentricFlag = 0 # 1 is allo, 0 is ego
 h0s = [0.25,0.25] # attraction vector, first are attraction for targets, then agents
 h_b = 0.2
 sigma = 0.5
@@ -100,7 +100,7 @@ plot_neurons = False
 uneven = True
 sample_size = 30
 start = 0
-finish = 0.00003
+finish = 0.003
 h0_range= np.linspace(start,finish,num=150)
 h0_for_plot = h0_range
 h0_total_list = []

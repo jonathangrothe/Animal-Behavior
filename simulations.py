@@ -52,11 +52,11 @@ for i in range(N):
     J[i,i] = 0.0
     J = np.squeeze(J)
 
-allocentricFlag = 1 # 1 is allo, 0 is ego 
-h0s = [0.25,0.25,0.25] # attraction vector, first are attraction for targets, then agents
+allocentricFlag = 0 # 1 is allo, 0 is ego 
+h0s = [0.2191,0.2191,0.2191] 
 h_b = 0.2
-sigma = 0.175 #0.25 works for three target (sometimes)
-beta = 200 #100 works for double
+sigma = 0.25 # narrower sigma means more bifurcations in 3 (+?) target case
+beta = 200 
 
 
 # -------- Running the simulation --------
@@ -95,20 +95,20 @@ base = {'N':N,
 plot_neurons = True
 plot_trajs = True
 uneven = True
-sample_size = 5
+sample_size = 3
 min_list = []
 max_list = []
 min_range_list = []
 max_range_list = []
 
 '''
-for i in range(5):
-    min_low = 0.19- 0.04 + 0.01*np.random.rand()
-    min_high = 0.19 + 0.04 + 0.01*np.random.rand()
-    max_low = 0.32 - 0.04 + 0.01*np.random.rand()
-    max_high = 0.32 + 0.04 + 0.01*np.random.rand()
-    min_est,range_min = repeated_sims.boundary_search(base,min_low,min_high,10,True,0.5,5) # probably also want to return the final step size to get an idea of the scale of the boundary point
-    max_est, range_max = repeated_sims.boundary_search(base,max_low,max_high,10,False,0.5,5)
+for i in range(1):
+    min_low = 0.21 - 0.04 + 0.01*np.random.rand()
+    min_high = 0.21 + 0.04 + 0.01*np.random.rand()
+    max_low = 0.25 - 0.04 + 0.01*np.random.rand()
+    max_high = 0.25 + 0.04 + 0.01*np.random.rand()
+    min_est,range_min = repeated_sims.boundary_search(base,min_low,min_high,10,True,'h0',0.2) # probably also want to return the final step size to get an idea of the scale of the boundary point
+    max_est, range_max = repeated_sims.boundary_search(base,max_low,max_high,10,False,'h0',0.2)
     print(f"boundaries, sim: {i}: {min_est,max_est}")
     min_list.append(min_est)
     max_list.append(max_est)
@@ -123,6 +123,8 @@ min_range = np.mean(min_range_list)
 max_range = np.mean(max_range_list)
 int_val = round((min_val+max_val)/2,5)
 '''
+min_val = 0.18
+max_val = 0.25
 
 # p(reaching each target|current path)
 # p(t=0), p(t=1), p(t=2) 
@@ -132,9 +134,11 @@ int_val = round((min_val+max_val)/2,5)
 
 # it is designed to be used like: 
 # h0_list = [[0.21,0.21,0.21],[0.23,0.23,0.23]]
-# and not aggregated, but I will have to change the code a bit to do that
-h0_list = [[[0.21,0.21,0.21]],[[0.23,0.23,0.23]]]
-print(h0_list)
+# and not aggregated, but I will have to change the code a bit to do that 
+h0_list = [[[min_val,min_val,min_val]],[[max_val,max_val,max_val]]]
+# print(h0_list)
+# beta_list = [[50],[100],[150],[200],[250]]
+# sigma_list = [[0.15],[0.175],[0.2],[0.225],[0.25]]
 
 xpositions = []
 ypositions = []
@@ -146,18 +150,6 @@ indices_list_forheatmap = []
 for item in h0_list:
     change = {'h0':item}
     target_list, time_list, decision_points, decision_pos, activity_df, x_list, y_list, headings_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
-    print("x list")
-    print(x_list)
-    print(len(x_list))
-    print(np.shape(x_list[0]))
-    print("y list")
-    print(y_list)
-    print(len(y_list))
-    print(np.shape(y_list[0]))
-    print("headings list")
-    print(headings_list)
-    print(len(headings_list))
-    print(np.shape(headings_list[0]))
     # always get the top target
     for t in range(len(target_list)):
         if target_list[t] == 0:
@@ -184,7 +176,7 @@ axes_flat = ax.flatten()
 for s in range(n_plots):
     dec_points = []
     dec_positions = []
-    sim_met.plot_traj(xpositions[s*sample_size:(s+1)*sample_size],ypositions[s*sample_size:(s+1)*sample_size],initialxt,initialyt,sample_size,decision_points_total[s*sample_size:(s+1)*sample_size],axes_flat[s],0,0)
+    sim_met.plot_traj(xpositions[s*sample_size:(s+1)*sample_size],ypositions[s*sample_size:(s+1)*sample_size],initialxt,initialyt,sample_size,decision_points_total[s*sample_size:(s+1)*sample_size],axes_flat[s],False,0,0)
     axes_flat[s].set_title(f"h0: {h0_list[s][0]}")
 figure_num += 1
 #plt.savefig('trajectories_beta20.png')
