@@ -9,18 +9,17 @@ from scipy.stats import binom
 
 def sample_sims(bp, changing_params, n_samples, include_trajs=False, include_activity=False):
     '''
-    bp: (base parameters) a dictionary which contains the base values to run the simulation on. It will contain an entry for every parameter in the simulation
+    A function for running a variety of consecutive simulations over changing values of specified parameters
+
+    parameters:
+    bp: (base parameters) a dictionary which contains the base values to run the simulation on. It will contain an entry for every parameter in simulate_ring_attractor in sim_ra
     changing_params: a dictionary which contains the parameters that are going to be changed throughout the simulations as keys, 
-                    and a list of values those parameters will take as values.
+                     and a list of values those parameters will take as values.
     n_samples: the number of samples to run for each specific set of parameters
     include_trajs: whether or not to return the trajectories
     include_activity: whether or not to return the sum of activity
 
-    returns: Each list that is returned is continuously appended to over the simulation, 
-             so there will be n_samples consecutive lists which are results from the same settings, 
-             and then the next list will be run with the corresponding settings in changing_params
-
-    success_list: TO BE DELETED, EMPTY LIST RIGHT NOW, meant to be a list of boolean 0 if agent doesn't reach target 1 if agent does
+    returns: 
     target_list: a list of size n_samples * len(changing_params) which target the agent reaches each time, if the agent fails to reach a target it is -1
     time_list: a list of size n_samples * len(changing_params) which contains the time the agent reaches the target, if no target is reached it is the number of timesteps + 1
     decision_points: a list of lists where each list contains all the time steps when a decision is made, as according to the get_bifurcation_times function in sim_met
@@ -34,9 +33,7 @@ def sample_sims(bp, changing_params, n_samples, include_trajs=False, include_act
     y_list: a list of size n_samples * len(changing_params) designed the same as x_list but containing y positions instead of x positions
     headings_list: a list of size n_samples * len(changing_params) designed the same as x_list and y_list but containing headings (in polar coordinates)
     '''
-    # initialize all the stuff I want to collect
-    # to do: create a warning if including trajectory and including activity when changing parameters 
-    # (b/c they are meant to only aggregate over samples of the same exact simulation settings)
+    # to do: make more robust warnings 
     if include_trajs or include_activity:
         for param in changing_params.keys():
             param_value_list = changing_params[param]
@@ -64,20 +61,14 @@ def sample_sims(bp, changing_params, n_samples, include_trajs=False, include_act
                                                                                  bp['sigma'],bp['hColl'],bp['rColl'],bp['initialx'],bp['initialy'],bp['initialxt'],bp['initialyt'],
                                                                                  False,True)
                 
-                # need a skip if there are no targets
-
                 if bp['ntargets'] > 0:
-                    # Basic target and time metrics
                     target_reached, time_reached, start = sim_met.get_destination_metrics(xPos,yPos,targetsx,targetsy)
                     target_list.append(target_reached)
                     time_list.append(time_reached)
-
-                    # Bifurcation times and locations: 
-                    dec_points_list, dec_pos = sim_met.get_bifurcation_times(xPos[0,:],yPos[0,:]) #change this when we get more agents
+                    dec_points_list, dec_pos = sim_met.get_bifurcation_times(xPos[0,:],yPos[0,:]) #change this when we get more agents (this might be solvable in sim_met)
                     decision_points.append(dec_points_list)
                     decision_pos.append(dec_pos)
 
-                # code for plotting neuron activity: 
                 if include_trajs:
                     xpos_1d = xPos.ravel()
                     ypos_1d = yPos.ravel()
@@ -85,7 +76,7 @@ def sample_sims(bp, changing_params, n_samples, include_trajs=False, include_act
                     y_list.append(ypos_1d)
                     headings_list.append(headings)
 
-                if include_activity: # we also want to add a sum of activity list,
+                if include_activity:
                     for neuron in range(np.shape(activity)[0]):
                         activity_list.append(activity[neuron,0,:])
 
@@ -94,39 +85,38 @@ def sample_sims(bp, changing_params, n_samples, include_trajs=False, include_act
     
     return target_list, time_list, decision_points, decision_pos, activity_df, x_list, y_list, headings_list
 
-# could be good to get this to be able to search for a certain bifurcation angle ...
-def boundary_search(bp,base_min,base_max,sample_size,min_search,param='h0',boundary_prob=0.2):
+
+def boundary_search(bp,base_min,base_max,sample_size,min_search,param,boundary_prob):
     '''
-    A function that performs a modified binary search to find the target attractiveness value which produces a probability close to the boundary_prob
-    Binary search until we are out of 0 and 1, because that will be the majority of cases, 
-    once it finds a non 0 or 1 probability, assume that the linear range of the function is half the current range and extrapolate where boundary_prob would be on that curve
-    then update the max and min around the predicted value, regardless of their comparisons to previous max and min. 
-    TO UPDATE: keep range constant? Maybe at the decision point do a quick sweep to try and get an idea of how long the transition period is? 
+    A function that performs a binary search to find a boundary value for a given parameter. 
+    Boundary value is defined as a value in which the agent reaches a target with between boundary_prob and 1-boundary_prob probability
+
     params:
     bp: set of base parameters for the simulate_ring_attractor function
-    base_min: the absolute minimum for h0
-    base_max: the absolute maximum for h0
-    KEEP IN MIND THE MEAN OF BASE_MIN AND BASE_MAX MUST BE IN THE SUCCESS RANGE (or find a way to fix this later)
+    base_min: the absolute minimum for the parameter we are searching over, 
+              it is important that this (and the base_max) is a decent guess with a little bit of room so the search doesn't get stuck in an extreme
+    base_max: the absolute maximum for the parameter we are searching over
     sample_size: number of samples to take
-    param: the parameter we are searching over (usually h0)
-    boundary_prob: the probability of success we are looking for, defaul to 0.05 to try and find right where it starts to fail
+    min_search: whether we are searching for a minimum or a maximum, tells us which direction to move in
+    param: the parameter we are searching over
+    boundary_prob: the probability of success we are looking for, because the simulation has stochasticity we don't want it to be too high, as that could lead to getting stuck
+                  
     returns:
     boundary_list: a list which contains the smallest* and the largest h0 value where we get really close to this boundary_prob
     boundary_range: the range of the region that was being searched when the desired value was found
     '''
+    ntargets = bp['ntargets']
+    h0_bool = param == 'h0'
     boundary_list = []
     found_range = []
     found = False
     min_val = base_min
     max_val = base_max
     value = (min_val+max_val)/2
-    if param == 'h0':
-        bp['h0'] = [value,value]
-    if param == 'sigma':
-        bp['sigma'] = value
+    bp[param] = search_helper(ntargets, h0_bool, value)
     while not found:
         target_list = []
-        print(f"h0: {bp['h0']}")
+        print(f"{param}: {bp[param]}")
         print(f"min: {min_val}")
         print(f"max: {max_val}")
         for s in range(sample_size):
@@ -135,10 +125,10 @@ def boundary_search(bp,base_min,base_max,sample_size,min_search,param='h0',bound
                                                                                                 bp['adistf'],bp['J'],bp['beta'],bp['h0'],bp['h_b'],bp['dt'],bp['v0'],bp['v0t'],
                                                                                                 bp['sigma'],bp['hColl'],bp['rColl'],bp['initialx'],bp['initialy'],bp['initialxt'],bp['initialyt'],
                                                                                                 False,True)
-            target_reached, time_reached, start = sim_met.get_destination_metrics(xPos,yPos,targetsx,targetsy)
+            target_reached, time_reached, start = sim_met.get_destination_metrics(xPos,yPos,targetsx,targetsy) # another vote to rework this function
             target_list.append(target_reached)
         n_reached = 0
-        for item in target_list:
+        for item in target_list: # could try and make this into a more general loop which loops for a different metric
             if item != -1:
                 n_reached += 1
         print(f"n reached: {n_reached}")
@@ -148,21 +138,42 @@ def boundary_search(bp,base_min,base_max,sample_size,min_search,param='h0',bound
             else:
                 max_val = value
             value = (min_val + max_val)/2
-            bp['h0'] = [value,value]
+            bp[param] = search_helper(ntargets, h0_bool, value)
         if n_reached > int((1-boundary_prob)*sample_size):
             if min_search:
                 max_val = value
             else:
                 min_val = value
             value = (min_val + max_val)/2
-            bp['h0'] = [value,value]
+            bp[param] = search_helper(ntargets, h0_bool, value)
         if int(boundary_prob*sample_size) < n_reached < int((1-boundary_prob)*sample_size):
-            # we know we're in the range, so if we our current range is appropriately small, we're good? with an error reported?
             curr_range = max_val - min_val
             value = (min_val+max_val)/2
             boundary_list.append(value)
             found_range.append(curr_range)
             break
-    print(boundary_list)
-    print(found_range)
     return boundary_list, found_range
+
+
+def search_helper(nt,h0_bool,val):
+    '''
+    A helper function for the binary search function that handles the fact that we need a list of h0 values when searching over that parameter
+    could be expanded to encode an uneven parameter in h0 ? 
+
+    params: 
+    nt: number of targets
+    h0_bool: if the parameter we are interested in is h0
+    val: the value we will be using in the search
+
+    returns: 
+    h0_list: the list of h0s we need for the simulation
+    val: the value of the parameter when we aren't using h0
+    '''
+    if h0_bool:
+        h0_list = []
+        for i in range(nt):
+            h0_list.append(val)
+        return h0_list
+    return val
+
+
