@@ -325,12 +325,12 @@ def plot_traj(xPos,yPos,targetsx,targetsy,sample_size,dec_points,figure,plot_dec
     '''
     if end_ind == 0:
         for sample in range(sample_size):
-            figure.plot(xPos[sample][start_ind:],yPos[sample][start_ind:],color='blue',alpha=0.5)
+            figure.plot(xPos[sample][start_ind:],yPos[sample][start_ind:],color='blue',alpha=1/sample_size)
             if plot_dec_point:
                 dec_time = dec_points[sample]
                 figure.scatter(xPos[sample][dec_time],yPos[sample][dec_time], color="green",alpha = 0.1)
             else:
-                figure.scatter(xPos[sample][0],yPos[sample][0], color='red',alpha=0.8)
+                figure.scatter(xPos[sample][0],yPos[sample][0], color='red',alpha=0)
         figure.scatter(targetsx,targetsy,color='red',s=5)
     else:
         for sample in range(sample_size):
