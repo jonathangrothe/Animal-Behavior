@@ -7,33 +7,44 @@ import simulate_ringattractor as sim_ra
 import simulation_metrics as sim_met
 from scipy.stats import binom
 
-def sample_sims(bp, changing_params, n_samples, include_trajs=[False, "scatter"], include_activity=False):
+def sample_sims(bp, changing_params, n_samples, include_trajs=False, include_activity=False):
     '''
     bp: (base parameters) a dictionary which contains the base values to run the simulation on. It will contain an entry for every parameter in the simulation
     changing_params: a dictionary which contains the parameters that are going to be changed throughout the simulations as keys, 
                     and a list of values those parameters will take as values.
     n_samples: the number of samples to run for each specific set of parameters
-    PARAMETERS TO ADD: 
-    success_metric: list of success metrics we can get (min/sum, correct/reach percentage, time to target, time to decision)
-    track_trajectories: boolean that if True collects data on all the trajectories
-    returns:
-    metrics: dictionary of metrics?
-    trajectories: returns all the trajectories in two dataframes, x_trajs_df and y_trajs_df for easy indexable access to both rows and columns going forward
-                (we need to be able to split samples based on rows, and aggregate the position over each time)
+    include_trajs: whether or not to return the trajectories
+    include_activity: whether or not to return the sum of activity
+
+    returns: Each list that is returned is continuously appended to over the simulation, 
+             so there will be n_samples consecutive lists which are results from the same settings, 
+             and then the next list will be run with the corresponding settings in changing_params
+
+    success_list: TO BE DELETED, EMPTY LIST RIGHT NOW, meant to be a list of boolean 0 if agent doesn't reach target 1 if agent does
+    target_list: a list of size n_samples * len(changing_params) which target the agent reaches each time, if the agent fails to reach a target it is -1
+    time_list: a list of size n_samples * len(changing_params) which contains the time the agent reaches the target, if no target is reached it is the number of timesteps + 1
+    decision_points: a list of lists where each list contains all the time steps when a decision is made, as according to the get_bifurcation_times function in sim_met
+    decision_pos: a list of list of tuples in which each list contains the positions (as x,y tuples) of the agent at the bifurcation time, as found using get_bifurcation_times in sim_met
+    sum_activity_list: TO BE DELETED, the sum of all neuron activity, I thought this would be interesting but I haven't found a great use for it
+    activity_df: a dataframe which contains all the neuron activity merged, each row is a neuron, simulations are differentiated by sets of 100 rows
+                 (ie: rows 0-99 is one simulation, 100-199 is the next, etc.). Each column corresponds to a time step, and each entry is the corresponding neuron's
+                 activity at that time. NaN entrys are present when a simulation ends before that time step. 
+    x_list: a list of size n_samples * len(changing_params) which contains numpy arrays which contain all the x positions for that simulation, 
+            each array is one dimensional and will have entries equal to the number of time steps that simulation runs for
+    y_list: a list of size n_samples * len(changing_params) designed the same as x_list but containing y positions instead of x positions
+    headings_list: a list of size n_samples * len(changing_params) designed the same as x_list and y_list but containing headings (in polar coordinates)
     '''
     # initialize all the stuff I want to collect
     # to do: create a warning if including trajectory and including activity when changing parameters 
     # (b/c they are meant to only aggregate over samples of the same exact simulation settings)
-    if include_trajs[0] or include_activity:
+    if include_trajs or include_activity:
         for param in changing_params.keys():
             param_value_list = changing_params[param]
             if len(param_value_list) > 1:
                 print("warning: taking trajectories or neuron activity over different simulation settings")
-    success_list = []
     time_list = []
     target_list = []
     activity_list = [] 
-    sum_activity_list = []
     decision_points = []
     decision_pos = []
     activity_df = None
@@ -60,43 +71,28 @@ def sample_sims(bp, changing_params, n_samples, include_trajs=[False, "scatter"]
                     target_reached, time_reached, start = sim_met.get_destination_metrics(xPos,yPos,targetsx,targetsy)
                     target_list.append(target_reached)
                     time_list.append(time_reached)
-                    all_fail = target_list.count(-1) == len(target_list)
 
                     # Bifurcation times and locations: 
                     dec_points_list, dec_pos = sim_met.get_bifurcation_times(xPos[0,:],yPos[0,:]) #change this when we get more agents
                     decision_points.append(dec_points_list)
                     decision_pos.append(dec_pos)
 
-                # Neuron activity metrics
-                sum_activity, range_activity, var_activity, n_inhib_list, n_active_list, neuron_change_rates = sim_met.get_neuron_info(activity[:,0,:])
-                sum_activity_list.append(sum_activity)
-
                 # code for plotting neuron activity: 
-                if include_trajs[0]:
+                if include_trajs:
                     xpos_1d = xPos.ravel()
                     ypos_1d = yPos.ravel()
-                    if include_trajs[1] == 'heat':
-                        x_list += list(xpos_1d)
-                        y_list += list(ypos_1d)
-                    if include_trajs[1] == 'scatter':
-                        x_list.append(xpos_1d)
-                        y_list.append(ypos_1d)
+                    x_list.append(xpos_1d)
+                    y_list.append(ypos_1d)
                     headings_list.append(headings)
 
                 if include_activity: # we also want to add a sum of activity list,
                     for neuron in range(np.shape(activity)[0]):
                         activity_list.append(activity[neuron,0,:])
 
-
     if include_activity:
         activity_df = pd.DataFrame(activity_list)
     
-    if include_trajs[0]:
-        if include_trajs[1] == 'heat':
-            x_list = np.array(x_list)
-            y_list = np.array(y_list)
-    # change the return to take out range, add in bifurcation times (as df?)
-    return success_list, target_list, time_list, decision_points, decision_pos, sum_activity_list, activity_df, x_list, y_list, headings_list
+    return target_list, time_list, decision_points, decision_pos, activity_df, x_list, y_list, headings_list
 
 # could be good to get this to be able to search for a certain bifurcation angle ...
 def boundary_search(bp,base_min,base_max,sample_size,min_search,param='h0',boundary_prob=0.2):

@@ -55,10 +55,10 @@ for i in range(N):
     J = np.squeeze(J)
 
 allocentricFlag = 0 # 1 is allo, 0 is ego 
-h0s = [0.25,0.25] # attraction vector, first are attraction for targets, then agents
+h0s = [0.295,0.295001] # attraction vector, first are attraction for targets, then agents
 h_b = 0.2
 sigma = 0.5 #0.25 works for three target (sometimes)
-beta = 40 #100 works for double
+beta = 20 #100 works for double
 
 
 # -------- Running the simulation --------
@@ -95,7 +95,7 @@ base = {'N':N,
 
 # plotting settings: controls what kind of simulations we're running
 plot_neurons = True
-plot_trajs = [True, 'scatter']
+plot_trajs = True
 uneven = True
 sample_size = 30
 min_list = []
@@ -142,13 +142,12 @@ ypositions = []
 headings = []
 neuron_activity = []
 mean_decision_points = []
-sum_total_activity = []
 decision_points_total = []
 decision_pos_total = []
 indices_list_forheatmap = []
 for item in allo_list:
     change = {'allocentricFlag':item}
-    success_list, target_list, time_list, decision_points, decision_pos, sum_activity_list, activity_df, x_list, y_list, headings_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
+    target_list, time_list, decision_points, decision_pos, activity_df, x_list, y_list, headings_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
     # always get the top target
     '''
     for t in range(len(target_list)):
@@ -160,7 +159,6 @@ for item in allo_list:
     ypositions += (y_list)
     headings += (headings_list)
     neuron_activity.append(activity_df)
-    sum_total_activity += sum_activity_list
     #decision_points_total += decision_points
     #decision_pos_total += decision_pos
 
@@ -183,34 +181,34 @@ positions_df.to_csv("positions_search_ego_df.csv")
 # SINGLE SETTING PLOTS
 # general plotting settings
 n_plots = len(allo_list)
-ncols = 1
-nrows = 2
+ncols = 2
+nrows = 1
 # neuron heat maps - maybe just do one example for each? 
-plt.figure(layout='constrained',figsize=(3,7))
-fig, axs = plt.subplots(nrows,ncols,num=figure_num)
-#subfigs = fig.subfigures(3, 1, wspace=0.1)
-#axs0 = subfigs[0].subplots(nrows,ncols)
-#ax0_labels = ['A','C','E','G','I','K']
-#axs1 = subfigs[1].subplots(nrows,ncols)
-#ax1_labels = ['B','D','F','H','J','L']
+fig = plt.figure(layout='constrained',figsize=(10,10))
+#fig, ax = plt.subplots(nrows,ncols,num=figure_num)
+subfigs = fig.subfigures(2,1, wspace=0.1)
+axs0 = subfigs[0].subplots(nrows,ncols)
+ax0_labels = ['A','C','E','G','I','K']
+axs1 = subfigs[1].subplots(nrows,ncols)
+ax1_labels = ['B','D','F','H','J','L']
 #axs2 = subfigs[2].subplots(nrows,ncols)
 #ax2_labels = ['C','F','I','L']
 grey_to_blue = ["#D3D3D3", "#A9A9A9", "#708090", "#4682B4", "#000080"]
 cmap = mcolors.LinearSegmentedColormap.from_list("GreyBlue", grey_to_blue)
 
 for s in range(n_plots):
-    sim_met.plot_traj(xpositions[s*sample_size:(s+1)*sample_size],ypositions[s*sample_size:(s+1)*sample_size],initialxt,initialyt,sample_size,decision_points_total[s*sample_size:(s+1)*sample_size],axs[s],0,0)
-    axs[s].set_title("allocentric" if allo_list[s][0]==1 else "egocentric")
+    sim_met.plot_traj(xpositions[s*sample_size:(s+1)*sample_size],ypositions[s*sample_size:(s+1)*sample_size],initialxt,initialyt,sample_size,decision_points_total[s*sample_size:(s+1)*sample_size],axs0[s],0,0)
+    axs0[s].set_title(f"{"allocentric" if allo_list[s][0]==1 else "egocentric"}, h0: {h0s}, beta: {beta}")
     #axs0[s].annotate(xy=(0.1, 0.9), xycoords="axes fraction")
 
-    '''
     rolled= np.roll(neuron_activity[s].dropna(axis=1).iloc[0:100,:].values, shift=50, axis=0)
     col_min = np.min(neuron_activity[s].iloc[:,40:])
     col_max = np.max(neuron_activity[s].iloc[:,40:])
-    axs0[s].imshow(rolled,cmap=cmap,aspect='auto',vmin=col_min,vmax=col_max)
+    axs1[s].imshow(rolled,cmap=cmap,aspect='auto',vmin=col_min,vmax=col_max)
     #axs1[s].annotate(xy=(0.1, 0.9), xycoords="axes fraction")
-    axs0[s].set_title("egocentric" if allo_list[s][0]==0 else "allocentric")
+    #axs1[s].set_title("egocentric" if allo_list[s][0]==0 else "allocentric")
 
+    '''
     # at time something plot bumps
     time_100 = neuron_activity[s].iloc[0:100,100]
     axs1[s].plot(time_100)

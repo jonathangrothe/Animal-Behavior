@@ -95,7 +95,7 @@ base = {'N':N,
 
 # plotting settings: controls what kind of simulations we're running
 # not plotting trajectories or neurons in this file
-plot_trajs = [False, 'scatter'] 
+plot_trajs = False
 plot_neurons = False
 uneven = True
 sample_size = 30
@@ -127,7 +127,7 @@ for index in range(len(beta_list)):
         print(f"beta: {beta_list[index]}")
         change= {'h0':h0_list}
         base['beta'] = beta_list[index]
-        success_list, target_list, time_list, decision_points, decision_pos, sum_activity_list, activity_df, x_list, y_list, headings_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
+        target_list, time_list, decision_points, decision_pos, activity_df, x_list, y_list, headings_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
         p_success, se_success, p_correct, se_correct, p_target, se_target = sim_met.get_success_rate(target_list, sample_size, ntargets, uneven, 1)
         time_total_list.append(time_list)
         prob_total_list.append(p_target)

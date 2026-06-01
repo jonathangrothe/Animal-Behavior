@@ -93,7 +93,7 @@ base = {'N':N,
 
 # plotting settings: controls what kind of simulations we're running
 plot_neurons = True
-plot_trajs = [True, 'scatter']
+plot_trajs = True
 uneven = True
 sample_size = 5
 min_list = []
@@ -130,6 +130,9 @@ int_val = round((min_val+max_val)/2,5)
 # p(t=0|top, back) p(t=0|bottom, back), ....
 # to get where it bifurcates pre decison we need a range of where it slows (we do this in traj code) and then to get its position at that time
 
+# it is designed to be used like: 
+# h0_list = [[0.21,0.21,0.21],[0.23,0.23,0.23]]
+# and not aggregated, but I will have to change the code a bit to do that
 h0_list = [[[0.21,0.21,0.21]],[[0.23,0.23,0.23]]]
 print(h0_list)
 
@@ -137,14 +140,24 @@ xpositions = []
 ypositions = []
 neuron_activity = []
 mean_decision_points = []
-sum_total_activity = []
 decision_points_total = []
 decision_pos_total = []
 indices_list_forheatmap = []
 for item in h0_list:
     change = {'h0':item}
-    success_list, target_list, time_list, decision_points, decision_pos, sum_activity_list, activity_df, x_list, y_list, headings_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
-    print(target_list)
+    target_list, time_list, decision_points, decision_pos, activity_df, x_list, y_list, headings_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
+    print("x list")
+    print(x_list)
+    print(len(x_list))
+    print(np.shape(x_list[0]))
+    print("y list")
+    print(y_list)
+    print(len(y_list))
+    print(np.shape(y_list[0]))
+    print("headings list")
+    print(headings_list)
+    print(len(headings_list))
+    print(np.shape(headings_list[0]))
     # always get the top target
     for t in range(len(target_list)):
         if target_list[t] == 0:
@@ -153,7 +166,6 @@ for item in h0_list:
     xpositions += (x_list)
     ypositions += (y_list)
     neuron_activity.append(activity_df)
-    sum_total_activity += sum_activity_list
     decision_points_total += decision_points
     decision_pos_total += decision_pos
 
