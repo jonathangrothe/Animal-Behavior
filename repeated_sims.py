@@ -96,13 +96,13 @@ def boundary_search(bp,base_min,base_max,sample_size,min_search,param,boundary_p
     boundary_prob: the probability of success we are looking for, because the simulation has stochasticity we don't want it to be too high, as that could lead to getting stuck
                   
     returns:
-    boundary_list: a list which contains the smallest* and the largest h0 value where we get really close to this boundary_prob
+    boundary: the boundary value we found after our search
     boundary_range: the range of the region that was being searched when the desired value was found
     '''
     ntargets = bp['ntargets']
     h0_bool = param == 'h0'
-    boundary_list = []
-    found_range = []
+    boundary = 0
+    found_range = 0
     found = False
     min_val = base_min
     max_val = base_max
@@ -143,10 +143,10 @@ def boundary_search(bp,base_min,base_max,sample_size,min_search,param,boundary_p
         if int(boundary_prob*sample_size) < n_reached < int((1-boundary_prob)*sample_size):
             curr_range = max_val - min_val
             value = (min_val+max_val)/2
-            boundary_list.append(value)
-            found_range.append(curr_range)
+            boundary = value
+            found_range = curr_range
             break
-    return boundary_list, found_range
+    return boundary, found_range
 
 
 def search_helper(nt,h0_bool,val):

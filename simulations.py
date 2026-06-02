@@ -98,37 +98,11 @@ plot_trajs = True
 sample_size = 2
 
 
-'''
-min_list = []
-max_list = []
-min_range_list = []
-max_range_list = []
-
-for i in range(1):
-    min_low = 0.21 - 0.04 + 0.01*np.random.rand()
-    min_high = 0.21 + 0.04 + 0.01*np.random.rand()
-    max_low = 0.25 - 0.04 + 0.01*np.random.rand()
-    max_high = 0.25 + 0.04 + 0.01*np.random.rand()
-    min_est,range_min = repeated_sims.boundary_search(base,min_low,min_high,10,True,'h0',0.2) # probably also want to return the final step size to get an idea of the scale of the boundary point
-    max_est, range_max = repeated_sims.boundary_search(base,max_low,max_high,10,False,'h0',0.2)
-    print(f"boundaries, sim: {i}: {min_est,max_est}")
-    min_list.append(min_est)
-    max_list.append(max_est)
-    min_range_list.append(range_min)
-    max_range_list.append(range_max)
-
-print(f"min list: {min_list}")
-print(f"max_list: {max_list}")
-min_val = np.mean(min_list)
-max_val = np.mean(max_list)
-min_range = np.mean(min_range_list)
-max_range = np.mean(max_range_list)
-int_val = round((min_val+max_val)/2,5)
-'''
 h0_list = [[0.21,0.21005],[0.24,0.24005],[0.27,0.27005],[0.3,0.30005]]
+allo_list = [0,1]
+
 for i in range(2):
-    allo_list = [1,0]
-    base['allocentricFlag'] = allo_list[i]
+    base['allocentricFlag'] = allo_list[i] # add title to reflect allocentricflag
 
     change = {'h0':h0_list}
     target_list, time_list, decision_points, decision_pos, activity_df, x_list, y_list, headings_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
@@ -150,7 +124,7 @@ for i in range(2):
         dec_points = []
         dec_positions = []
         sim_met.plot_traj(x_list[s*sample_size:(s+1)*sample_size],y_list[s*sample_size:(s+1)*sample_size],initialxt,initialyt,sample_size,[0],axs0[s],False,0,0)
-        axs0[s].set_title(f"h0: {h0_list[s]}")
+        axs0[s].set_title(f"{"allocentric" if allo_list[i]==1 else "egocentric"},h0: {h0_list[s]}")
 
         rolled= np.roll(activity_df.dropna(axis=1).iloc[s*100*sample_size:s*100*sample_size+100,:].values, shift=50, axis=0)
         col_min = np.min(activity_df.iloc[:,40:])
