@@ -33,12 +33,6 @@ def sample_sims(bp, changing_params, n_samples, include_trajs=False, include_act
     y_list: a list of size n_samples * len(changing_params) designed the same as x_list but containing y positions instead of x positions
     headings_list: a list of size n_samples * len(changing_params) designed the same as x_list and y_list but containing headings (in polar coordinates)
     '''
-    # to do: make more robust warnings 
-    if include_trajs or include_activity:
-        for param in changing_params.keys():
-            param_value_list = changing_params[param]
-            if len(param_value_list) > 1:
-                print("warning: taking trajectories or neuron activity over different simulation settings")
     time_list = []
     target_list = []
     activity_list = [] 

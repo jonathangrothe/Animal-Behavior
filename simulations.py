@@ -8,15 +8,15 @@ import repeated_sims
 # --------  PARAMETERS --------
 
 L = 100 # width of grid
-ntargets = 3
+ntargets = 2
 nagents = 1
 initialx = np.zeros(nagents)
 initialy = np.zeros(nagents)
 for a in range(nagents):
     initialx[a] = 20
     initialy[a] = 50
-initialxt = [65,80,65]
-initialyt = [30,50,70]
+initialxt = [80,80]
+initialyt = [20,80]
 
 # number of time steps
 T = 5000
@@ -53,10 +53,10 @@ for i in range(N):
     J = np.squeeze(J)
 
 allocentricFlag = 0 # 1 is allo, 0 is ego 
-h0s = [0.2191,0.2191,0.2191] 
+h0s = [0.2191,0.2191] 
 h_b = 0.2
 sigma = 0.25 # narrower sigma means more bifurcations in 3 (+?) target case
-beta = 200 
+beta = 100 
 
 
 # -------- Running the simulation --------
@@ -94,14 +94,15 @@ base = {'N':N,
 # plotting settings: controls what kind of simulations we're running
 plot_neurons = True
 plot_trajs = True
-uneven = True
-sample_size = 3
+sample_size = 10
+
+
+'''
 min_list = []
 max_list = []
 min_range_list = []
 max_range_list = []
 
-'''
 for i in range(1):
     min_low = 0.21 - 0.04 + 0.01*np.random.rand()
     min_high = 0.21 + 0.04 + 0.01*np.random.rand()
@@ -123,76 +124,39 @@ min_range = np.mean(min_range_list)
 max_range = np.mean(max_range_list)
 int_val = round((min_val+max_val)/2,5)
 '''
-min_val = 0.18
+
+min_val = 0.22
 max_val = 0.25
 
-# p(reaching each target|current path)
-# p(t=0), p(t=1), p(t=2) 
-# p(t=0|go to top), p(t=0|go to bottom), ....
-# p(t=0|top, back) p(t=0|bottom, back), ....
-# to get where it bifurcates pre decison we need a range of where it slows (we do this in traj code) and then to get its position at that time
-
-# it is designed to be used like: 
-# h0_list = [[0.21,0.21,0.21],[0.23,0.23,0.23]]
-# and not aggregated, but I will have to change the code a bit to do that 
-h0_list = [[[min_val,min_val,min_val]],[[max_val,max_val,max_val]]]
+h0_list = [[min_val,min_val],[max_val,max_val]]
 # print(h0_list)
 # beta_list = [[50],[100],[150],[200],[250]]
 # sigma_list = [[0.15],[0.175],[0.2],[0.225],[0.25]]
 
-xpositions = []
-ypositions = []
-neuron_activity = []
-mean_decision_points = []
-decision_points_total = []
-decision_pos_total = []
-indices_list_forheatmap = []
-for item in h0_list:
-    change = {'h0':item}
-    target_list, time_list, decision_points, decision_pos, activity_df, x_list, y_list, headings_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
-    # always get the top target
-    for t in range(len(target_list)):
-        if target_list[t] == 0:
-            indices_list_forheatmap.append(t)
-            break
-    xpositions += (x_list)
-    ypositions += (y_list)
-    neuron_activity.append(activity_df)
-    decision_points_total += decision_points
-    decision_pos_total += decision_pos
 
-figure_num = 1
+change = {'h0':h0_list}
+target_list, time_list, decision_points, decision_pos, activity_df, x_list, y_list, headings_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
 
 
-# SINGLE SETTING PLOTS
-# general plotting settings
 n_plots = len(h0_list)
 ncols = 2
 nrows = 1
-# neuron heat maps - maybe just do one example for each? 
-plt.figure(layout='constrained',figsize=(10,5))
-fig, ax = plt.subplots(nrows,ncols,num=figure_num)
-axes_flat = ax.flatten()
+
+fig = plt.figure(layout='constrained',figsize=(10,5))
+subfigs = fig.subfigures(2,1, wspace=0.1)
+axs0 = subfigs[0].subplots(nrows,ncols)
+axs1 = subfigs[1].subplots(nrows,ncols)
+
 for s in range(n_plots):
     dec_points = []
     dec_positions = []
-    sim_met.plot_traj(xpositions[s*sample_size:(s+1)*sample_size],ypositions[s*sample_size:(s+1)*sample_size],initialxt,initialyt,sample_size,decision_points_total[s*sample_size:(s+1)*sample_size],axes_flat[s],False,0,0)
-    axes_flat[s].set_title(f"h0: {h0_list[s][0]}")
-figure_num += 1
-#plt.savefig('trajectories_beta20.png')
+    sim_met.plot_traj(x_list[s*sample_size:(s+1)*sample_size],y_list[s*sample_size:(s+1)*sample_size],initialxt,initialyt,sample_size,[0],axs0[s],False,0,0)
+    axs0[s].set_title(f"h0: {h0_list[s][0]}")
 
-for a in range(n_plots):
-    plt.figure(figsize=(5,2.5))
-    plt.figure(figure_num)
-    rolled= np.roll(neuron_activity[a].dropna(axis=1).iloc[0:100,:].values, shift=50, axis=0)
-    col_min = np.min(neuron_activity[a].iloc[:,40:])
-    col_max = np.max(neuron_activity[a].iloc[:,40:])
-    #print(f"min: {col_min}")
-    #print(f"max: {col_max}")
-    plt.imshow(rolled,cmap='viridis',aspect='auto',vmin=col_min,vmax=col_max)
-    plt.title(f"h0: {h0_list[a][0]}")
-    #plt.savefig(f'heatmap_{h0_list[a][0]}_beta20.png')
-    figure_num+=1
+    rolled= np.roll(activity_df.dropna(axis=1).iloc[s*100*sample_size:s*100*sample_size+100,:].values, shift=50, axis=0)
+    col_min = np.min(activity_df.iloc[:,40:])
+    col_max = np.max(activity_df.iloc[:,40:])
+    axs1[s].imshow(rolled,cmap='viridis',aspect='auto',vmin=col_min,vmax=col_max)
 
 
 plt.show()

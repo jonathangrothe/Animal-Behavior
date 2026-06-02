@@ -125,13 +125,6 @@ min_range = np.mean(min_range_list)
 max_range = np.mean(max_range_list)
 int_val = round((min_val+max_val)/2,5)
 
-
-# p(reaching each target|current path)
-# p(t=0), p(t=1), p(t=2) 
-# p(t=0|go to top), p(t=0|go to bottom), ....
-# p(t=0|top, back) p(t=0|bottom, back), ....
-# to get where it bifurcates pre decison we need a range of where it slows (we do this in traj code) and then to get its position at that time
-
 #h0_list = [[[min_val,min_val]],[[int_val,int_val]],[[max_val,max_val]]]
 #print(h0_list)
 #sigma_list = [[0.25],[0.3],[0.35],[0.4],[0.45],[0.5]]
@@ -174,7 +167,7 @@ positions_df['x diff'] = x_diff
 positions_df['y diff'] = y_diff
 figure_num = 1
 
-positions_df.to_csv("positions_search_ego_df.csv")
+#positions_df.to_csv("positions_search_ego_df.csv")
 #neuron_activity[1].to_csv("activity_ego_df.csv")
 #headings_df.to_csv("headings_ego_df.csv",index=False)
 
