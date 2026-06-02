@@ -4,6 +4,7 @@ import pandas as pd
 import simulate_ringattractor as sim_ra
 import simulation_metrics as sim_met
 import repeated_sims
+import matplotlib.colors as mcolors
 
 # --------  PARAMETERS --------
 
@@ -19,7 +20,7 @@ initialxt = [80,80]
 initialyt = [20,80]
 
 # number of time steps
-T = 5000
+T = 12000
 periodicflag = 0
 rEgo = 0 # radius to switch to egocentric (for when close to another agent)
 rEgoTarget = 0 # radius for switch near target 
@@ -55,7 +56,7 @@ for i in range(N):
 allocentricFlag = 0 # 1 is allo, 0 is ego 
 h0s = [0.2191,0.2191] 
 h_b = 0.2
-sigma = 0.25 # narrower sigma means more bifurcations in 3 (+?) target case
+sigma = 0.5 # narrower sigma means more bifurcations in 3 (+?) target case
 beta = 100 
 
 
@@ -89,7 +90,8 @@ base = {'N':N,
         'h0':h0s,
         'h_b':h_b,
         'sigma':sigma,
-        'beta':beta}
+        'beta':beta,
+        'offset':1}
 
 # plotting settings: controls what kind of simulations we're running
 plot_neurons = True
@@ -125,38 +127,44 @@ max_range = np.mean(max_range_list)
 int_val = round((min_val+max_val)/2,5)
 '''
 
-min_val = 0.22
-max_val = 0.25
+for i in range(4):
+    if i == 1 or i == 3:
+        h0_list = [[0.21,0.21005],[0.24,0.24005],[0.27,0.27005],[0.3,0.30005]]
+    else:
+        h0_list = [[0.21,0.21],[0.24,0.24],[0.27,0.27],[0.3,0.3]]
+    if i >= 2:
+        base['offset'] = 2
+    # print(h0_list)
+    # beta_list = [[50],[100],[150],[200],[250]]
+    # sigma_list = [[0.15],[0.175],[0.2],[0.225],[0.25]]
 
-h0_list = [[min_val,min_val],[max_val,max_val]]
-# print(h0_list)
-# beta_list = [[50],[100],[150],[200],[250]]
-# sigma_list = [[0.15],[0.175],[0.2],[0.225],[0.25]]
+
+    change = {'h0':h0_list}
+    target_list, time_list, decision_points, decision_pos, activity_df, x_list, y_list, headings_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
 
 
-change = {'h0':h0_list}
-target_list, time_list, decision_points, decision_pos, activity_df, x_list, y_list, headings_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
+    n_plots = len(h0_list)
+    ncols = 4
+    nrows = 1
 
+    fig = plt.figure(layout='constrained',figsize=(10,5),num=i+1)
+    subfigs = fig.subfigures(2,1, wspace=0.1)
+    axs0 = subfigs[0].subplots(nrows,ncols)
+    axs1 = subfigs[1].subplots(nrows,ncols)
 
-n_plots = len(h0_list)
-ncols = 2
-nrows = 1
+    grey_to_blue = ["#D3D3D3", "#A9A9A9", "#708090", "#4682B4", "#000080"]
+    cmap = mcolors.LinearSegmentedColormap.from_list("GreyBlue", grey_to_blue)
 
-fig = plt.figure(layout='constrained',figsize=(10,5))
-subfigs = fig.subfigures(2,1, wspace=0.1)
-axs0 = subfigs[0].subplots(nrows,ncols)
-axs1 = subfigs[1].subplots(nrows,ncols)
+    for s in range(n_plots):
+        dec_points = []
+        dec_positions = []
+        sim_met.plot_traj(x_list[s*sample_size:(s+1)*sample_size],y_list[s*sample_size:(s+1)*sample_size],initialxt,initialyt,sample_size,[0],axs0[s],False,0,0)
+        axs0[s].set_title(f"h0: {h0_list[s]}")
 
-for s in range(n_plots):
-    dec_points = []
-    dec_positions = []
-    sim_met.plot_traj(x_list[s*sample_size:(s+1)*sample_size],y_list[s*sample_size:(s+1)*sample_size],initialxt,initialyt,sample_size,[0],axs0[s],False,0,0)
-    axs0[s].set_title(f"h0: {h0_list[s][0]}")
-
-    rolled= np.roll(activity_df.dropna(axis=1).iloc[s*100*sample_size:s*100*sample_size+100,:].values, shift=50, axis=0)
-    col_min = np.min(activity_df.iloc[:,40:])
-    col_max = np.max(activity_df.iloc[:,40:])
-    axs1[s].imshow(rolled,cmap='viridis',aspect='auto',vmin=col_min,vmax=col_max)
+        rolled= np.roll(activity_df.dropna(axis=1).iloc[s*100*sample_size:s*100*sample_size+100,:].values, shift=50, axis=0)
+        col_min = np.min(activity_df.iloc[:,40:])
+        col_max = np.max(activity_df.iloc[:,40:])
+        axs1[s].imshow(rolled,cmap=cmap,aspect='auto',vmin=col_min,vmax=col_max)
 
 
 plt.show()
