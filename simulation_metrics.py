@@ -13,8 +13,8 @@ def get_destination_metrics(xPos, yPos, targetsx, targetsy , stopping_distance =
     and at what time the agent reaches that target
 
     Parameters:
-    xPos: all the x positions of the agent(s)
-    yPos: all the y positions of the agent(s)
+    xPos: a list of lists of x positions of the agent where each sublist contains all the positions in one simulation run
+    yPos: a list of lists of y positions of the agent where each sublist contains all the positions in one simulation run
     targetsx: all the x positions of the targets
     targetsy: all the y positions of the targets
     stopping_distance: the maximum distance between the agent and target at which the agent is considered to have reached the target
@@ -49,8 +49,8 @@ def get_bifurcation_times(xPos,yPos,min_diff=1): # this function needs work...
     A bifurcation is considered to have happened when the actual trajectory differs from the linear regression by a certain amount.
 
     Parameters:
-    xPos: the x positions of the agent
-    yPos: the y positions of the agent
+    xPos: a list of lists of x positions of the agent where each sublist contains all the positions in one simulation run
+    yPos: a list of lists of y positions of the agent where each sublist contains all the positions in one simulation run
 
     Returns: 
     dec_points: a list of time steps where bifurcations were found
@@ -139,12 +139,25 @@ def find_bumps(activity):
 def plot_metric(metrics,x,colors,labels,fig,title,xlabel,ylabel):
     '''
     A function which plots an aggregated metric over changing values of a parameter
+
     Parameters:
-    metrics: a list of list of metrics with n samples per each value of the parameter we are measuring (the y axis)
-    x: the values of the parameter we are measuring success over (the x axis)
-    labels: the labels for each metric
+    metrics: a list of lists where each sublist is length sample_size*n_values and contains sample_size consecutive metric measurements
+             for each time the simulation is run over a given parameter, p1. Each list of metrics corresponds to another parameter, p2.
+             If metrics was an array, there would be p2 rows and sample_size*p1 columns, a,0:sample_size would correspond to one set of simulation settings
+    x: the values of the parameter we are measuring our metric over (the x axis)
+    colors: a list of size n_values which contains colors for each value of p2
+    labels: the labels for each other parameter (p2), just the first and last labels are shown to avoid overcrowding the plot
+    fig: the figure we are doing the plotting in
+    title: the title of the plot
+    xlabel: the label of the x axis
+    ylabel: the label of the y axis
+
+    Returns:
+    mean_metric_list: a list of lists which contains the mean for each unique simulation setting. 
+                      Same design as metrics, but instead of a,0 would correspond to the mean over a unique set of simulation settings, and a,1 a different set
+
     Expected output: 
-    A line plot of the metric (y-axis) with standard error lines over x (x-axis)
+    A line plot of metrics (y-axis) with standard error lines over x (x-axis)
     '''
     # first step: get the dimesions to line up
     # second step: plot it
@@ -175,15 +188,32 @@ def plot_metric(metrics,x,colors,labels,fig,title,xlabel,ylabel):
     fig.set_title(title)
     fig.set_xlabel(xlabel)
     fig.set_ylabel(ylabel)
-    return 0, mean_metric_list
+    return mean_metric_list
 
 
 def plot_traj(xPos,yPos,targetsx,targetsy,sample_size,dec_points,figure,plot_dec_point=False,start_ind=0,end_ind=0):
     '''
     A function that takes x trajectories and y trajectories and plots them over each other, with a low ish opacity so we can see overlap. 
     Designed to be used over the same simulation settings with a number s of samples.
-    Need: to color by velocity
-    return:
+
+    Parameters:
+    xPos: a list of lists of x positions of the agent where each sublist contains all the positions in one simulation run
+    yPos: a list of lists of y positions of the agent where each sublist contains all the positions in one simulation run
+    targetsx: a list of x positions of the targets
+    targetsy: a list of y positions of the targets
+    sample_size: the number of repitions of the same exact simulation settings
+    dec_points: a list of times where bifurcations are found, which will optionally plotted
+    figure: the figure to plot the trajectories in
+    plot_dec_point: whether or not to plot the bifurcation points
+    start_ind: the time index to start plotting
+    end_ind: the time index to stop plotting (if 0 plot until the final time step)
+    
+    returns: 
+    None
+
+    Expected output: 
+    A line plot of the trajectories of the agent in blue that is darker on more commonly taken paths and lighter on less commonly taken paths. 
+    The targets are plotted as small red dots, and if the bifurcation times are plotted then they will be larger, low opacity, green dots on the trajectory. 
     '''
     if end_ind == 0:
         for sample in range(sample_size):
@@ -191,8 +221,6 @@ def plot_traj(xPos,yPos,targetsx,targetsy,sample_size,dec_points,figure,plot_dec
             if plot_dec_point:
                 dec_time = dec_points[sample]
                 figure.scatter(xPos[sample][dec_time],yPos[sample][dec_time], color="green",alpha = 0.1)
-            else:
-                figure.scatter(xPos[sample][0],yPos[sample][0], color='red',alpha=0)
         figure.scatter(targetsx,targetsy,color='red',s=5)
     else:
         for sample in range(sample_size):

@@ -176,7 +176,7 @@ fig, axs = plt.subplots(1, 2, figsize=(14, 7),num=1)
 x_label = "h0"
 time_y_label = "Average time to target"
 time_agg_title = f"Average time to target, {"allocentric" if allocentricFlag==1 else "egocentric"}, sigma: {sigma}"
-figure_num, mean_time = sim_met.plot_metric(time_total_list,h0_range,colors_time,labels_time,axs[0],
+mean_time = sim_met.plot_metric(time_total_list,h0_range,colors_time,labels_time,axs[0],
                             time_agg_title,x_label,time_y_label)
     
 time_df = pd.DataFrame(mean_time)
@@ -186,7 +186,7 @@ time_df = pd.DataFrame(mean_time)
     
 dec_posx_y_label = "Average x position at decision"
 decision_posx_agg_title = f"Average x position at bifurcation, {"allocentric" if allocentricFlag==1 else "egocentric"}, sigma: {sigma}"
-figure_num, mean_dec_time = sim_met.plot_metric(decision_pos_x_total,h0_range,colors_time,labels_time,axs[1],
+mean_dec_time = sim_met.plot_metric(decision_pos_x_total,h0_range,colors_time,labels_time,axs[1],
                                                     decision_posx_agg_title,x_label,dec_posx_y_label)
 
 '''

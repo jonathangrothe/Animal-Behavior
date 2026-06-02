@@ -160,7 +160,7 @@ fig1,ax1 = plt.subplots(1,1,figsize=(8,8),num=1)
 x_label = "difference in atraction"
 time_y_label = "Average time to target"
 time_agg_title = f"Average time to target, {"allocentric" if allocentricFlag==1 else "egocentric"}, beta: {beta}, sigma{sigma}"
-figure_num, mean_time = sim_met.plot_metric(time_total_list,h0_range,colors,labels,ax1,
+mean_time = sim_met.plot_metric(time_total_list,h0_range,colors,labels,ax1,
                         time_agg_title,x_label,time_y_label)
     
 time_df = pd.DataFrame(mean_time)
