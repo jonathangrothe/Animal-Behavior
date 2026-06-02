@@ -20,7 +20,7 @@ initialxt = [80,80]
 initialyt = [20,80]
 
 # number of time steps
-T = 12000
+T = 5000
 periodicflag = 0
 rEgo = 0 # radius to switch to egocentric (for when close to another agent)
 rEgoTarget = 0 # radius for switch near target 
@@ -90,13 +90,12 @@ base = {'N':N,
         'h0':h0s,
         'h_b':h_b,
         'sigma':sigma,
-        'beta':beta,
-        'offset':1}
+        'beta':beta}
 
 # plotting settings: controls what kind of simulations we're running
 plot_neurons = True
 plot_trajs = True
-sample_size = 10
+sample_size = 2
 
 
 '''
@@ -126,25 +125,17 @@ min_range = np.mean(min_range_list)
 max_range = np.mean(max_range_list)
 int_val = round((min_val+max_val)/2,5)
 '''
-
-for i in range(4):
-    if i == 1 or i == 3:
-        h0_list = [[0.21,0.21005],[0.24,0.24005],[0.27,0.27005],[0.3,0.30005]]
-    else:
-        h0_list = [[0.21,0.21],[0.24,0.24],[0.27,0.27],[0.3,0.3]]
-    if i >= 2:
-        base['offset'] = 2
-    # print(h0_list)
-    # beta_list = [[50],[100],[150],[200],[250]]
-    # sigma_list = [[0.15],[0.175],[0.2],[0.225],[0.25]]
-
+h0_list = [[0.21,0.21005],[0.24,0.24005],[0.27,0.27005],[0.3,0.30005]]
+for i in range(2):
+    allo_list = [1,0]
+    base['allocentricFlag'] = allo_list[i]
 
     change = {'h0':h0_list}
     target_list, time_list, decision_points, decision_pos, activity_df, x_list, y_list, headings_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
 
 
     n_plots = len(h0_list)
-    ncols = 4
+    ncols = len(h0_list)
     nrows = 1
 
     fig = plt.figure(layout='constrained',figsize=(10,5),num=i+1)

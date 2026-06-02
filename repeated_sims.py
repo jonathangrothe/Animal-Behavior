@@ -53,7 +53,7 @@ def sample_sims(bp, changing_params, n_samples, include_trajs=False, include_act
                                                                                  bp['periodicFlag'],bp['rEgo'],bp['rEgoTarget'],bp['Egonumber'],bp['distf'],
                                                                                  bp['adistf'],bp['J'],bp['beta'],bp['h0'],bp['h_b'],bp['dt'],bp['v0'],bp['v0t'],
                                                                                  bp['sigma'],bp['hColl'],bp['rColl'],bp['initialx'],bp['initialy'],bp['initialxt'],bp['initialyt'],
-                                                                                 False,True,bp['offset'])
+                                                                                 False,True)
                 
                 if bp['ntargets'] > 0:
                     target_reached, time_reached = sim_met.get_destination_metrics(xPos,yPos,targetsx,targetsy)
