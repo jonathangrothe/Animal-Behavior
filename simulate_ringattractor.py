@@ -17,7 +17,6 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
 
     uArray = np.zeros((N, nagents, T+1))
     u0 = 0.2*np.random.randn(N,nagents) 
-    offset = 20
     '''
     u0 = np.zeros((100,1))
     for index in range(len(u0)):
@@ -45,9 +44,9 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
     '''
     uArray[:,:,0] = u0
 
-    xPos = np.zeros((nagents,(T//offset)+1))
-    yPos = np.zeros((nagents,(T//offset)+1))
-    headings = np.zeros((nagents,(T//offset)+1))
+    xPos = np.zeros((nagents,T+1))
+    yPos = np.zeros((nagents,T+1))
+    headings = np.zeros((nagents,T+1))
     for a in range(nagents):
         xPos[a,0] = initialx[a]
         yPos[a,0] = initialy[a]
@@ -81,14 +80,14 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
         
         #contribution of other agents
         for a in range(nagents):
-            xa = xPos[a,(tstep//offset)]
-            ya = yPos[a,(tstep//offset)]
+            xa = xPos[a,tstep]
+            ya = yPos[a,tstep]
 
             for b in range(nagents):
                 if b == a:
                     continue
-                xb = xPos[b,(tstep//offset)]
-                yb = yPos[b,(tstep//offset)]
+                xb = xPos[b,tstep]
+                yb = yPos[b,tstep]
 
                 dx = xb - xa
                 dy = yb - ya
@@ -118,8 +117,8 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
                     Iextern[i,a] = Iextern[i,a] + ampl*np.exp(-0.5*(dAng**2)/(sigma**2))
         
         for a in range(nagents):
-            xa = xPos[a,(tstep//offset)]
-            ya = yPos[a,(tstep//offset)]
+            xa = xPos[a,tstep]
+            ya = yPos[a,tstep]
             for ttarg in range(ntargets):
                 xt = targetXPos[ttarg,tstep]
                 yt = targetYPos[ttarg,tstep]
@@ -183,17 +182,17 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
                 newAngle = np.atan2(cy,cx)
                 if newAngle < 0:
                     newAngle = newAngle + 2*np.pi
-            headings[a,(tstep//offset)+1] = newAngle
+            headings[a,tstep+1] = newAngle
         
             if allocentricFlag == 0:
-                alpharing[a,:] = np.mod(alpharing[a,:] - headings[a,(tstep//offset)] + newAngle,2*np.pi)
+                alpharing[a,:] = np.mod(alpharing[a,:] - headings[a,tstep] + newAngle,2*np.pi)
             elif Egocentric[a] >= Egonumber:
-                alpharing[a,:] = np.mod(alpharing[a,:]-headings[a,(tstep//offset)] + newAngle, 2*np.pi)
+                alpharing[a,:] = np.mod(alpharing[a,:]-headings[a,tstep] + newAngle, 2*np.pi)
 
         # -------- STEP D --------
         for a in range(nagents):
-            oldx = xPos[a,tstep//offset]
-            oldy = yPos[a,tstep//offset]
+            oldx = xPos[a,tstep]
+            oldy = yPos[a,tstep]
 
             #calculating the centers again
             cx_d = 0
@@ -218,8 +217,8 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
             elif newy > L:
                 newy = L
             if tstep % 10 == 0:
-                xPos[a,(tstep//offset)+1] = newx
-                yPos[a,(tstep//offset)+1] = newy
+                xPos[a,tstep+1] = newx
+                yPos[a,tstep+1] = newy
 
 
         # -------- STEP E --------
@@ -283,8 +282,8 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
             for targ in range(ntargets):
                 targ_x = targetXPos[targ,tstep]
                 targ_y = targetYPos[targ,tstep]
-                x_dist = np.abs(xPos[0,(tstep//offset)] - targ_x)
-                y_dist = np.abs(yPos[0,(tstep//offset)] - targ_y)
+                x_dist = np.abs(xPos[0,tstep] - targ_x)
+                y_dist = np.abs(yPos[0,tstep] - targ_y)
                 total_dist = np.sqrt((x_dist**2)+(y_dist**2))
                 if total_dist <= stopping_dist:
                     stopped = True
@@ -292,9 +291,9 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
 
         if stop == True and stopped == True:
             if tstep >= stopping_time:
-                headings = headings[:,:(tstep//offset)+1]
-                xPos = xPos[:,:(tstep//offset)+1]
-                yPos = yPos[:,:(tstep//offset)+1]
+                headings = headings[:,:tstep+1]
+                xPos = xPos[:,:tstep+1]
+                yPos = yPos[:,:tstep+1]
                 targetXPos = targetXPos[:,:tstep+1]
                 targetYPos = targetYPos[:,:tstep+1]
                 uArray = uArray[:,:,:tstep+1]

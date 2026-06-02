@@ -98,15 +98,15 @@ base = {'N':N,
 plot_trajs = False
 plot_neurons = False
 uneven = True
-sample_size = 30
+sample_size = 2
 start = 0.18
 finish = 0.33
-n_h0 = 50
+n_h0 = 2
 h0_range= np.linspace(start,finish,num=n_h0)
 #h0_for_plot = h0_range
 h0_total_list = []
 # 9.5: 0.215-0.32, 10: 0.208-0.325, 12: 0.189-0.339, 20: 0.177-0.338, 52: 0.182-0.325, 180: 0.189-0.326 ? 
-beta_list = [10,12,20,40,100] # 0.22 to 0.31 - 0.1925-0.335
+beta_list = [40] # 0.22 to 0.31 - 0.1925-0.335
 h0_list = []
 for item in h0_range:
     h0_list.append([item,item])
@@ -128,10 +128,12 @@ for index in range(len(beta_list)):
         change= {'h0':h0_list}
         base['beta'] = beta_list[index]
         target_list, time_list, decision_points, decision_pos, activity_df, x_list, y_list, headings_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
-        p_success, se_success, p_correct, se_correct, p_target, se_target = sim_met.get_success_rate(target_list, sample_size, ntargets, uneven, 1)
+        p_target, se_target = sim_met.get_success_rate(target_list, sample_size, ntargets)
         time_total_list.append(time_list)
         prob_total_list.append(p_target)
         prob_se_list.append(se_target)
+        print(p_target)
+        print(se_target)
         decision_points_total.append(decision_points)
         decision_pos_total.append(decision_pos)
         xpos_list = []

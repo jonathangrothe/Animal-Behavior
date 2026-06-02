@@ -21,7 +21,7 @@ initialxt = [80,80]
 initialyt = [20,80]
 
 # number of time steps
-T = 50000
+T = 5000
 periodicflag = 0
 rEgo = 0 # radius to switch to egocentric (for when close to another agent)
 rEgoTarget = 0 # radius for switch near target 
@@ -58,7 +58,7 @@ allocentricFlag = 0 # 1 is allo, 0 is ego
 h0s = [0.295,0.295001] # attraction vector, first are attraction for targets, then agents
 h_b = 0.2
 sigma = 0.5 #0.25 works for three target (sometimes)
-beta = 20 #100 works for double
+beta = 100 #100 works for double
 
 
 # -------- Running the simulation --------
@@ -97,7 +97,7 @@ base = {'N':N,
 plot_neurons = True
 plot_trajs = True
 uneven = True
-sample_size = 10
+sample_size = 1
 min_list = []
 max_list = []
 min_range_list = []

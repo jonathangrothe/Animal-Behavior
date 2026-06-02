@@ -98,14 +98,14 @@ base = {'N':N,
 plot_trajs = False
 plot_neurons = False
 uneven = True
-sample_size = 30
+sample_size = 3
 start = 0
 finish = 0.003
-h0_range= np.linspace(start,finish,num=150)
+h0_range= np.linspace(start,finish,num=3)
 h0_for_plot = h0_range
 h0_total_list = []
 # 9.5: 0.215-0.32, 10: 0.208-0.325, 12: 0.189-0.339, 20: 0.177-0.338, 52: 0.182-0.325, 180: 0.189-0.326 ? 
-base_h0_list = [0.19,0.26,0.295,0.32]# 0.22 to 0.31 - 0.1925-0.335
+base_h0_list = [0.295,0.32]# 0.22 to 0.31 - 0.1925-0.335
 n_lines = len(base_h0_list)
 for n in range(n_lines):
     h0_list = []
@@ -125,17 +125,21 @@ decision_pos_total = []
 for h0s in h0_total_list:
     change= {'h0':h0s}
     target_list, time_list, decision_points, decision_pos, activity_df, x_list, y_list, headings_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
-    p_success, se_success, p_correct, se_correct, p_target, se_target = sim_met.get_success_rate(target_list, sample_size, ntargets, uneven, 1)
+    p_target, se_target = sim_met.get_success_rate(target_list, sample_size, ntargets)
     time_total_list.append(time_list)
-    prob_total_list.append(p_correct)
-    prob_se_list.append(se_correct)
+    prob_list = []
+    se_list = []
+    for index in range(len(p_target)):
+        prob_list.append(p_target[index][1])
+        se_list.append(se_target[index][1])
+    prob_total_list.append(prob_list)
+    prob_se_list.append(se_list)
     decision_points_total.append(decision_points)
     decision_pos_total.append(decision_pos)
-    
+
 correct_df = pd.DataFrame(prob_total_list)
 correct_df.index = base_h0_list
 correct_df.columns = h0_range
-print(correct_df)
 
 # compile the data we want from each run into a dataframe
 # we want: p_correct and time, and we would prefer if they are labeled with simulation settings
@@ -167,7 +171,7 @@ p_success_y = "Probability of reaching top target"
 p_success_title = f"Probability of reaching top target, {"allocentric" if allocentricFlag==1 else "egocentric"}, beta: {beta}, sigma: {sigma}"
 
 plt.figure(figsize=(8,8))
-fig, ax = plt.subplots(2,2,num=2)
+fig, ax = plt.subplots(1,2,num=2)
 axes_flat = ax.flatten()
 print(f"current: {prob_total_list}")
 for i in range(len(prob_total_list)):

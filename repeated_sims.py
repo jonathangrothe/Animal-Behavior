@@ -62,12 +62,12 @@ def sample_sims(bp, changing_params, n_samples, include_trajs=False, include_act
                                                                                  False,True)
                 
                 if bp['ntargets'] > 0:
-                    target_reached, time_reached, start = sim_met.get_destination_metrics(xPos,yPos,targetsx,targetsy)
+                    target_reached, time_reached = sim_met.get_destination_metrics(xPos,yPos,targetsx,targetsy)
                     target_list.append(target_reached)
                     time_list.append(time_reached)
-                    dec_points_list, dec_pos = sim_met.get_bifurcation_times(xPos[0,:],yPos[0,:]) #change this when we get more agents (this might be solvable in sim_met)
-                    decision_points.append(dec_points_list)
-                    decision_pos.append(dec_pos)
+                    #dec_points_list, dec_pos = sim_met.get_bifurcation_times(xPos[0,:],yPos[0,:]) #change this when we get more agents (this might be solvable in sim_met)
+                    #decision_points.append(dec_points_list)
+                    #decision_pos.append(dec_pos)
 
                 if include_trajs:
                     xpos_1d = xPos.ravel()
@@ -125,7 +125,7 @@ def boundary_search(bp,base_min,base_max,sample_size,min_search,param,boundary_p
                                                                                                 bp['adistf'],bp['J'],bp['beta'],bp['h0'],bp['h_b'],bp['dt'],bp['v0'],bp['v0t'],
                                                                                                 bp['sigma'],bp['hColl'],bp['rColl'],bp['initialx'],bp['initialy'],bp['initialxt'],bp['initialyt'],
                                                                                                 False,True)
-            target_reached, time_reached, start = sim_met.get_destination_metrics(xPos,yPos,targetsx,targetsy) # another vote to rework this function
+            target_reached, time_reached = sim_met.get_destination_metrics(xPos,yPos,targetsx,targetsy) # another vote to rework this function
             target_list.append(target_reached)
         n_reached = 0
         for item in target_list: # could try and make this into a more general loop which loops for a different metric
