@@ -98,7 +98,7 @@ plot_trajs = True
 sample_size = 1
 
 
-h0_list = [[0.23,0.232],[0.25,0.2515],[0.27,0.272],[0.3,0.301],[0.3,0.303]]
+h0_list = [[0.23,0.23005],[0.23,0.23001],[0.25,0.25002],[0.25,0.250005]]
 allo_list = [0,1]
 
 for i in range(2):
@@ -106,7 +106,20 @@ for i in range(2):
 
     change = {'h0':h0_list}
     target_list, time_list, decision_points, decision_pos, activity_df, x_list, y_list, headings_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
+        
+    # look at activity, get the times of bifurcation and max activated values around them ?
 
+    one_sample = activity_df.dropna(axis=1).iloc[0:100,:]
+    max_act = 0.9
+    tanh_val = max_act*2-1
+    u_cutoff = (0.5*np.log((1+tanh_val)/(1-tanh_val)))/beta
+    print(f"u cutoff: {u_cutoff}")
+    for x in range(len(one_sample.columns)):
+        max_u = np.max(one_sample.iloc[:,x]) 
+        if x % 5 == 0:
+            print(f"tstep: {x}, max activ: {max_u}")
+        if max_u < u_cutoff:
+            print(f"low activity alert! tstep: {x}, max_activ: {max_u}")
 
     n_plots = len(h0_list)
     ncols = len(h0_list)

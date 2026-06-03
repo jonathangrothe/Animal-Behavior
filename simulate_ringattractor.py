@@ -163,11 +163,11 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
             
             low_movement = False
             if np.max(faPos) <=0.7:
-                if np.max(faPos >= 0.5):
-                    print(f"intermediate t: {tstep}")
-                counter_val += 1
+                if tstep >=200:
+                    counter_val += 1
             if np.max(uArray[:,a,tstep+1])<=0:
-                counter_u += 1
+                if tstep >=200:
+                    counter_u += 1
                 low_movement = True
                 #print(f"tstep: {tstep}")
                 #print(f"cx step c: {round(cx,5)}, cy step c: {round(cy,5)}")
