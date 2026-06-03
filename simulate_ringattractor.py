@@ -44,7 +44,8 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
     # if stop is true, we will let it go 100 tsteps before ending
     stopped = False
     stopping_time = 0
-
+    counter_u = 0
+    counter_val = 0
     for tstep in range(0,T):
 
         # -------- STEP A --------
@@ -159,16 +160,21 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
                     newAngle = newAngle + 2*np.pi
             
             headings[a,tstep+1] = newAngle
-            '''
-            angle_diff = False
-            if np.abs(newAngle-headings[a,tstep])>0.5:
-                angle_diff = True
-                print(f"tstep: {tstep}")
-                print(f"cx step c: {round(cx,5)}, cy step c: {round(cy,5)}")
-                print(f"curr angle: {round(headings[a,tstep],5)}, new angle: {round(newAngle,5)}")
+            
+            low_movement = False
+            if np.max(faPos) <=0.7:
+                if np.max(faPos >= 0.5):
+                    print(f"intermediate t: {tstep}")
+                counter_val += 1
+            if np.max(uArray[:,a,tstep+1])<=0:
+                counter_u += 1
+                low_movement = True
+                #print(f"tstep: {tstep}")
+                #print(f"cx step c: {round(cx,5)}, cy step c: {round(cy,5)}")
+                #print(f"curr angle: {round(headings[a,tstep],5)}, new angle: {round(newAngle,5)}")
             else:
-                angle_diff = False
-            '''
+                low_movement = False
+            
             if allocentricFlag == 0:
                 alpharing[a,:] = np.mod(alpharing[a,:] - headings[a,tstep] + headings[a,tstep+1],2*np.pi)
             elif Egocentric[a] >= Egonumber:
@@ -185,6 +191,9 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
             cy_d = 0
             for i in range(N):
                 val = fAct(uArray[i,a,tstep+1],beta) 
+                #if low_movement and tstep % 5 ==0:
+                    #with np.printoptions(threshold=np.inf):
+                        #print(f"unactivated: {uArray[i,a,tstep+1]}, activated: {val}")
                 if val < 0:
                     val = 0
                 cx_d = cx_d + val * np.cos(alpharing[a,i])
@@ -202,11 +211,11 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
                 newy = 0
             elif newy > L:
                 newy = L
-            '''
-            if angle_diff:
-                print(f"cx step d: {round(cx_d,5)}, cy step d: {round(cy_d,5)}")
-                print(f"old x: {round(oldx,5)}, new x: {round(newx,5)}, old y: {round(oldy,5)}, new y: {round(newy,5)}")
-            '''
+            
+            #if low_movement:
+                #print(f"cx step d: {round(cx_d,5)}, cy step d: {round(cy_d,5)}")
+                #print(f"old x: {round(oldx,5)}, new x: {round(newx,5)}, old y: {round(oldy,5)}, new y: {round(newy,5)}")
+            
             xPos[a,tstep+1] = newx
             yPos[a,tstep+1] = newy
 
@@ -286,11 +295,12 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
                 targetXPos = targetXPos[:,:tstep+1]
                 targetYPos = targetYPos[:,:tstep+1]
                 uArray = uArray[:,:,:tstep+1]
+                print(f"n inhib: {counter_u}, n low active: {counter_val}")
                 return headings, xPos, yPos, targetXPos, targetYPos, uArray
                 
         if plot == True:
             plt.show(block = False)
-
+    print(f"n inhib: {counter_u}, n low active: {counter_val}")
     return headings, xPos, yPos, targetXPos, targetYPos, uArray
 
 #function for creating an evenly spaced grid

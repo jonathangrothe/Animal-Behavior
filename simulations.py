@@ -54,10 +54,10 @@ for i in range(N):
     J = np.squeeze(J)
 
 allocentricFlag = 0 # 1 is allo, 0 is ego 
-h0s = [0.2191,0.2191] 
+h0s = [0.27,0.27005] 
 h_b = 0.2
 sigma = 0.5 # narrower sigma means more bifurcations in 3 (+?) target case
-beta = 100 
+beta = 20
 
 
 # -------- Running the simulation --------
@@ -95,10 +95,10 @@ base = {'N':N,
 # plotting settings: controls what kind of simulations we're running
 plot_neurons = True
 plot_trajs = True
-sample_size = 2
+sample_size = 1
 
 
-h0_list = [[0.21,0.21005],[0.24,0.24005],[0.27,0.27005],[0.3,0.30005]]
+h0_list = [[0.23,0.232],[0.25,0.2515],[0.27,0.272],[0.3,0.301],[0.3,0.303]]
 allo_list = [0,1]
 
 for i in range(2):
