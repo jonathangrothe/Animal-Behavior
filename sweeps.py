@@ -10,15 +10,15 @@ from scipy.optimize import curve_fit
 # --------  PARAMETERS --------
 
 L = 100 # width of grid
-ntargets = 2
+ntargets = 3
 nagents = 1
 initialx = np.zeros(nagents)
 initialy = np.zeros(nagents)
 for a in range(nagents):
-    initialx[a] = 20
+    initialx[a] = 50
     initialy[a] = 50
-initialxt = [80,80]
-initialyt = [20,80]
+initialxt = [20,50,80]
+initialyt = [50,80,50]
 
 # number of time steps
 T = 5000
@@ -55,10 +55,10 @@ for i in range(N):
     J = np.squeeze(J)
 
 allocentricFlag = 0 # 1 is allo, 0 is ego
-h0s = [0.25,0.25] # attraction vector, first are attraction for targets, then agents
+h0s = [0.25,0.25,0.25] # attraction vector, first are attraction for targets, then agents
 h_b = 0.2
 sigma = 0.5
-beta = 20
+beta = 100
 
 
 # -------- Running the simulation --------
@@ -99,14 +99,12 @@ plot_trajs = False
 plot_neurons = False
 uneven = True
 sample_size = 2
+# do a sweep up here to determine starting point and ending point
 start = 0.18
 finish = 0.33
 n_h0 = 2
 h0_range= np.linspace(start,finish,num=n_h0)
-#h0_for_plot = h0_range
-h0_total_list = []
-# 9.5: 0.215-0.32, 10: 0.208-0.325, 12: 0.189-0.339, 20: 0.177-0.338, 52: 0.182-0.325, 180: 0.189-0.326 ? 
-beta_list = [40] # 0.22 to 0.31 - 0.1925-0.335
+beta_list = [40] 
 h0_list = []
 for item in h0_range:
     h0_list.append([item,item])
@@ -119,44 +117,12 @@ decision_points_total = []
 decision_pos_total = []
 decision_pos_x_total = []
 
-# want to get the x position of the last decision point where y was close to 50
+# what we want: a plot that shows behavior over all possible ways of reaching the target, for given beta, sigma, geometry over h0s
 
-# we want to sweep over sigmas, so each time we set the h0 and the beta, and have sigma as change
-for index in range(len(beta_list)):
-        #print(f"h0: {h0_lis}")
-        print(f"beta: {beta_list[index]}")
-        change= {'h0':h0_list}
-        base['beta'] = beta_list[index]
-        target_list, time_list, decision_points, decision_pos, activity_df, x_list, y_list, headings_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
-        p_target, se_target = sim_met.get_success_rate(target_list, sample_size, ntargets)
-        time_total_list.append(time_list)
-        prob_total_list.append(p_target)
-        prob_se_list.append(se_target)
-        print(p_target)
-        print(se_target)
-        decision_points_total.append(decision_points)
-        decision_pos_total.append(decision_pos)
-        xpos_list = []
-        for item in decision_pos:
-            if len(item) == 0:
-                xpos_list.append(80)
-            if len(item) == 1:
-                xpos_list.append(item[0][0])
-            if len(item) > 1:
-                index_first_dec = 0
-                for index in range(len(item)):
-                    if np.abs(item[index][1]-50) >= 3:
-                        index_first_dec = index - 1
-                xpos_list.append(item[index_first_dec][0])
-        decision_pos_x_total.append(xpos_list)
-    
-correct_df = pd.DataFrame(prob_total_list)
-#correct_df.index = h0_list
-#correct_df.columns = beta_list
 
-# compile the data we want from each run into a dataframe
-# we want: p_correct and time, and we would prefer if they are labeled with simulation settings
-
+change= {'h0':h0_list}
+target_list, time_list, decision_points, decision_pos, activity_df, x_list, y_list, headings_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
+p_target, se_target = sim_met.get_success_rate(target_list, sample_size, ntargets)
 
 figure_num = 1
 
@@ -180,8 +146,6 @@ mean_time = sim_met.plot_metric(time_total_list,h0_range,colors_time,labels_time
                             time_agg_title,x_label,time_y_label)
     
 time_df = pd.DataFrame(mean_time)
-#time_df.index = beta_list
-#time_df.columns = h0_range
 
     
 dec_posx_y_label = "Average x position at decision"
@@ -212,6 +176,5 @@ fig.suptitle(p_success_title)
 figure_num += 1
 plt.tight_layout()
 '''
-#time_df.to_csv(f"time_df_beta{beta_list[0]}_egocentric.csv")
-#correct_df.to_csv(f"pcorrect_df_beta{beta_list[0]}_egocentric.csv")
+
 plt.show()

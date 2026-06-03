@@ -295,12 +295,12 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
                 targetXPos = targetXPos[:,:tstep+1]
                 targetYPos = targetYPos[:,:tstep+1]
                 uArray = uArray[:,:,:tstep+1]
-                print(f"n inhib: {counter_u}, n low active: {counter_val}")
+                #print(f"n inhib: {counter_u}, n low active: {counter_val}")
                 return headings, xPos, yPos, targetXPos, targetYPos, uArray
                 
         if plot == True:
             plt.show(block = False)
-    print(f"n inhib: {counter_u}, n low active: {counter_val}")
+    #print(f"n inhib: {counter_u}, n low active: {counter_val}")
     return headings, xPos, yPos, targetXPos, targetYPos, uArray
 
 #function for creating an evenly spaced grid
