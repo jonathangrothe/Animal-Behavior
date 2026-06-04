@@ -138,9 +138,9 @@ max_val = 0.22
 int_val = (min_val+max_val)/2
 #h0_list = [[0.19,0.19,0.19],[0.195,0.195,0.195],[0.2,0.2,0.2],[0.205,0.205,0.205],[0.21,0.21,0.21],[0.215,0.215,0.215]]
 #print(h0_list)
-area = 0.3
-sigma_list = [0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5,0.55,0.6,0.65,0.7,0.75]
-h0_list_from_sigma = repeated_sims.area_helper(area,'sigma',sigma_list)
+area = 0.2
+sigma_start_list = [0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5,0.55,0.6,0.65,0.7,0.75]
+h0_list_from_sigma = repeated_sims.area_helper(area,'sigma',sigma_start_list)
 h0_for_sim_from_sigma = []
 for item in h0_list_from_sigma:
     h0_tmp_list = []
@@ -148,12 +148,18 @@ for item in h0_list_from_sigma:
         h0_tmp_list.append(item)
     h0_for_sim_from_sigma.append(h0_tmp_list)
 sigma_repeated = repeated_sims.area_helper(area,'h0',h0_list_from_sigma)
-print(f"original sigmas: {sigma_list}")
+print(f"original sigmas: {sigma_start_list}")
 print(f"h0s from that: {h0_list_from_sigma}")
 print(f"recreated sigma list: {sigma_repeated}")
 
-h0_list = [0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45]
-sigma_list_from_h0 = repeated_sims.area_helper(area,'h0',h0_list)
+h0_start_list = [0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45]
+h0_start_for_sim= []
+for item in h0_start_list:
+    h0_tmp_list = []
+    for i in range(ntargets):
+        h0_tmp_list.append(item)
+    h0_start_for_sim.append(h0_tmp_list)
+sigma_list_from_h0 = repeated_sims.area_helper(area,'h0',h0_start_list)
 h0_repeated = repeated_sims.area_helper(area,'sigma',sigma_list_from_h0)
 h0_for_sim_repeated = []
 for item in h0_repeated:
@@ -161,24 +167,26 @@ for item in h0_repeated:
     for i in range(ntargets):
         h0_tmp_list.append(item)
     h0_for_sim_repeated.append(h0_tmp_list)
-print(f"original h0s: {h0_list}")
+print(f"original h0s: {h0_start_list}")
 print(f"sigmas from that: {sigma_list_from_h0}")
 print(f"recreated h0 list: {h0_repeated}")
 
     
 #beta_list = [[11],[15],[20],[40],[90],[250]]
 #allo_list = [[0],[1]]
+h0_list = h0_start_for_sim
+sigma_list = sigma_list_from_h0
 
 
-change = {'sigma':sigma_list, 'h0':h0_for_sim_from_sigma}
+change = {'sigma':sigma_list, 'h0':h0_list}
 target_list, time_list, decision_points, decision_pos, activity_df, x_list, y_list, headings_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
 print(target_list)
 
 print(np.shape(activity_df))
 
 # functionize this plotting ? in the future...
-n_plots = len(sigma_list)
-ncols = 7
+n_plots = len(h0_list)
+ncols = n_plots//2
 nrows = 2
 # neuron heat maps - maybe just do one example for each? 
 fig = plt.figure(layout='constrained',figsize=(16,8))
@@ -195,13 +203,12 @@ cmap = mcolors.LinearSegmentedColormap.from_list("GreyBlue", grey_to_blue)
 
 for s in range(n_plots):
     sim_met.plot_traj(x_list[s*sample_size:(s+1)*sample_size],y_list[s*sample_size:(s+1)*sample_size],initialxt,initialyt,sample_size,[0],axs0[s],False,0,0)
-    axs0[s].set_title(f"{"allocentric" if allocentricFlag==1 else "egocentric"}, sigma: {round(sigma_list[s],4)}, h0: {round(h0_for_sim_from_sigma[s][0],4)}, beta: {beta}")
+    axs0[s].set_title(f"{"allocentric" if allocentricFlag==1 else "egocentric"}, sigma: {round(sigma_list[s],4)}, h0: {round(h0_list[s][0],4)}, beta: {beta}")
 
-    rolled= np.roll(activity_df.iloc[s*100*sample_size:s*100*sample_size+100,:].dropna(axis=1).values, shift=25, axis=0)
+    rolled= activity_df.iloc[s*100*sample_size:s*100*sample_size+100,:].dropna(axis=1)
     col_min = np.min(activity_df.iloc[s*100*sample_size:s*100*sample_size+100,40:])
     col_max = np.max(activity_df.iloc[s*100*sample_size:s*100*sample_size+100,40:])
     axs1[s].imshow(rolled,cmap=cmap,aspect='auto',vmin=col_min,vmax=col_max)
-
 
 
 plt.show()

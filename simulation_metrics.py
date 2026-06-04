@@ -136,6 +136,18 @@ def find_bumps(activity):
         bump_list.append(true_bumps)
     return bump_list
 
+def get_bump_type(initialxt,initialyt,activity):
+    '''
+    A function that takes the targets position and the activity over a simulation and returns what kind of behavior the bump exhibits
+    Right now the plan is to classify behavior in three ways (for the 120 degree case): 
+        -all bumps equal (stalled movement)
+        -one bump dominates (goes straight to right option)
+        -bumps shift (movement, but I think this always is ciruclar in 120 degree case?)
+            -expansion for this: number of bifurcations based on number of bump shifts
+    '''
+    
+    return None
+
 def plot_metric(metrics,x,colors,labels,fig,title,xlabel,ylabel):
     '''
     A function which plots an aggregated metric over changing values of a parameter
@@ -231,4 +243,14 @@ def plot_traj(xPos,yPos,targetsx,targetsy,sample_size,dec_points,figure,plot_dec
             dist[1:] = np.sqrt(deltax**2 + deltay**2)
             figure.scatter(xPos[sample][start_ind:end_ind],yPos[sample][start_ind:end_ind],c = dist, cmap = 'afmhot_r', alpha=0.5,s=8)
     return None
+
+def plot_phase_over_area(h0_list,sigma_list,target_list,acolor,figure):
+    '''
+    This function will take a set of simulations done over a constant area and plot a line plot with h0 as the x axis and sigma as the y axis
+    each point will be highlighted in a different color or tick mark or something to note which phase its in (maybe one for bump and one for outcome)
+    We'll first just start with reaching the target
+    '''
+    figure.plot(h0_list,sigma_list,c=acolor)
+    #figure.scatter(x=h0_list,y=sigma_list,c=target_list,cmap="RdYlGn")
+
 

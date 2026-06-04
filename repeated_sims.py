@@ -48,9 +48,7 @@ def sample_sims(bp, changing_params, n_samples, include_trajs=False, include_act
         if n_sweeps > 0 and curr_len != n_sweeps:
             raise ValueError("Changing parameters are different dimensions")
         n_sweeps = curr_len
-    print(f"keys: {changing_params.keys()}, n_sweeps: {n_sweeps}")
     for index in range(n_sweeps):
-        #param_value_list = changing_params[param]
         for param in changing_params.keys():
             bp[param] = changing_params[param][index]
             print(f"param: {param}, value: {changing_params[param][index]}")
