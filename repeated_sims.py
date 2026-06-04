@@ -42,12 +42,19 @@ def sample_sims(bp, changing_params, n_samples, include_trajs=False, include_act
     x_list = []
     y_list = []
     headings_list = []
-    for param in changing_params.keys():
-        param_value_list = changing_params[param]
-        for value in param_value_list:
-            bp[param] = value
-            print(f"param: {value}")
-            for sample in range(n_samples):
+    n_sweeps = -1
+    for key in changing_params.keys():
+        curr_len = len(changing_params[key])
+        if n_sweeps > 0 and curr_len != n_sweeps:
+            raise ValueError("Changing parameters are different dimensions")
+        n_sweeps = curr_len
+    print(f"keys: {changing_params.keys()}, n_sweeps: {n_sweeps}")
+    for index in range(n_sweeps):
+        #param_value_list = changing_params[param]
+        for param in changing_params.keys():
+            bp[param] = changing_params[param][index]
+            print(f"param: {param}, value: {changing_params[param][index]}")
+        for sample in range(n_samples):
                 print(f"sample: {sample}")
                 headings, xPos, yPos, targetsx, targetsy, activity = sim_ra.simulate_ring_attractor(bp['N'],bp['L'],bp['T'],bp['ntargets'],bp['nagents'],bp['allocentricFlag'],
                                                                                  bp['periodicFlag'],bp['rEgo'],bp['rEgoTarget'],bp['Egonumber'],bp['distf'],
@@ -206,6 +213,47 @@ def target_range_test(min_val,max_val,target_list,direction,boundary_prob):
         curr_range = max_val - min_val
         value = (min_val+max_val)/2
         return value
+    
+def area_helper(area, param, param_list):
+    if param == 'sigma':
+        h0_list = []
+        for item in param_list: 
+            expon = -(item**2*2)
+            inv = 1/expon
+            integral = inv*(np.exp(np.pi/expon)-1)
+            h0 = area/2*integral
+            h0_list.append(h0)
+        return h0_list
+    if param == 'h0':
+        s = 1
+        tol=1e-10
+        sigma_list = []
+        for item in param_list:
+            for i in range(10):
+                fs   = f(area, s, item)
+                fps  = fprime(s, item)
+                if abs(fs) < tol:
+                    if s > 1:
+                        print(f"warning, h0 is too small to support this area")
+                        sigma_list.append(1)
+                        break
+                    sigma_list.append(s)
+                    break
+                if fps == 0:
+                    raise ValueError("Derivative is zero — Newton's method failed. Try a different starting guess.")
+                s = s - fs / fps
+                if s <= 0:
+                    s = 0.25
+        return sigma_list
+
+def f(a,s,h):
+    return 4*h*s**2-4*h*s**2*np.exp(-np.pi/(2*s**2))-a
+
+def fprime(s,h):
+    return 4 * h * (2 * s * (1 - np.exp(-np.pi/(2*s**2))) - (np.pi / s) * np.exp(-np.pi/(2*s**2)))
+
+        
+
 
 
 

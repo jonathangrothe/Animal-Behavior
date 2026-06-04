@@ -17,7 +17,7 @@ for a in range(nagents):
     initialx[a] = 50
     initialy[a] = 50
 initialxt = [50-(15*np.sqrt(3)),50,50+(15*np.sqrt(3))]
-initialyt = [65,80,65]
+initialyt = [35,80,35]
 
 # number of time steps
 T = 5000
@@ -54,9 +54,9 @@ for i in range(N):
     J = np.squeeze(J)
 
 allocentricFlag = 1 # 1 is allo, 0 is ego 
-h0s = [0.205,0.205,0.205] # attraction vector, first are attraction for targets, then agents
+h0s = [0.21903,0.21903,0.21904] # attraction vector, first are attraction for targets, then agents
 h_b = 0.2
-sigma = 0.2 #0.25 works for three target (sometimes)
+sigma = 0.25 #0.25 works for three target (sometimes)
 beta = 100 #100 works for double
 
 
@@ -96,7 +96,7 @@ base = {'N':N,
 plot_neurons = True
 plot_trajs = True
 uneven = True
-sample_size = 30
+sample_size = 1
 
 # turn this into a sweep of sweeps, get the range each time
 # get a list of betas/sigmas we want to sweep over 
@@ -138,26 +138,56 @@ max_val = 0.22
 int_val = (min_val+max_val)/2
 #h0_list = [[0.19,0.19,0.19],[0.195,0.195,0.195],[0.2,0.2,0.2],[0.205,0.205,0.205],[0.21,0.21,0.21],[0.215,0.215,0.215]]
 #print(h0_list)
-sigma_list = [0.18,0.23,0.28,0.33,0.38,0.43]
+area = 0.3
+sigma_list = [0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5,0.55,0.6,0.65,0.7,0.75]
+h0_list_from_sigma = repeated_sims.area_helper(area,'sigma',sigma_list)
+h0_for_sim_from_sigma = []
+for item in h0_list_from_sigma:
+    h0_tmp_list = []
+    for i in range(ntargets):
+        h0_tmp_list.append(item)
+    h0_for_sim_from_sigma.append(h0_tmp_list)
+sigma_repeated = repeated_sims.area_helper(area,'h0',h0_list_from_sigma)
+print(f"original sigmas: {sigma_list}")
+print(f"h0s from that: {h0_list_from_sigma}")
+print(f"recreated sigma list: {sigma_repeated}")
+
+h0_list = [0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45]
+sigma_list_from_h0 = repeated_sims.area_helper(area,'h0',h0_list)
+h0_repeated = repeated_sims.area_helper(area,'sigma',sigma_list_from_h0)
+h0_for_sim_repeated = []
+for item in h0_repeated:
+    h0_tmp_list = []
+    for i in range(ntargets):
+        h0_tmp_list.append(item)
+    h0_for_sim_repeated.append(h0_tmp_list)
+print(f"original h0s: {h0_list}")
+print(f"sigmas from that: {sigma_list_from_h0}")
+print(f"recreated h0 list: {h0_repeated}")
+
+    
 #beta_list = [[11],[15],[20],[40],[90],[250]]
 #allo_list = [[0],[1]]
 
 
-change = {'sigma':sigma_list}
+change = {'sigma':sigma_list, 'h0':h0_for_sim_from_sigma}
 target_list, time_list, decision_points, decision_pos, activity_df, x_list, y_list, headings_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
 print(target_list)
 
 print(np.shape(activity_df))
 
+# functionize this plotting ? in the future...
 n_plots = len(sigma_list)
-ncols = len(sigma_list)
-nrows = 1
+ncols = 7
+nrows = 2
 # neuron heat maps - maybe just do one example for each? 
-fig = plt.figure(layout='constrained',figsize=(10,10))
+fig = plt.figure(layout='constrained',figsize=(16,8))
 #fig, ax = plt.subplots(nrows,ncols,num=figure_num)
 subfigs = fig.subfigures(2,1, wspace=0.1)
 axs0 = subfigs[0].subplots(nrows,ncols)
+axs0 = axs0.flatten()
 axs1 = subfigs[1].subplots(nrows,ncols)
+axs1 = axs1.flatten()
 #axs2 = subfigs[2].subplots(nrows,ncols)
 
 grey_to_blue = ["#D3D3D3", "#A9A9A9", "#708090", "#4682B4", "#000080"]
@@ -165,11 +195,11 @@ cmap = mcolors.LinearSegmentedColormap.from_list("GreyBlue", grey_to_blue)
 
 for s in range(n_plots):
     sim_met.plot_traj(x_list[s*sample_size:(s+1)*sample_size],y_list[s*sample_size:(s+1)*sample_size],initialxt,initialyt,sample_size,[0],axs0[s],False,0,0)
-    axs0[s].set_title(f"{"allocentric" if allocentricFlag==1 else "egocentric"}, sigma: {sigma_list[s]}, beta: {beta}")
+    axs0[s].set_title(f"{"allocentric" if allocentricFlag==1 else "egocentric"}, sigma: {round(sigma_list[s],4)}, h0: {round(h0_for_sim_from_sigma[s][0],4)}, beta: {beta}")
 
-    rolled= np.roll(activity_df.dropna(axis=1).iloc[s*100*sample_size:s*100*sample_size+100,:].values, shift=50, axis=0)
-    col_min = np.min(activity_df.iloc[:,40:])
-    col_max = np.max(activity_df.iloc[:,40:])
+    rolled= np.roll(activity_df.iloc[s*100*sample_size:s*100*sample_size+100,:].dropna(axis=1).values, shift=25, axis=0)
+    col_min = np.min(activity_df.iloc[s*100*sample_size:s*100*sample_size+100,40:])
+    col_max = np.max(activity_df.iloc[s*100*sample_size:s*100*sample_size+100,40:])
     axs1[s].imshow(rolled,cmap=cmap,aspect='auto',vmin=col_min,vmax=col_max)
 
 
