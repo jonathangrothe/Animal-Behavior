@@ -145,7 +145,40 @@ def get_bump_type(initialxt,initialyt,activity):
         -bumps shift (movement, but I think this always is ciruclar in 120 degree case?)
             -expansion for this: number of bifurcations based on number of bump shifts
     '''
+    # this needs some work, need to confirm that each phase accurately tracks to the behavior
+    # I will do this in simulations_ego file
+    # 25, 58, 92
+    bump1 = activity.iloc[25,50:len(activity)-5]
+    bump2 = activity.iloc[58,50:len(activity)-5]
+    bump3 = activity.iloc[92,50:len(activity)-5]
+    bump1_max = np.max(bump1)
+    bump2_max = np.max(bump2)
+    bump3_max = np.max(bump3)
+    bump1_min = np.min(bump1)
+    bump2_min = np.min(bump2)
+    bump3_min = np.min(bump3)
+    # stable (min and max close) or unstable (min and max far)
+    print(f"bump1, max: {bump1_max}, min: {bump1_min}")
+    print(f"bump2, max: {bump2_max}, min: {bump2_min}")
+    print(f"bump3, max: {bump3_max}, min: {bump3_min}")
+    stable = False
+    close = False
+    if np.abs(bump1_max-bump2_max) < 0.04 and np.abs(bump1_max-bump3_max) < 0.04:
+        #print("close")
+        close = True
+    if bump1_max-bump1_min < 0.04 and bump2_max-bump2_min < 0.04 and bump3_max-bump3_min < 0.04:
+        #print(f"stable")
+        stable = True
     
+    if stable and close:
+        print("1")
+        return 1
+    if stable and not close:
+        print("2")
+        return 2
+    if not stable:
+        print("3")
+        return 3
     return None
 
 def plot_metric(metrics,x,colors,labels,fig,title,xlabel,ylabel):

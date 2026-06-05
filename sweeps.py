@@ -96,35 +96,44 @@ base = {'N':N,
 # plotting settings: controls what kind of simulations we're running
 # not plotting trajectories or neurons in this file
 plot_trajs = False
-plot_neurons = False
+include_neurons = True
 sample_size = 1
 
-base_sigma = np.linspace(0.05,1,num=50)
+base_sigma = np.linspace(0.05,1,num=20)
 start = 0.15
 finish = 0.35
-n_h0 = 50
+n_h0 = 20
 h0_range= np.linspace(start,finish,num=n_h0)
 h0_list = []
 for item in h0_range:
     h0_list.append([item,item,item])
 
-fig, ax = plt.subplots(figsize=(8,8),num=1)
+subfigs, axs = plt.subplots(nrows=1,ncols=2, figsize = (16,8))
+
 
 target_grid = []
+phase_grid = []
 for sigma_index in range(len(base_sigma)):
     print(f"SIGMA: {base_sigma[sigma_index]}")
     sigma_list = [base_sigma[sigma_index]]*n_h0
     change= {'h0':h0_list,
              'sigma':sigma_list}
-    target_list, time_list, decision_points, decision_pos, activity_df, x_list, y_list, headings_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
+    target_list, time_list, decision_points, decision_pos, activity_df, x_list, y_list, headings_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=include_neurons)
     p_target, se_target = sim_met.get_success_rate(target_list, sample_size, ntargets)
     target_reached = [1 if x >= 0 else x for x in target_list]
     target_grid.append(target_reached)
-    #sim_met.plot_phase_over_area(h0_range,sigma_list,target_reached,ax)
+    phases = []
+    for i in range(5):
+        phases.append(sim_met.get_bump_type(0,0,activity_df.iloc[i*100:(i+1)*100,:]))
+        print(f"target: {target_list[i]}")
+    phase_grid.append(phases)
 
 target_df = pd.DataFrame(target_grid,columns=h0_range,index=base_sigma)
 print(target_df)
-ax.imshow(target_df, cmap='RdYlGn',origin='lower',extent=[h0_range[0], h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
+phase_df = pd.DataFrame(target_grid,columns=h0_range,index=base_sigma)
+print(phase_df)
+axs[0].imshow(target_df, cmap='RdYlGn',origin='lower',extent=[h0_range[0], h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
+axs[1].imshow(phase_df,cmap='viridis',origin='lower',extent=[h0_range[0], h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
 '''
 ax.set_xticks(np.arange(len(target_df.columns)))
 ax.set_xticklabels(target_df.columns)
@@ -136,6 +145,6 @@ cmap = plt.get_cmap('cividis')
 colors_area = cmap(np.linspace(0, 1, len(area_list)))
 for area_index in range(len(area_list)):
     sigma_list = repeated_sims.area_helper(area_list[area_index],'h0',h0_range)
-    sim_met.plot_phase_over_area(h0_range,sigma_list,target_reached,colors_area[area_index],ax)
+    sim_met.plot_phase_over_area(h0_range,sigma_list,target_reached,colors_area[area_index],axs[0])
 
 plt.show()
