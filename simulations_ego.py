@@ -5,6 +5,7 @@ import simulate_ringattractor as sim_ra
 import simulation_metrics as sim_met
 import repeated_sims
 import matplotlib.colors as mcolors
+from scipy.signal import find_peaks
 
 # --------  PARAMETERS --------
 
@@ -56,8 +57,8 @@ for i in range(N):
 allocentricFlag = 1 # 1 is allo, 0 is ego 
 h0s = [0.21903,0.21903,0.21904] # attraction vector, first are attraction for targets, then agents
 h_b = 0.2
-sigma = 0.25 #0.25 works for three target (sometimes)
-beta = 100 #100 works for double
+sigma = 0.25 
+beta = 100 
 
 
 # -------- Running the simulation --------
@@ -174,15 +175,24 @@ print(f"recreated h0 list: {h0_repeated}")
     
 #beta_list = [[11],[15],[20],[40],[90],[250]]
 #allo_list = [[0],[1]]
-h0_list = h0_start_for_sim
-sigma_list = sigma_list_from_h0
+#h0_list = h0_start_for_sim
+#sigma_list = sigma_list_from_h0
 
+h0_list = [[0.2,0.2,0.2],[0.25,0.25,0.25],[0.27,0.27,0.27],[0.27,0.27,0.27],[0.32,0.32,0.32],[0.34,0.34,0.34]]
+sigma_list = [0.2,0.27,0.34,0.85,0.5,0.3]
 
 change = {'sigma':sigma_list, 'h0':h0_list}
 target_list, time_list, decision_points, decision_pos, activity_df, x_list, y_list, headings_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
 print(target_list)
 
 print(np.shape(activity_df))
+
+for i in range(len(target_list)):
+    print(f"sim: {i}")
+    curr_activity = activity_df.iloc[i*100:(i+1)*100]
+    sim_met.get_bump_type(initialxt,initialyt,curr_activity)
+
+    
 
 # functionize this plotting ? in the future...
 n_plots = len(h0_list)

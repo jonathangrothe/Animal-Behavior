@@ -148,37 +148,53 @@ def get_bump_type(initialxt,initialyt,activity):
     # this needs some work, need to confirm that each phase accurately tracks to the behavior
     # I will do this in simulations_ego file
     # 25, 58, 92
-    bump1 = activity.iloc[25,50:len(activity)-5]
-    bump2 = activity.iloc[58,50:len(activity)-5]
-    bump3 = activity.iloc[92,50:len(activity)-5]
-    bump1_max = np.max(bump1)
-    bump2_max = np.max(bump2)
-    bump3_max = np.max(bump3)
-    bump1_min = np.min(bump1)
-    bump2_min = np.min(bump2)
-    bump3_min = np.min(bump3)
-    # stable (min and max close) or unstable (min and max far)
-    print(f"bump1, max: {bump1_max}, min: {bump1_min}")
-    print(f"bump2, max: {bump2_max}, min: {bump2_min}")
-    print(f"bump3, max: {bump3_max}, min: {bump3_min}")
-    stable = False
-    close = False
-    if np.abs(bump1_max-bump2_max) < 0.04 and np.abs(bump1_max-bump3_max) < 0.04:
-        #print("close")
-        close = True
-    if bump1_max-bump1_min < 0.04 and bump2_max-bump2_min < 0.04 and bump3_max-bump3_min < 0.04:
-        #print(f"stable")
-        stable = True
-    
-    if stable and close:
-        print("1")
-        return 1
-    if stable and not close:
-        print("2")
-        return 2
-    if not stable:
-        print("3")
+    bump_means = []
+    bump_vars = []
+    for i in range(len(initialxt)):
+        angle = np.atan2(initialyt[i]-50,initialxt[i]-50)
+        index = round(100*(angle/(2*np.pi)))
+        if index < 0:
+            index += 100
+        print(f"target: {i}, index: {index}")
+        bump = activity.iloc[index-2:index+3,50:activity.shape[1]-5]
+        bump_mean = np.mean(bump)
+        bump_means.append(bump_mean)
+        bump_var = np.var(bump)
+        bump_vars.append(bump_var)
+        print(f"bump {i}, mean: {bump_mean}, var: {bump_var}")
+    total_time = activity.shape[1]
+    #for i in range(total_time//10):
+        # see how the trajectory changes
+        # see how the bump changes
+        # get x pos
+        # get y pos
+        # for each target, get the activity at the neuron at the angle to that target
+        # get the deltas in activity over the small interval
+        # what this does: accounts for the bump shift and gets us on a smaller time scale,
+        # so now we know that if the activity changes something meaningful is happening. 
+        # basically: the interesting moments happen when the MAGNITUDE of the bump changes, 
+        # but that's challenging to calculate because the bump will shift location as the agent moves.
+    bump_means.sort(reverse=True)
+    n_positive = sum(1 for x in bump_means if x > 0)
+    if n_positive == 0:
+        print("no movement, all negative")
+        return 0
+    if n_positive == 1 or n_positive ==2 :
+        # check to see if there is a clear ordering
+        diff_1 = bump_means[0] - bump_means[1]
+        diff_2 = bump_means[1] - bump_means[2]
+        if diff_2 < 0.1*diff_1:
+            print(f"straight to target: diff 1: {diff_1}, diff 2: {diff_2}, n_positive: {n_positive}")
+            return 1
+        if diff_1 < 0.1*diff_2:
+            print(f"rotational movement: diff 1: {diff_1}, diff 2: {diff_2}, n_positive: {n_positive}")
+            return 2
+        print(f"bifurcation?, diff 1: {diff_1}, diff 2: {diff_2}, n_positive: {n_positive}")
         return 3
+    if n_positive == 3:
+        print("no movement, all positive")
+        return 4
+
     return None
 
 def plot_metric(metrics,x,colors,labels,fig,title,xlabel,ylabel):
