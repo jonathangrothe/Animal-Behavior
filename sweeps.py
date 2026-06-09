@@ -95,14 +95,14 @@ base = {'N':N,
 
 # plotting settings: controls what kind of simulations we're running
 # not plotting trajectories or neurons in this file
-plot_trajs = False
+plot_trajs = True
 include_neurons = True
 sample_size = 1
 
-base_sigma = np.linspace(0.05,1,num=20)
+base_sigma = np.linspace(0.05,1,num=10)
 start = 0.15
 finish = 0.35
-n_h0 = 20
+n_h0 = 10
 h0_range= np.linspace(start,finish,num=n_h0)
 h0_list = []
 for item in h0_range:
@@ -123,14 +123,22 @@ for sigma_index in range(len(base_sigma)):
     target_reached = [1 if x >= 0 else x for x in target_list]
     target_grid.append(target_reached)
     phases = []
-    for i in range(5):
-        phases.append(sim_met.get_bump_type(0,0,activity_df.iloc[i*100:(i+1)*100,:]))
-        print(f"target: {target_list[i]}")
+    #print(f"length x list: {len(x_list)}, x_list: {x_list}")
+    for i in range(len(target_list)):
+        curr_activity = activity_df.iloc[i*100:(i+1)*100]
+        curr_xpos = x_list[i:(i+1)][0]
+        curr_ypos = y_list[i:(i+1)][0]
+        probabilities = sim_met.get_bump_type(initialxt,initialyt,curr_xpos,curr_ypos,curr_activity,5)
+        phase = np.argmax(probabilities)
+        if target_reached == -1 and probabilities[3]>=0.3:
+            phase = 3
+        phases.append(np.argmax(probabilities)) # can add to this later with bifurcation stuff when c4 is bigger and c2 is smaller in the c2 case
     phase_grid.append(phases)
+
 
 target_df = pd.DataFrame(target_grid,columns=h0_range,index=base_sigma)
 print(target_df)
-phase_df = pd.DataFrame(target_grid,columns=h0_range,index=base_sigma)
+phase_df = pd.DataFrame(phase_grid,columns=h0_range,index=base_sigma)
 print(phase_df)
 axs[0].imshow(target_df, cmap='RdYlGn',origin='lower',extent=[h0_range[0], h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
 axs[1].imshow(phase_df,cmap='viridis',origin='lower',extent=[h0_range[0], h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')

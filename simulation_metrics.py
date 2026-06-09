@@ -136,7 +136,7 @@ def find_bumps(activity):
         bump_list.append(true_bumps)
     return bump_list
 
-def get_bump_type(initialxt,initialyt,activity):
+def get_bump_type(initialxt,initialyt,xPos,yPos,activity,interval=10):
     '''
     A function that takes the targets position and the activity over a simulation and returns what kind of behavior the bump exhibits
     Right now the plan is to classify behavior in three ways (for the 120 degree case): 
@@ -145,57 +145,108 @@ def get_bump_type(initialxt,initialyt,activity):
         -bumps shift (movement, but I think this always is ciruclar in 120 degree case?)
             -expansion for this: number of bifurcations based on number of bump shifts
     '''
+    # from these lists, I think we have enough info to separate into our categories of interest:
+        # 1: all negative, 3 bumps (vast majority of the time spent with all neurons inhibited and relatively large diff abs min)
+        # 2: straight to target, 3 bumps (vast majority of the time spent with one neuron activated, other two inhibited, relatively large diff absolute min)
+        # 3: goes to target, 1 bump (vast majority of the time spent with one neuron activated, but there are several time steps where the diff to absolute min < 0.5)
+        # input bifurcation as c3.5, when it starts as 4 and transitions to 2
+        # 4: rotational behavior, 3 bumps (vast majority of the time spent with 2 neurons activated, relatively large diff absolute min)
+            # if at the beginning a lot are coming up 4, then it settles into 2, thats a bifurcation of 3 bumps
+        # 5: all positive, 3 bumps (vast marjoity of the time spent with all neurons activated and large diff absolute min)
     # this needs some work, need to confirm that each phase accurately tracks to the behavior
     # I will do this in simulations_ego file
     # 25, 58, 92
-    bump_means = []
-    bump_vars = []
-    for i in range(len(initialxt)):
-        angle = np.atan2(initialyt[i]-50,initialxt[i]-50)
-        index = round(100*(angle/(2*np.pi)))
-        if index < 0:
-            index += 100
-        print(f"target: {i}, index: {index}")
-        bump = activity.iloc[index-2:index+3,50:activity.shape[1]-5]
-        bump_mean = np.mean(bump)
-        bump_means.append(bump_mean)
-        bump_var = np.var(bump)
-        bump_vars.append(bump_var)
-        print(f"bump {i}, mean: {bump_mean}, var: {bump_var}")
-    total_time = activity.shape[1]
-    #for i in range(total_time//10):
-        # see how the trajectory changes
-        # see how the bump changes
-        # get x pos
-        # get y pos
-        # for each target, get the activity at the neuron at the angle to that target
-        # get the deltas in activity over the small interval
-        # what this does: accounts for the bump shift and gets us on a smaller time scale,
-        # so now we know that if the activity changes something meaningful is happening. 
-        # basically: the interesting moments happen when the MAGNITUDE of the bump changes, 
-        # but that's challenging to calculate because the bump will shift location as the agent moves.
-    bump_means.sort(reverse=True)
-    n_positive = sum(1 for x in bump_means if x > 0)
-    if n_positive == 0:
-        print("no movement, all negative")
-        return 0
-    if n_positive == 1 or n_positive ==2 :
-        # check to see if there is a clear ordering
-        diff_1 = bump_means[0] - bump_means[1]
-        diff_2 = bump_means[1] - bump_means[2]
-        if diff_2 < 0.1*diff_1:
-            print(f"straight to target: diff 1: {diff_1}, diff 2: {diff_2}, n_positive: {n_positive}")
-            return 1
-        if diff_1 < 0.1*diff_2:
-            print(f"rotational movement: diff 1: {diff_1}, diff 2: {diff_2}, n_positive: {n_positive}")
-            return 2
-        print(f"bifurcation?, diff 1: {diff_1}, diff 2: {diff_2}, n_positive: {n_positive}")
-        return 3
-    if n_positive == 3:
-        print("no movement, all positive")
-        return 4
 
-    return None
+
+    activity = activity.dropna(axis=1)
+    total_time = activity.shape[1]
+    total_intervals = int(total_time/interval)
+    ntargets = len(initialxt)
+    bump1_list = []
+    bump2_list = []
+    bump3_list = []
+    absolute_mins = []
+    absolute_maxs = []
+    one_bump_max = 0
+    one_bump_counter = 0
+    for i in range(total_intervals):
+        end_int = (i+1)*interval
+        if end_int > total_time:
+            end_int = total_time
+        xPos_interval = xPos[i*interval:end_int]
+        yPos_interval = yPos[i*interval:end_int]
+        target_neurons = []
+        for t in range(ntargets):
+            angle = np.atan2(initialyt[t]-yPos_interval[0],initialxt[t]-xPos_interval[0])
+            index = np.round(100*(angle/(2*np.pi)))
+            if index < 0:
+                index += 100
+            target_neurons.append(index)
+        activity_int = activity.iloc[target_neurons,i*interval:end_int]
+        bump1 = np.mean(activity_int.iloc[0,:])
+        bump2 = np.mean(activity_int.iloc[1,:])
+        bump3 = np.mean(activity_int.iloc[2,:])
+        absolute_min = np.min(activity.iloc[:,i*interval:end_int])
+        absolute_max = np.max(activity.iloc[:,i*interval:end_int])
+        absolute_mins.append(absolute_min)
+        absolute_maxs.append(absolute_max)
+        min_diff = min(bump1,bump2,bump3)-absolute_min # change this from means? to max of the approximate bump area ?? IDk
+        if min_diff < 0.1 * (absolute_max-absolute_min):
+            one_bump_counter += 1
+            if one_bump_counter > one_bump_max:
+                one_bump_max = one_bump_counter
+        else:
+            one_bump_counter = 0
+        bump1_list.append(bump1)
+        bump2_list.append(bump2)
+        bump3_list.append(bump3)
+    one_bump_eligible = False
+    if one_bump_max >= 0.2*total_intervals:
+        one_bump_eligible = True
+    print(f"consecutive bumps: {one_bump_max}")
+    counter_1 = 0
+    counter_2 = 0
+    counter_3 = 0
+    counter_4 = 0
+    counter_5 = 0
+    counter_other = 0
+    for a in range(len(bump1_list)):
+        min_diff = min(bump1_list[a],bump2_list[a],bump3_list[a])-absolute_mins[a]
+        num_positive = sum(1 for item in [bump1_list[a],bump2_list[a],bump3_list[a]] if item > 0)
+        if num_positive == 0:
+            counter_1 += 1
+        if num_positive == 1:
+            if one_bump_eligible: 
+                if min_diff > 0.1 * (absolute_maxs[a]-absolute_mins[a]):
+                    counter_3 += 1
+                else:
+                    counter_2 += 1
+            else:
+                counter_2 += 1
+        if num_positive == 2:
+            counter_4 += 1
+        if num_positive == 3:
+            counter_5 += 1
+        if num_positive > 3:
+                print(f"nc, time: {a*interval}: neuron at t1: {bump1_list[a]}, neuron at t2: {bump2_list[a]}, neuron at t3: {bump3_list[a]}, npos: {num_positive}, min: {min(bump1_list[a],bump2_list[a],bump3_list[a])}, absolute min: {absolute_mins[a]}, absolute max: {absolute_maxs[a]}, {min_diff > 0.1 * absolute_maxs[a]-absolute_mins[a]}")
+                counter_other += 1
+
+    situation_sum = counter_1 + counter_2 + counter_3 + counter_4 + counter_5 + counter_other
+    print(f"c1: {counter_1}, c2: {counter_2}, c3: {counter_3}, c4: {counter_4}, c5: {counter_5}, cOther: {counter_other}")
+    p_1 = counter_1/situation_sum
+    p_2 = counter_2/situation_sum
+    p_3 = counter_3/situation_sum
+    p_4 = counter_4/situation_sum
+    p_5 = counter_5/situation_sum
+    p_other = counter_other/situation_sum
+    if p_other > 0.5:
+        print("check this one, p other > 0.5")
+    probability_list = [p_1,p_2,p_3,p_4,p_5,p_other]
+        # theoretical bumps states that could maybe happen maybe ??
+        # no bumps
+        # shifting aggregate bump?
+
+    return probability_list
 
 def plot_metric(metrics,x,colors,labels,fig,title,xlabel,ylabel):
     '''

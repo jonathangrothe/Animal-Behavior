@@ -178,8 +178,8 @@ print(f"recreated h0 list: {h0_repeated}")
 #h0_list = h0_start_for_sim
 #sigma_list = sigma_list_from_h0
 
-h0_list = [[0.2,0.2,0.2],[0.25,0.25,0.25],[0.27,0.27,0.27],[0.27,0.27,0.27],[0.32,0.32,0.32],[0.34,0.34,0.34]]
-sigma_list = [0.2,0.27,0.34,0.85,0.5,0.3]
+h0_list = [[0.15,0.15,0.15],[0.172222,0.172222,0.172222],[0.194444,0.194444,0.194444],[0.216667,0.216667,0.216667],[0.238889,0.238889 ,0.238889],[0.261111,0.261111,0.261111],[0.283333,0.283333,0.283333],[0.305556,0.305556,0.305556],[0.327778,0.327778,0.327778],[0.350000,0.3500000,0.350000]]
+sigma_list = [0.472222]*10
 
 change = {'sigma':sigma_list, 'h0':h0_list}
 target_list, time_list, decision_points, decision_pos, activity_df, x_list, y_list, headings_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
@@ -190,7 +190,9 @@ print(np.shape(activity_df))
 for i in range(len(target_list)):
     print(f"sim: {i}")
     curr_activity = activity_df.iloc[i*100:(i+1)*100]
-    sim_met.get_bump_type(initialxt,initialyt,curr_activity)
+    curr_xpos = x_list[i:(i+1)][0]
+    curr_ypos = y_list[i:(i+1)][0]
+    probabilities = sim_met.get_bump_type(initialxt,initialyt,curr_xpos,curr_ypos,curr_activity)
 
     
 
