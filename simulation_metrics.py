@@ -138,24 +138,24 @@ def find_bumps(activity):
 
 def get_bump_type(initialxt,initialyt,xPos,yPos,activity,interval=10):
     '''
-    A function that takes the targets position and the activity over a simulation and returns what kind of behavior the bump exhibits
-    Right now the plan is to classify behavior in three ways (for the 120 degree case): 
-        -all bumps equal (stalled movement)
-        -one bump dominates (goes straight to right option)
-        -bumps shift (movement, but I think this always is ciruclar in 120 degree case?)
-            -expansion for this: number of bifurcations based on number of bump shifts
+    A function that takes the targets position and the activity over a simulation and returns a list of probabilities of the bump behavior.
+    Designed right now for three targets, expanding to more should be straightforward but requires close reading.
+    Does not handle bifurcations specifically yet, but that could come from observing some 1 bump and some 2 bump behavior. 
+    Still need to get that solid before doing more sweeps
+    Paramters:
+    initialxt: a list of initial x positions of the targets
+    initialyt: a list of initial y positions of the targets
+    xPos: a list of x positions over the simulation
+    yPos: a list of y positions over the simulation
+    activity: a dataframe of neuron activity over the simulation
+    interval: how small of an interval to consider at a time. 
+              Intervals are considered as a static point, so they should be small enough that in most cases the bump doesn't shift majorly over one interval
+    returns: 
+    proportion_list: a list of proportions of each bump outcome. The bump outcomes are defined as: 0 bumps, 1 bump, 2 bumps, 3 bumps, and more than 3 bumps.
+                      The proportions are calculated as total number of intervals in which each bump state occurs over the total number of intervals.
+                      This doesn't describe behavior exactly, but does offer a good idea of what kinds of behavior occur at each time. 
+
     '''
-    # from these lists, I think we have enough info to separate into our categories of interest:
-        # 1: all negative, 3 bumps (vast majority of the time spent with all neurons inhibited and relatively large diff abs min)
-        # 2: straight to target, 3 bumps (vast majority of the time spent with one neuron activated, other two inhibited, relatively large diff absolute min)
-        # 3: goes to target, 1 bump (vast majority of the time spent with one neuron activated, but there are several time steps where the diff to absolute min < 0.5)
-        # input bifurcation as c3.5, when it starts as 4 and transitions to 2
-        # 4: rotational behavior, 3 bumps (vast majority of the time spent with 2 neurons activated, relatively large diff absolute min)
-            # if at the beginning a lot are coming up 4, then it settles into 2, thats a bifurcation of 3 bumps
-        # 5: all positive, 3 bumps (vast marjoity of the time spent with all neurons activated and large diff absolute min)
-    # this needs some work, need to confirm that each phase accurately tracks to the behavior
-    # I will do this in simulations_ego file
-    # 25, 58, 92
     activity = activity.dropna(axis=1)
     total_time = activity.shape[1]
     total_intervals = int(total_time/interval)
@@ -163,7 +163,17 @@ def get_bump_type(initialxt,initialyt,xPos,yPos,activity,interval=10):
     bump1_list = []
     bump2_list = []
     bump3_list = []
-    off_counter = 0
+    target_neurons_list = []
+    rows = random.sample(range(0, 100), 5)
+    npeaks_list = []
+    oscilates = False
+    for item in rows: 
+        row = activity.iloc[item,:]
+        peaks, indices = find_peaks(row)
+        n_peaks = len(peaks)
+        npeaks_list.append(n_peaks)
+    if np.mean(npeaks_list) >= 5 and total_time >= 3000:
+        oscilates = True
     for i in range(total_intervals):
         end_int = (i+1)*interval
         if end_int > total_time:
@@ -177,9 +187,7 @@ def get_bump_type(initialxt,initialyt,xPos,yPos,activity,interval=10):
             if index < 0:
                 index += 100
             target_neurons.append(index)
-        degrees_off = 25 - target_neurons[0]
-        if 10 < np.abs(degrees_off) < 90:
-            off_counter +=1
+        target_neurons_list.append(target_neurons)
         activity_int = activity.iloc[target_neurons,i*interval:end_int]
         bump1 = np.mean(activity_int.iloc[0,:])
         bump2 = np.mean(activity_int.iloc[1,:])
@@ -187,7 +195,6 @@ def get_bump_type(initialxt,initialyt,xPos,yPos,activity,interval=10):
         bump1_list.append(bump1)
         bump2_list.append(bump2)
         bump3_list.append(bump3)
-    print(f"number of times off by more than 10 degrees: {off_counter}")
     counter_0 = 0
     counter_1 = 0
     counter_2 = 0
@@ -195,10 +202,47 @@ def get_bump_type(initialxt,initialyt,xPos,yPos,activity,interval=10):
     counter_other = 0
     for a in range(len(bump1_list)):
         num_positive = sum(1 for item in [bump1_list[a],bump2_list[a],bump3_list[a]] if item > 0)
+        end_int = (a+1)*interval
+        if end_int > total_time:
+            end_int = total_time
+        if num_positive > 1:
+            neuron_left = round(target_neurons_list[a][0])
+            neuron_center = round(target_neurons_list[a][1])
+            neuron_right = round(target_neurons_list[a][2])
+            # if left and center are positive, check to see if between them there is a smaller value than the min between them
+            if bump1_list[a] > 0 and bump2_list[a] > 0:
+                # take the difference between the neurons to find the shorter interval
+                # if the shorter interval doesn't work indexing wise, swap it around
+                neuron_diff = neuron_left - neuron_center
+                between_min = 0
+                if 0 <= neuron_diff < 50:
+                    between_min = np.min(activity.iloc[25:30,a*interval:end_int])
+                elif neuron_diff >= 50:
+                    combined = pd.concat(activity.iloc[:neuron_center,a*interval:end_int],activity.iloc[neuron_left:,a*interval:end_int])
+                    between_min = np.min(combined)
+                else:
+                    between_min = np.min(activity.iloc[neuron_left:neuron_center,a*interval:end_int])
+                if between_min >= 0:
+                    num_positive = num_positive -1
+            if bump2_list[a] > 0 and bump3_list[a] > 0:
+                neuron_diff = neuron_center - neuron_right
+                between_min = 0
+                if 0 <= neuron_diff < 50:
+                    between_min = np.min(activity.iloc[(neuron_right+1):neuron_center,a*interval:end_int])
+                elif neuron_diff >= 50:
+                    combined = pd.concat(activity.iloc[:neuron_right,a*interval:end_int],activity.iloc[neuron_center:,a*interval:end_int])
+                    between_min = np.min(combined)
+                else:
+                    between_min = np.min(activity.iloc[neuron_center:neuron_right,a*interval:end_int])
+                if between_min >= 0:
+                    num_positive = num_positive -1
         if num_positive == 0:
             counter_0 += 1
         if num_positive == 1:
-            counter_1 += 1
+            if oscilates:
+                counter_2 += 1
+            else:
+                counter_1 += 1
         if num_positive == 2:
             counter_2 += 1
         if num_positive == 3:
@@ -206,9 +250,7 @@ def get_bump_type(initialxt,initialyt,xPos,yPos,activity,interval=10):
         if num_positive > 3:
             print(f"nc, time: {a*interval}: neuron at t1: {bump1_list[a]}, neuron at t2: {bump2_list[a]}, neuron at t3: {bump3_list[a]}, npos: {num_positive}, min: {min(bump1_list[a],bump2_list[a],bump3_list[a])}")
             counter_other += 1
-
     situation_sum = counter_0 + counter_1 + counter_2 + counter_3 + counter_other
-    #print(f"c1: {counter_1}, c2: {counter_2}, c3: {counter_3}, c4: {counter_4}, c5: {counter_5}, cOther: {counter_other}")
     p_0 = counter_0/situation_sum
     p_1 = counter_1/situation_sum
     p_2 = counter_2/situation_sum
@@ -216,12 +258,9 @@ def get_bump_type(initialxt,initialyt,xPos,yPos,activity,interval=10):
     p_other = counter_other/situation_sum
     if p_other > 0.5:
         print("check this one, p other > 0.5")
-    probability_list = [p_0,p_1,p_2,p_3,p_other]
-        # theoretical bumps states that could maybe happen maybe ??
-        # no bumps
-        # shifting aggregate bump?
-
-    return probability_list
+    proportion_list = [p_0,p_1,p_2,p_3,p_other]
+    print(proportion_list)
+    return proportion_list
 
 def plot_metric(metrics,x,colors,labels,fig,title,xlabel,ylabel):
     '''

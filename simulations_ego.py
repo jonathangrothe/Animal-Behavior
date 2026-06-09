@@ -18,7 +18,7 @@ for a in range(nagents):
     initialx[a] = 50
     initialy[a] = 50
 initialxt = [50-(15*np.sqrt(3)),50,50+(15*np.sqrt(3))]
-initialyt = [35,80,35]
+initialyt = [65,80,65]
 
 # number of time steps
 T = 5000
@@ -97,7 +97,7 @@ base = {'N':N,
 plot_neurons = True
 plot_trajs = True
 uneven = True
-sample_size = 10
+sample_size = 3
 
 # turn this into a sweep of sweeps, get the range each time
 # get a list of betas/sigmas we want to sweep over 
@@ -128,50 +128,7 @@ for item in sigma_sweep_list:
 print(f"range list: {sigma_h0range_list}")
 ind_best_sigma = np.argmax(sigma_h0range_list)
 best_sigma = sigma_sweep_list[ind_best_sigma]
-
-base['sigma'] = best_sigma
-min_val = sigma_extrema[ind_best_sigma][0]+0.01
-max_val = sigma_extrema[ind_best_sigma][1]-0.01
-int_val = round((min_val+max_val)/2,5)
 '''
-min_val = 0.2
-max_val = 0.22
-int_val = (min_val+max_val)/2
-#h0_list = [[0.19,0.19,0.19],[0.195,0.195,0.195],[0.2,0.2,0.2],[0.205,0.205,0.205],[0.21,0.21,0.21],[0.215,0.215,0.215]]
-#print(h0_list)
-area = 0.2
-sigma_start_list = [0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5,0.55,0.6,0.65,0.7,0.75]
-h0_list_from_sigma = repeated_sims.area_helper(area,'sigma',sigma_start_list)
-h0_for_sim_from_sigma = []
-for item in h0_list_from_sigma:
-    h0_tmp_list = []
-    for i in range(ntargets):
-        h0_tmp_list.append(item)
-    h0_for_sim_from_sigma.append(h0_tmp_list)
-sigma_repeated = repeated_sims.area_helper(area,'h0',h0_list_from_sigma)
-print(f"original sigmas: {sigma_start_list}")
-print(f"h0s from that: {h0_list_from_sigma}")
-print(f"recreated sigma list: {sigma_repeated}")
-
-h0_start_list = [0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45]
-h0_start_for_sim= []
-for item in h0_start_list:
-    h0_tmp_list = []
-    for i in range(ntargets):
-        h0_tmp_list.append(item)
-    h0_start_for_sim.append(h0_tmp_list)
-sigma_list_from_h0 = repeated_sims.area_helper(area,'h0',h0_start_list)
-h0_repeated = repeated_sims.area_helper(area,'sigma',sigma_list_from_h0)
-h0_for_sim_repeated = []
-for item in h0_repeated:
-    h0_tmp_list = []
-    for i in range(ntargets):
-        h0_tmp_list.append(item)
-    h0_for_sim_repeated.append(h0_tmp_list)
-print(f"original h0s: {h0_start_list}")
-print(f"sigmas from that: {sigma_list_from_h0}")
-print(f"recreated h0 list: {h0_repeated}")
-
     
 #beta_list = [[11],[15],[20],[40],[90],[250]]
 #allo_list = [[0],[1]]
@@ -179,7 +136,7 @@ print(f"recreated h0 list: {h0_repeated}")
 #sigma_list = sigma_list_from_h0
 
 h0_list = [[0.15,0.15,0.15],[0.172222,0.172222,0.172222],[0.194444,0.194444,0.194444],[0.216667,0.216667,0.216667],[0.238889,0.238889 ,0.238889],[0.261111,0.261111,0.261111],[0.283333,0.283333,0.283333],[0.305556,0.305556,0.305556],[0.327778,0.327778,0.327778],[0.350000,0.3500000,0.350000]]
-sigma_list = [0.844]*10
+sigma_list = [0.5]*10
 
 change = {'sigma':sigma_list, 'h0':h0_list}
 target_list, time_list, decision_points, decision_pos, activity_df, x_list, y_list, headings_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)

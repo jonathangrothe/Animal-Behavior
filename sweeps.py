@@ -97,22 +97,23 @@ base = {'N':N,
 # not plotting trajectories or neurons in this file
 plot_trajs = True
 include_neurons = True
-sample_size = 5
+sample_size = 1
 
-base_sigma = np.linspace(0.05,1,num=10)
+base_sigma = np.linspace(0.05,1,num=100)
 start = 0.15
 finish = 0.35
-n_h0 = 10
+n_h0 = 100
 h0_range= np.linspace(start,finish,num=n_h0)
 h0_list = []
 for item in h0_range:
     h0_list.append([item,item,item])
 
-subfigs, axs = plt.subplots(nrows=1,ncols=2, figsize = (16,8))
+subfigs, axs = plt.subplots(nrows=1,ncols=3, figsize = (16,7))
 
 
 target_grid = []
 phase_grid = []
+time_grid = []
 for sigma_index in range(len(base_sigma)):
     sigma_list = [base_sigma[sigma_index]]*n_h0
     change= {'h0':h0_list,
@@ -132,15 +133,16 @@ for sigma_index in range(len(base_sigma)):
         phases.append(phase) # can add to this later with bifurcation stuff when c4 is bigger and c2 is smaller in the c2 case
     grid_phases = []
     grid_targets = []
+    grid_times = []
     for s in range(n_h0):
         sim_phases = phases[s*sample_size:(s+1)*sample_size]
         sim_targets = target_reached[s*sample_size:(s+1)*sample_size]
+        sim_times = time_list[s*sample_size:(s+1)*sample_size]
         n0 = sim_phases.count(0)
         n1 = sim_phases.count(1)
         n2 = sim_phases.count(2)
         n3 = sim_phases.count(3)
-        n4 = sim_phases.count(4)
-        n5 = sim_phases.count(5)
+        nOther = sim_phases.count(4)
         nreach = sim_targets.count(1)
         nfail = sim_targets.count(-1)
         reach = 0
@@ -148,20 +150,27 @@ for sigma_index in range(len(base_sigma)):
             reach = 1
         if nreach < nfail:
             reach = -1
-        grid_phases.append(np.argmax([n0,n1,n2,n3,n4,n5]))
+        grid_phases.append(np.argmax([n0,n1,n2,n3,nOther]))
         grid_targets.append(reach)
+        grid_times.append(np.mean(sim_times))
     phase_grid.append(grid_phases)
     target_grid.append(grid_targets)
-
-print(target_grid)
-print(phase_grid)
+    time_grid.append(grid_times)
 
 target_df = pd.DataFrame(target_grid,columns=h0_range,index=base_sigma)
 print(target_df)
 phase_df = pd.DataFrame(phase_grid,columns=h0_range,index=base_sigma)
 print(phase_df)
-axs[0].imshow(target_df, cmap='coolwarm',origin='lower',extent=[h0_range[0], h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
+time_df = pd.DataFrame(time_grid,columns=h0_range,index=base_sigma)
+print(time_df)
+axs[0].imshow(target_df, cmap='bwr_r',origin='lower',extent=[h0_range[0], h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
 axs[1].imshow(phase_df,cmap='viridis',origin='lower',extent=[h0_range[0], h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
+axs[2].imshow(time_df,cmap='inferno_r',origin='lower',extent=[h0_range[0],h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
+axs[0].set_title("Reaching a target heatmap")
+axs[1].set_title("Phase heatmap (purple: 0 bumps -> yellow: 3 bumps)")
+axs[2].set_title("Time to target heatmap (lighter is fastere)")
+subfigs.supxlabel('h0')
+subfigs.supylabel('sigma')
 '''
 ax.set_xticks(np.arange(len(target_df.columns)))
 ax.set_xticklabels(target_df.columns)
