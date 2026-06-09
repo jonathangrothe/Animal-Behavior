@@ -1,7 +1,7 @@
+import random
 import numpy as np
 from scipy.signal import find_peaks
 from scipy import stats
-import cv2
 import matplotlib.pyplot as plt
 import pandas as pd
 
@@ -156,8 +156,6 @@ def get_bump_type(initialxt,initialyt,xPos,yPos,activity,interval=10):
     # this needs some work, need to confirm that each phase accurately tracks to the behavior
     # I will do this in simulations_ego file
     # 25, 58, 92
-
-
     activity = activity.dropna(axis=1)
     total_time = activity.shape[1]
     total_intervals = int(total_time/interval)
@@ -165,10 +163,7 @@ def get_bump_type(initialxt,initialyt,xPos,yPos,activity,interval=10):
     bump1_list = []
     bump2_list = []
     bump3_list = []
-    absolute_mins = []
-    absolute_maxs = []
-    one_bump_max = 0
-    one_bump_counter = 0
+    off_counter = 0
     for i in range(total_intervals):
         end_int = (i+1)*interval
         if end_int > total_time:
@@ -182,66 +177,46 @@ def get_bump_type(initialxt,initialyt,xPos,yPos,activity,interval=10):
             if index < 0:
                 index += 100
             target_neurons.append(index)
+        degrees_off = 25 - target_neurons[0]
+        if 10 < np.abs(degrees_off) < 90:
+            off_counter +=1
         activity_int = activity.iloc[target_neurons,i*interval:end_int]
         bump1 = np.mean(activity_int.iloc[0,:])
         bump2 = np.mean(activity_int.iloc[1,:])
         bump3 = np.mean(activity_int.iloc[2,:])
-        absolute_min = np.min(activity.iloc[:,i*interval:end_int])
-        absolute_max = np.max(activity.iloc[:,i*interval:end_int])
-        absolute_mins.append(absolute_min)
-        absolute_maxs.append(absolute_max)
-        min_diff = min(bump1,bump2,bump3)-absolute_min # change this from means? to max of the approximate bump area ?? IDk
-        if min_diff < 0.1 * (absolute_max-absolute_min):
-            one_bump_counter += 1
-            if one_bump_counter > one_bump_max:
-                one_bump_max = one_bump_counter
-        else:
-            one_bump_counter = 0
         bump1_list.append(bump1)
         bump2_list.append(bump2)
         bump3_list.append(bump3)
-    one_bump_eligible = False
-    if one_bump_max >= 0.2*total_intervals:
-        one_bump_eligible = True
-    print(f"consecutive bumps: {one_bump_max}")
+    print(f"number of times off by more than 10 degrees: {off_counter}")
+    counter_0 = 0
     counter_1 = 0
     counter_2 = 0
     counter_3 = 0
-    counter_4 = 0
-    counter_5 = 0
     counter_other = 0
     for a in range(len(bump1_list)):
-        min_diff = min(bump1_list[a],bump2_list[a],bump3_list[a])-absolute_mins[a]
         num_positive = sum(1 for item in [bump1_list[a],bump2_list[a],bump3_list[a]] if item > 0)
         if num_positive == 0:
-            counter_1 += 1
+            counter_0 += 1
         if num_positive == 1:
-            if one_bump_eligible: 
-                if min_diff > 0.1 * (absolute_maxs[a]-absolute_mins[a]):
-                    counter_3 += 1
-                else:
-                    counter_2 += 1
-            else:
-                counter_2 += 1
+            counter_1 += 1
         if num_positive == 2:
-            counter_4 += 1
+            counter_2 += 1
         if num_positive == 3:
-            counter_5 += 1
+            counter_3 += 1
         if num_positive > 3:
-                print(f"nc, time: {a*interval}: neuron at t1: {bump1_list[a]}, neuron at t2: {bump2_list[a]}, neuron at t3: {bump3_list[a]}, npos: {num_positive}, min: {min(bump1_list[a],bump2_list[a],bump3_list[a])}, absolute min: {absolute_mins[a]}, absolute max: {absolute_maxs[a]}, {min_diff > 0.1 * absolute_maxs[a]-absolute_mins[a]}")
-                counter_other += 1
+            print(f"nc, time: {a*interval}: neuron at t1: {bump1_list[a]}, neuron at t2: {bump2_list[a]}, neuron at t3: {bump3_list[a]}, npos: {num_positive}, min: {min(bump1_list[a],bump2_list[a],bump3_list[a])}")
+            counter_other += 1
 
-    situation_sum = counter_1 + counter_2 + counter_3 + counter_4 + counter_5 + counter_other
-    print(f"c1: {counter_1}, c2: {counter_2}, c3: {counter_3}, c4: {counter_4}, c5: {counter_5}, cOther: {counter_other}")
+    situation_sum = counter_0 + counter_1 + counter_2 + counter_3 + counter_other
+    #print(f"c1: {counter_1}, c2: {counter_2}, c3: {counter_3}, c4: {counter_4}, c5: {counter_5}, cOther: {counter_other}")
+    p_0 = counter_0/situation_sum
     p_1 = counter_1/situation_sum
     p_2 = counter_2/situation_sum
     p_3 = counter_3/situation_sum
-    p_4 = counter_4/situation_sum
-    p_5 = counter_5/situation_sum
     p_other = counter_other/situation_sum
     if p_other > 0.5:
         print("check this one, p other > 0.5")
-    probability_list = [p_1,p_2,p_3,p_4,p_5,p_other]
+    probability_list = [p_0,p_1,p_2,p_3,p_other]
         # theoretical bumps states that could maybe happen maybe ??
         # no bumps
         # shifting aggregate bump?

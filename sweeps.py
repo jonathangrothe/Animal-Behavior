@@ -97,7 +97,7 @@ base = {'N':N,
 # not plotting trajectories or neurons in this file
 plot_trajs = True
 include_neurons = True
-sample_size = 1
+sample_size = 5
 
 base_sigma = np.linspace(0.05,1,num=10)
 start = 0.15
@@ -114,16 +114,13 @@ subfigs, axs = plt.subplots(nrows=1,ncols=2, figsize = (16,8))
 target_grid = []
 phase_grid = []
 for sigma_index in range(len(base_sigma)):
-    print(f"SIGMA: {base_sigma[sigma_index]}")
     sigma_list = [base_sigma[sigma_index]]*n_h0
     change= {'h0':h0_list,
              'sigma':sigma_list}
     target_list, time_list, decision_points, decision_pos, activity_df, x_list, y_list, headings_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=include_neurons)
     p_target, se_target = sim_met.get_success_rate(target_list, sample_size, ntargets)
     target_reached = [1 if x >= 0 else x for x in target_list]
-    target_grid.append(target_reached)
     phases = []
-    #print(f"length x list: {len(x_list)}, x_list: {x_list}")
     for i in range(len(target_list)):
         curr_activity = activity_df.iloc[i*100:(i+1)*100]
         curr_xpos = x_list[i:(i+1)][0]
@@ -132,27 +129,50 @@ for sigma_index in range(len(base_sigma)):
         phase = np.argmax(probabilities)
         if target_reached == -1 and probabilities[3]>=0.3:
             phase = 3
-        phases.append(np.argmax(probabilities)) # can add to this later with bifurcation stuff when c4 is bigger and c2 is smaller in the c2 case
-    phase_grid.append(phases)
+        phases.append(phase) # can add to this later with bifurcation stuff when c4 is bigger and c2 is smaller in the c2 case
+    grid_phases = []
+    grid_targets = []
+    for s in range(n_h0):
+        sim_phases = phases[s*sample_size:(s+1)*sample_size]
+        sim_targets = target_reached[s*sample_size:(s+1)*sample_size]
+        n0 = sim_phases.count(0)
+        n1 = sim_phases.count(1)
+        n2 = sim_phases.count(2)
+        n3 = sim_phases.count(3)
+        n4 = sim_phases.count(4)
+        n5 = sim_phases.count(5)
+        nreach = sim_targets.count(1)
+        nfail = sim_targets.count(-1)
+        reach = 0
+        if nreach > nfail:
+            reach = 1
+        if nreach < nfail:
+            reach = -1
+        grid_phases.append(np.argmax([n0,n1,n2,n3,n4,n5]))
+        grid_targets.append(reach)
+    phase_grid.append(grid_phases)
+    target_grid.append(grid_targets)
 
+print(target_grid)
+print(phase_grid)
 
 target_df = pd.DataFrame(target_grid,columns=h0_range,index=base_sigma)
 print(target_df)
 phase_df = pd.DataFrame(phase_grid,columns=h0_range,index=base_sigma)
 print(phase_df)
-axs[0].imshow(target_df, cmap='RdYlGn',origin='lower',extent=[h0_range[0], h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
+axs[0].imshow(target_df, cmap='coolwarm',origin='lower',extent=[h0_range[0], h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
 axs[1].imshow(phase_df,cmap='viridis',origin='lower',extent=[h0_range[0], h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
 '''
 ax.set_xticks(np.arange(len(target_df.columns)))
 ax.set_xticklabels(target_df.columns)
 ax.set_yticks(np.arange(len(target_df.index)))
 ax.set_yticklabels(target_df.index)
-'''
+
 area_list = [0.05,0.2,0.35,0.5]
 cmap = plt.get_cmap('cividis')
 colors_area = cmap(np.linspace(0, 1, len(area_list)))
 for area_index in range(len(area_list)):
     sigma_list = repeated_sims.area_helper(area_list[area_index],'h0',h0_range)
     sim_met.plot_phase_over_area(h0_range,sigma_list,target_reached,colors_area[area_index],axs[0])
-
+'''
 plt.show()

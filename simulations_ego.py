@@ -97,7 +97,7 @@ base = {'N':N,
 plot_neurons = True
 plot_trajs = True
 uneven = True
-sample_size = 1
+sample_size = 10
 
 # turn this into a sweep of sweeps, get the range each time
 # get a list of betas/sigmas we want to sweep over 
@@ -179,20 +179,19 @@ print(f"recreated h0 list: {h0_repeated}")
 #sigma_list = sigma_list_from_h0
 
 h0_list = [[0.15,0.15,0.15],[0.172222,0.172222,0.172222],[0.194444,0.194444,0.194444],[0.216667,0.216667,0.216667],[0.238889,0.238889 ,0.238889],[0.261111,0.261111,0.261111],[0.283333,0.283333,0.283333],[0.305556,0.305556,0.305556],[0.327778,0.327778,0.327778],[0.350000,0.3500000,0.350000]]
-sigma_list = [0.472222]*10
+sigma_list = [0.844]*10
 
 change = {'sigma':sigma_list, 'h0':h0_list}
 target_list, time_list, decision_points, decision_pos, activity_df, x_list, y_list, headings_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
-print(target_list)
 
-print(np.shape(activity_df))
-
+phases = []
 for i in range(len(target_list)):
-    print(f"sim: {i}")
-    curr_activity = activity_df.iloc[i*100:(i+1)*100]
+    curr_activity = activity_df.iloc[i*100:(i+1)*100,:]
     curr_xpos = x_list[i:(i+1)][0]
     curr_ypos = y_list[i:(i+1)][0]
     probabilities = sim_met.get_bump_type(initialxt,initialyt,curr_xpos,curr_ypos,curr_activity)
+    phase = np.argmax(probabilities)
+    phases.append(phase)
 
     
 
@@ -222,5 +221,15 @@ for s in range(n_plots):
     col_max = np.max(activity_df.iloc[s*100*sample_size:s*100*sample_size+100,40:])
     axs1[s].imshow(rolled,cmap=cmap,aspect='auto',vmin=col_min,vmax=col_max)
 
+    sim_phases = phases[s*sample_size:(s+1)*sample_size]
+    n0 = sim_phases.count(0)
+    n1 = sim_phases.count(1)
+    n2 = sim_phases.count(2)
+    n3 = sim_phases.count(3)
+    n4 = sim_phases.count(4)
+    print(f"Plot: {s}")
+    print(f"outcome: 0: {n0}, 1: {n1}, 2: {n2}, 3: {n3}, other: {n4}")
+    print(f"target list: {target_list[s*sample_size:(s+1)*sample_size]}")
+    print(f"overall: {np.argmax([n0,n1,n2,n3,n4])}")
 
 plt.show()
