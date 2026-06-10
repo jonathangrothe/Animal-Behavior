@@ -218,7 +218,7 @@ def get_bump_type(initialxt,initialyt,xPos,yPos,activity,interval=10):
                 if 0 <= neuron_diff < 50:
                     between_min = np.min(activity.iloc[25:30,a*interval:end_int])
                 elif neuron_diff >= 50:
-                    combined = pd.concat(activity.iloc[:neuron_center,a*interval:end_int],activity.iloc[neuron_left:,a*interval:end_int])
+                    combined = pd.concat([activity.iloc[:neuron_center,a*interval:end_int],activity.iloc[neuron_left:,a*interval:end_int]])
                     between_min = np.min(combined)
                 else:
                     between_min = np.min(activity.iloc[neuron_left:neuron_center,a*interval:end_int])
@@ -230,7 +230,7 @@ def get_bump_type(initialxt,initialyt,xPos,yPos,activity,interval=10):
                 if 0 <= neuron_diff < 50:
                     between_min = np.min(activity.iloc[(neuron_right+1):neuron_center,a*interval:end_int])
                 elif neuron_diff >= 50:
-                    combined = pd.concat(activity.iloc[:neuron_right,a*interval:end_int],activity.iloc[neuron_center:,a*interval:end_int])
+                    combined = pd.concat([activity.iloc[:neuron_right,a*interval:end_int],activity.iloc[neuron_center:,a*interval:end_int]])
                     between_min = np.min(combined)
                 else:
                     between_min = np.min(activity.iloc[neuron_center:neuron_right,a*interval:end_int])
@@ -259,7 +259,7 @@ def get_bump_type(initialxt,initialyt,xPos,yPos,activity,interval=10):
     if p_other > 0.5:
         print("check this one, p other > 0.5")
     proportion_list = [p_0,p_1,p_2,p_3,p_other]
-    print(proportion_list)
+    #print(proportion_list)
     return proportion_list
 
 def plot_metric(metrics,x,colors,labels,fig,title,xlabel,ylabel):

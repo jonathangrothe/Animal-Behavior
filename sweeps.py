@@ -1,6 +1,7 @@
 import math
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
 import pandas as pd
 import simulate_ringattractor as sim_ra
 import simulation_metrics as sim_met
@@ -97,7 +98,7 @@ base = {'N':N,
 # not plotting trajectories or neurons in this file
 plot_trajs = True
 include_neurons = True
-sample_size = 1
+sample_size = 5
 
 base_sigma = np.linspace(0.05,1,num=100)
 start = 0.15
@@ -108,7 +109,7 @@ h0_list = []
 for item in h0_range:
     h0_list.append([item,item,item])
 
-subfigs, axs = plt.subplots(nrows=1,ncols=3, figsize = (16,7))
+subfigs, axs = plt.subplots(nrows=1,ncols=3, figsize = (20,5))
 
 
 target_grid = []
@@ -144,12 +145,13 @@ for sigma_index in range(len(base_sigma)):
         n3 = sim_phases.count(3)
         nOther = sim_phases.count(4)
         nreach = sim_targets.count(1)
-        nfail = sim_targets.count(-1)
         reach = 0
-        if nreach > nfail:
+        if nreach/sample_size >= 0.75:
             reach = 1
-        if nreach < nfail:
+        elif nreach/sample_size <= 0.25:
             reach = -1
+        else:
+            reach = 0
         grid_phases.append(np.argmax([n0,n1,n2,n3,nOther]))
         grid_targets.append(reach)
         grid_times.append(np.mean(sim_times))
@@ -163,14 +165,37 @@ phase_df = pd.DataFrame(phase_grid,columns=h0_range,index=base_sigma)
 print(phase_df)
 time_df = pd.DataFrame(time_grid,columns=h0_range,index=base_sigma)
 print(time_df)
-axs[0].imshow(target_df, cmap='bwr_r',origin='lower',extent=[h0_range[0], h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
-axs[1].imshow(phase_df,cmap='viridis',origin='lower',extent=[h0_range[0], h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
-axs[2].imshow(time_df,cmap='inferno_r',origin='lower',extent=[h0_range[0],h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
-axs[0].set_title("Reaching a target heatmap")
-axs[1].set_title("Phase heatmap (purple: 0 bumps -> yellow: 3 bumps)")
-axs[2].set_title("Time to target heatmap (lighter is fastere)")
+
+bwr_r = plt.colormaps['bwr_r']
+discrete_bwrr = bwr_r.resampled(3)(np.linspace(0,1,3))
+viridis = plt.colormaps['viridis']
+discrete_viridis = viridis.resampled(5)(np.linspace(0,1,5))
+cmap1 = mcolors.ListedColormap(discrete_bwrr)
+cmap2 = mcolors.ListedColormap(discrete_viridis)
+cmap3 = 'inferno_r'
+boundaries_tar = np.arange(-1,3) - 0.5
+norm_tar = mcolors.BoundaryNorm(boundaries_tar,cmap1.N)
+boundaries_phase = np.arange(5) - 0.5
+norm_phase = mcolors.BoundaryNorm(boundaries_phase,cmap2.N)
+
+
+
+categories_tar = ['Fails to reach', 'Both', 'Reaches']
+categories_phase = ['0 bumps', '1 bump', '2 bumps', '3 bumps']
+
+im1 = axs[0].imshow(target_df, cmap=cmap1,origin='lower',extent=[h0_range[0], h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
+im2 = axs[1].imshow(phase_df,cmap=cmap2,origin='lower',extent=[h0_range[0], h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
+im3 = axs[2].imshow(time_df,cmap=cmap3,origin='lower',extent=[h0_range[0],h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
+cbar1 = plt.colorbar(im1, ticks=np.arange(-1,2))
+cbar1.ax.set_yticklabels(categories_tar)
+cbar2 = plt.colorbar(im2, ticks=np.arange(4))
+cbar2.ax.set_yticklabels(categories_phase)
+cbar3 = plt.colorbar(im3)
+cbar3.set_label('Time to target')
+
 subfigs.supxlabel('h0')
 subfigs.supylabel('sigma')
+subfigs.suptitle(f"Heatmaps for 2π/3 between targets, average of {sample_size} samples")
 '''
 ax.set_xticks(np.arange(len(target_df.columns)))
 ax.set_xticklabels(target_df.columns)
@@ -184,4 +209,5 @@ for area_index in range(len(area_list)):
     sigma_list = repeated_sims.area_helper(area_list[area_index],'h0',h0_range)
     sim_met.plot_phase_over_area(h0_range,sigma_list,target_reached,colors_area[area_index],axs[0])
 '''
+plt.tight_layout()
 plt.show()
