@@ -164,16 +164,17 @@ def get_bump_type(initialxt,initialyt,xPos,yPos,activity,interval=10):
     bump2_list = []
     bump3_list = []
     target_neurons_list = []
-    rows = random.sample(range(0, 100), 5)
     npeaks_list = []
     oscilates = False
-    for item in rows: 
-        row = activity.iloc[item,:]
-        peaks, indices = find_peaks(row)
-        n_peaks = len(peaks)
-        npeaks_list.append(n_peaks)
-    if np.mean(npeaks_list) >= 5 and total_time >= 3000:
-        oscilates = True
+    print("NEW SAMPLE!!")
+    # if there is a steady bump, see how much we have shifted
+    prev_start = -1
+    prev_end = 100
+    totalshift = 0
+    nbumps_shifts = 0
+    prev_nbumps = 0
+    xstart = xPos[0]
+    ystart = yPos[0]
     for i in range(total_intervals):
         end_int = (i+1)*interval
         if end_int > total_time:
@@ -195,6 +196,34 @@ def get_bump_type(initialxt,initialyt,xPos,yPos,activity,interval=10):
         bump1_list.append(bump1)
         bump2_list.append(bump2)
         bump3_list.append(bump3)
+        npositive = sum(1 for item in [bump1,bump2,bump3] if item > 0)
+        if npositive != prev_nbumps:
+            print(f"nbumps switch at {i*interval}, prevbumps: {prev_nbumps}, currbumps: {npositive}")
+            # if we have moved at least some amount from the origin, count it as a shift ?
+            xnow = xPos[i*interval]
+            ynow = yPos[i*interval]
+            dist = np.sqrt((xstart-xnow)**2+(ystart-ynow)**2)
+            if dist > 10:
+                nbumps_shifts += 1
+        prev_nbumps = npositive
+        if npositive == 1:
+            activity_interval = activity.iloc[:,i*interval]
+            activity_positive = activity_interval[activity_interval > 0]
+            if isinstance(activity_positive.index, pd.RangeIndex):
+                bump_start = activity_positive.index.start % 100
+                bump_end = activity_positive.index.stop % 100
+                if bump_end < bump_start:
+                    bump_end += 100
+                if bump_start < prev_start - 1:
+                    totalshift += prev_start - bump_start
+                if bump_end > prev_end + 1:
+                    totalshift += bump_end - prev_end
+                #print(f"bump start: {bump_start}, bump end: {bump_end}")
+                prev_start = bump_start
+                prev_end = bump_end
+    print(f"total shift: {totalshift}")
+    print(f"total number of bumps switches: {nbumps_shifts}")
+    # if there are no bump switches, and a potential reasonable amount of shifting, its a bifurcation ?
     counter_0 = 0
     counter_1 = 0
     counter_2 = 0

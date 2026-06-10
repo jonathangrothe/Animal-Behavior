@@ -97,7 +97,7 @@ base = {'N':N,
 plot_neurons = True
 plot_trajs = True
 uneven = True
-sample_size = 3
+sample_size = 1
 
 # turn this into a sweep of sweeps, get the range each time
 # get a list of betas/sigmas we want to sweep over 
@@ -135,8 +135,8 @@ best_sigma = sigma_sweep_list[ind_best_sigma]
 #h0_list = h0_start_for_sim
 #sigma_list = sigma_list_from_h0
 
-h0_list = [[0.15,0.15,0.15],[0.172222,0.172222,0.172222],[0.194444,0.194444,0.194444],[0.216667,0.216667,0.216667],[0.238889,0.238889 ,0.238889],[0.261111,0.261111,0.261111],[0.283333,0.283333,0.283333],[0.305556,0.305556,0.305556],[0.327778,0.327778,0.327778],[0.350000,0.3500000,0.350000]]
-sigma_list = [0.5]*10
+h0_list = [[0.19,0.19,0.19],[0.2,0.2,0.2],[0.21,0.21,0.21],[0.22,0.22,0.22],[0.28,0.28,0.28],[0.3,0.3,0.3]]
+sigma_list = [0.5]*6
 
 change = {'sigma':sigma_list, 'h0':h0_list}
 target_list, time_list, decision_points, decision_pos, activity_df, x_list, y_list, headings_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
