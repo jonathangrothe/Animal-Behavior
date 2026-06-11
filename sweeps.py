@@ -98,12 +98,12 @@ base = {'N':N,
 # not plotting trajectories or neurons in this file
 plot_trajs = True
 include_neurons = True
-sample_size = 5
+sample_size = 1
 
-base_sigma = np.linspace(0.05,1,num=100)
+base_sigma = np.linspace(0.05,1,num=10)
 start = 0.15
 finish = 0.35
-n_h0 = 100
+n_h0 = 10
 h0_range= np.linspace(start,finish,num=n_h0)
 h0_list = []
 for item in h0_range:
@@ -115,6 +115,8 @@ subfigs, axs = plt.subplots(nrows=1,ncols=3, figsize = (20,5))
 target_grid = []
 phase_grid = []
 time_grid = []
+shift_grid = []
+switchs_grid = []
 for sigma_index in range(len(base_sigma)):
     sigma_list = [base_sigma[sigma_index]]*n_h0
     change= {'h0':h0_list,
@@ -123,6 +125,8 @@ for sigma_index in range(len(base_sigma)):
     p_target, se_target = sim_met.get_success_rate(target_list, sample_size, ntargets)
     target_reached = [1 if x >= 0 else x for x in target_list]
     phases = []
+    shift = []
+    switch = []
     for i in range(len(target_list)):
         curr_activity = activity_df.iloc[i*100:(i+1)*100]
         curr_xpos = x_list[i:(i+1)][0]
@@ -132,13 +136,19 @@ for sigma_index in range(len(base_sigma)):
         if target_reached == -1 and probabilities[3]>=0.3:
             phase = 3
         phases.append(phase) # can add to this later with bifurcation stuff when c4 is bigger and c2 is smaller in the c2 case
+        print(f"phase: {phase}")
+        print(f"reaches target: {target_list[i]}")
     grid_phases = []
     grid_targets = []
     grid_times = []
+    grid_shift = []
+    grid_switch = []
     for s in range(n_h0):
         sim_phases = phases[s*sample_size:(s+1)*sample_size]
         sim_targets = target_reached[s*sample_size:(s+1)*sample_size]
         sim_times = time_list[s*sample_size:(s+1)*sample_size]
+        sim_shifts = shift[s*sample_size:(s+1)*sample_size]
+        sim_switchs = switch[s*sample_size:(s+1)*sample_size]
         n0 = sim_phases.count(0)
         n1 = sim_phases.count(1)
         n2 = sim_phases.count(2)
@@ -155,6 +165,7 @@ for sigma_index in range(len(base_sigma)):
         grid_phases.append(np.argmax([n0,n1,n2,n3,nOther]))
         grid_targets.append(reach)
         grid_times.append(np.mean(sim_times))
+
     phase_grid.append(grid_phases)
     target_grid.append(grid_targets)
     time_grid.append(grid_times)

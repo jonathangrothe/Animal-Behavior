@@ -135,8 +135,8 @@ best_sigma = sigma_sweep_list[ind_best_sigma]
 #h0_list = h0_start_for_sim
 #sigma_list = sigma_list_from_h0
 
-h0_list = [[0.19,0.19,0.19],[0.2,0.2,0.2],[0.21,0.21,0.21],[0.22,0.22,0.22],[0.28,0.28,0.28],[0.3,0.3,0.3]]
-sigma_list = [0.5]*6
+h0_list = [[0.22,0.22,0.22],[0.24,0.24,0.24],[0.26,0.26,0.26],[0.28,0.28,0.28],[0.3,0.3,0.3],[0.32,0.32,0.32]]
+sigma_list = [0.5,0.5,0.5,0.3,0.3,0.3]
 
 change = {'sigma':sigma_list, 'h0':h0_list}
 target_list, time_list, decision_points, decision_pos, activity_df, x_list, y_list, headings_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)

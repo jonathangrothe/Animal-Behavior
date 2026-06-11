@@ -164,17 +164,13 @@ def get_bump_type(initialxt,initialyt,xPos,yPos,activity,interval=10):
     bump2_list = []
     bump3_list = []
     target_neurons_list = []
-    npeaks_list = []
-    oscilates = False
-    print("NEW SAMPLE!!")
-    # if there is a steady bump, see how much we have shifted
     prev_start = -1
     prev_end = 100
-    totalshift = 0
-    nbumps_shifts = 0
-    prev_nbumps = 0
-    xstart = xPos[0]
-    ystart = yPos[0]
+    startshift = 0
+    endshift = 0
+    onebump_time_list = []
+    twobump_time_list = []
+    threebump_time_list = []
     for i in range(total_intervals):
         end_int = (i+1)*interval
         if end_int > total_time:
@@ -197,33 +193,32 @@ def get_bump_type(initialxt,initialyt,xPos,yPos,activity,interval=10):
         bump2_list.append(bump2)
         bump3_list.append(bump3)
         npositive = sum(1 for item in [bump1,bump2,bump3] if item > 0)
-        if npositive != prev_nbumps:
-            print(f"nbumps switch at {i*interval}, prevbumps: {prev_nbumps}, currbumps: {npositive}")
-            # if we have moved at least some amount from the origin, count it as a shift ?
-            xnow = xPos[i*interval]
-            ynow = yPos[i*interval]
-            dist = np.sqrt((xstart-xnow)**2+(ystart-ynow)**2)
-            if dist > 10:
-                nbumps_shifts += 1
-        prev_nbumps = npositive
         if npositive == 1:
+            onebump_time_list.append(i*interval)
             activity_interval = activity.iloc[:,i*interval]
             activity_positive = activity_interval[activity_interval > 0]
-            if isinstance(activity_positive.index, pd.RangeIndex):
+            if isinstance(activity_positive.index, pd.RangeIndex): # checks to make sure the bump is consecutive to avoid noisy start
                 bump_start = activity_positive.index.start % 100
                 bump_end = activity_positive.index.stop % 100
                 if bump_end < bump_start:
                     bump_end += 100
-                if bump_start < prev_start - 1:
-                    totalshift += prev_start - bump_start
-                if bump_end > prev_end + 1:
-                    totalshift += bump_end - prev_end
-                #print(f"bump start: {bump_start}, bump end: {bump_end}")
-                prev_start = bump_start
-                prev_end = bump_end
-    print(f"total shift: {totalshift}")
-    print(f"total number of bumps switches: {nbumps_shifts}")
-    # if there are no bump switches, and a potential reasonable amount of shifting, its a bifurcation ?
+                start_shift = prev_start - bump_start 
+                end_shift = bump_end - prev_end
+                if np.abs(start_shift) > 0:
+                    if prev_start != -1:
+                        startshift += start_shift
+                        print(f"shift at {i*10}, current start: {bump_start}, prev: {prev_start}")
+                    prev_start = bump_start
+                if np.abs(end_shift) > 0:
+                    if prev_end != 100:
+                        endshift += end_shift
+                        print(f"shift at {i*10}, current end: {bump_end}, prev: {prev_end}")
+                    prev_end = bump_end
+        if npositive == 2:
+            twobump_time_list.append(i*interval)
+        if npositive == 3:
+            threebump_time_list.append(i*interval)
+    netshift = np.abs(startshift - endshift)
     counter_0 = 0
     counter_1 = 0
     counter_2 = 0
@@ -268,10 +263,7 @@ def get_bump_type(initialxt,initialyt,xPos,yPos,activity,interval=10):
         if num_positive == 0:
             counter_0 += 1
         if num_positive == 1:
-            if oscilates:
-                counter_2 += 1
-            else:
-                counter_1 += 1
+            counter_1 += 1
         if num_positive == 2:
             counter_2 += 1
         if num_positive == 3:
@@ -285,11 +277,34 @@ def get_bump_type(initialxt,initialyt,xPos,yPos,activity,interval=10):
     p_2 = counter_2/situation_sum
     p_3 = counter_3/situation_sum
     p_other = counter_other/situation_sum
+    # what we need to do here is use our info to determine if a majority one bump is a bifurcation (or if it is a misclassified 2
     if p_other > 0.5:
         print("check this one, p other > 0.5")
-    proportion_list = [p_0,p_1,p_2,p_3,p_other]
-    #print(proportion_list)
-    return proportion_list
+    proportion_list = [p_0,p_1,0,p_2,p_3,p_other]
+    phase = np.argmax(proportion_list)
+    if p_2 >= 0.1:
+        if p_1 > p_3:
+            if np.max(twobump_time_list) <= np.min(onebump_time_list):
+                print("bifurcation from two bumps to one detected")
+                phase = 2
+            else: 
+                print("two bumps late detected")
+                phase = 3
+        if p_3 > p_1:
+            if np.max(twobump_time_list) <= np.min(threebump_time_list):
+                print("bifurcation from two bumps to three bumps (with one dominant bump)")
+                phase = 2
+            else: 
+                print("two bumps late detected")
+                phase = 3
+    if p_1 >= 0.9:
+        if netshift >= 1:
+            phase = 2
+            print("bifurcation of one bump shifting detected")
+            print(f"net shift: {netshift}")
+    print(proportion_list)
+    print(f"phase: {phase}")
+    return phase
 
 def plot_metric(metrics,x,colors,labels,fig,title,xlabel,ylabel):
     '''
