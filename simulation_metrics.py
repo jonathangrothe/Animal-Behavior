@@ -160,17 +160,12 @@ def get_bump_type(initialxt,initialyt,xPos,yPos,activity,interval=10):
     total_time = activity.shape[1]
     total_intervals = int(total_time/interval)
     ntargets = len(initialxt)
-    bump1_list = []
-    bump2_list = []
-    bump3_list = []
+    counter_0 = 0
+    counter_1 = 0
+    counter_2 = 0
+    counter_3 = 0
+    counter_other = 0
     target_neurons_list = []
-    prev_start = -1
-    prev_end = 100
-    startshift = 0
-    endshift = 0
-    onebump_time_list = []
-    twobump_time_list = []
-    threebump_time_list = []
     for i in range(total_intervals):
         end_int = (i+1)*interval
         if end_int > total_time:
@@ -179,7 +174,8 @@ def get_bump_type(initialxt,initialyt,xPos,yPos,activity,interval=10):
         yPos_interval = yPos[i*interval:end_int]
         target_neurons = []
         for t in range(ntargets):
-            angle = np.atan2(initialyt[t]-yPos_interval[0],initialxt[t]-xPos_interval[0])
+            angle = np.atan2(initialyt[t]-yPos_interval[0],initialxt[t]-xPos_interval[0]) #get this and return it, I think this will be nearly as interesting as trying to classify the bump and A LOT easier
+            angle = np.atan2(50-yPos_interval[0],50-xPos_interval[0])
             index = np.round(100*(angle/(2*np.pi)))
             if index < 0:
                 index += 100
@@ -188,89 +184,48 @@ def get_bump_type(initialxt,initialyt,xPos,yPos,activity,interval=10):
         activity_int = activity.iloc[target_neurons,i*interval:end_int]
         bump1 = np.mean(activity_int.iloc[0,:])
         bump2 = np.mean(activity_int.iloc[1,:])
-        bump3 = np.mean(activity_int.iloc[2,:])
-        bump1_list.append(bump1)
-        bump2_list.append(bump2)
-        bump3_list.append(bump3)
+        bump3 = np.mean(activity_int.iloc[2,:]) # see if we can redo this whole thing but with expected bumps ?
         npositive = sum(1 for item in [bump1,bump2,bump3] if item > 0)
-        if npositive == 1:
-            onebump_time_list.append(i*interval)
-            activity_interval = activity.iloc[:,i*interval]
-            activity_positive = activity_interval[activity_interval > 0]
-            if isinstance(activity_positive.index, pd.RangeIndex): # checks to make sure the bump is consecutive to avoid noisy start
-                bump_start = activity_positive.index.start % 100
-                bump_end = activity_positive.index.stop % 100
-                if bump_end < bump_start:
-                    bump_end += 100
-                start_shift = prev_start - bump_start 
-                end_shift = bump_end - prev_end
-                if np.abs(start_shift) > 0:
-                    if prev_start != -1:
-                        startshift += start_shift
-                        print(f"shift at {i*10}, current start: {bump_start}, prev: {prev_start}")
-                    prev_start = bump_start
-                if np.abs(end_shift) > 0:
-                    if prev_end != 100:
-                        endshift += end_shift
-                        print(f"shift at {i*10}, current end: {bump_end}, prev: {prev_end}")
-                    prev_end = bump_end
-        if npositive == 2:
-            twobump_time_list.append(i*interval)
-        if npositive == 3:
-            threebump_time_list.append(i*interval)
-    netshift = np.abs(startshift - endshift)
-    counter_0 = 0
-    counter_1 = 0
-    counter_2 = 0
-    counter_3 = 0
-    counter_other = 0
-    for a in range(len(bump1_list)):
-        num_positive = sum(1 for item in [bump1_list[a],bump2_list[a],bump3_list[a]] if item > 0)
-        end_int = (a+1)*interval
-        if end_int > total_time:
-            end_int = total_time
-        if num_positive > 1:
-            neuron_left = round(target_neurons_list[a][0])
-            neuron_center = round(target_neurons_list[a][1])
-            neuron_right = round(target_neurons_list[a][2])
-            # if left and center are positive, check to see if between them there is a smaller value than the min between them
-            if bump1_list[a] > 0 and bump2_list[a] > 0:
-                # take the difference between the neurons to find the shorter interval
-                # if the shorter interval doesn't work indexing wise, swap it around
+        if npositive > 1: # this makes sure that if multiple are positive they are actually distinct bumps (there is a negative value between tem) rather than continuations of the same bump
+            neuron_left = round(target_neurons[0])
+            neuron_center = round(target_neurons[1])
+            neuron_right = round(target_neurons[2])
+            if bump1 > 0 and bump2 > 0:
                 neuron_diff = neuron_left - neuron_center
                 between_min = 0
                 if 0 <= neuron_diff < 50:
-                    between_min = np.min(activity.iloc[25:30,a*interval:end_int])
+                    between_min = np.min(activity.iloc[neuron_left:neuron_center,i*interval:end_int]) 
                 elif neuron_diff >= 50:
-                    combined = pd.concat([activity.iloc[:neuron_center,a*interval:end_int],activity.iloc[neuron_left:,a*interval:end_int]])
+                    combined = pd.concat([activity.iloc[:neuron_center,i*interval:end_int],activity.iloc[neuron_left:,i*interval:end_int]])
                     between_min = np.min(combined)
                 else:
-                    between_min = np.min(activity.iloc[neuron_left:neuron_center,a*interval:end_int])
+                    between_min = np.min(activity.iloc[neuron_left:neuron_center,i*interval:end_int])
                 if between_min >= 0:
-                    num_positive = num_positive -1
-            if bump2_list[a] > 0 and bump3_list[a] > 0:
+                    npositive = npositive -1
+            if bump2 > 0 and bump3 > 0:
                 neuron_diff = neuron_center - neuron_right
                 between_min = 0
                 if 0 <= neuron_diff < 50:
-                    between_min = np.min(activity.iloc[(neuron_right+1):neuron_center,a*interval:end_int])
+                    between_min = np.min(activity.iloc[(neuron_right+1):neuron_center,i*interval:end_int])
                 elif neuron_diff >= 50:
-                    combined = pd.concat([activity.iloc[:neuron_right,a*interval:end_int],activity.iloc[neuron_center:,a*interval:end_int]])
+                    combined = pd.concat([activity.iloc[:neuron_right,i*interval:end_int],activity.iloc[neuron_center:,i*interval:end_int]])
                     between_min = np.min(combined)
                 else:
-                    between_min = np.min(activity.iloc[neuron_center:neuron_right,a*interval:end_int])
+                    between_min = np.min(activity.iloc[neuron_center:neuron_right,i*interval:end_int])
                 if between_min >= 0:
-                    num_positive = num_positive -1
-        if num_positive == 0:
+                    npositive = npositive -1
+        if npositive == 0:
             counter_0 += 1
-        if num_positive == 1:
+        if npositive == 1:
             counter_1 += 1
-        if num_positive == 2:
+        if npositive == 2:
             counter_2 += 1
-        if num_positive == 3:
+        if npositive == 3:
             counter_3 += 1
-        if num_positive > 3:
-            print(f"nc, time: {a*interval}: neuron at t1: {bump1_list[a]}, neuron at t2: {bump2_list[a]}, neuron at t3: {bump3_list[a]}, npos: {num_positive}, min: {min(bump1_list[a],bump2_list[a],bump3_list[a])}")
+        if npositive > 3:
+            print(f"nc, time: {i*interval}: neuron at t1: {bump1}, neuron at t2: {bump2}, neuron at t3: {bump3}, npos: {npositive}")
             counter_other += 1
+
     situation_sum = counter_0 + counter_1 + counter_2 + counter_3 + counter_other
     p_0 = counter_0/situation_sum
     p_1 = counter_1/situation_sum
@@ -278,30 +233,19 @@ def get_bump_type(initialxt,initialyt,xPos,yPos,activity,interval=10):
     p_3 = counter_3/situation_sum
     p_other = counter_other/situation_sum
     # what we need to do here is use our info to determine if a majority one bump is a bifurcation (or if it is a misclassified 2
-    if p_other > 0.5:
-        print("check this one, p other > 0.5")
-    proportion_list = [p_0,p_1,0,p_2,p_3,p_other]
+    proportion_list = [p_0,p_1,p_2,p_3,p_other]
     phase = np.argmax(proportion_list)
-    if p_2 >= 0.1:
-        if p_1 > p_3:
-            if np.max(twobump_time_list) <= np.min(onebump_time_list):
-                print("bifurcation from two bumps to one detected")
-                phase = 2
-            else: 
-                print("two bumps late detected")
-                phase = 3
-        if p_3 > p_1:
-            if np.max(twobump_time_list) <= np.min(threebump_time_list):
-                print("bifurcation from two bumps to three bumps (with one dominant bump)")
-                phase = 2
-            else: 
-                print("two bumps late detected")
-                phase = 3
-    if p_1 >= 0.9:
-        if netshift >= 1:
+    if phase == 1:
+        if counter_2 > 100/interval and total_time >= 5000:
             phase = 2
-            print("bifurcation of one bump shifting detected")
-            print(f"net shift: {netshift}")
+    if phase == 3:
+        if total_time <= 3000:
+            phase = 1
+        else:
+            phase = 0
+    if phase == 4:
+        print("PHASE is other ALERT")
+        phase = -1
     print(proportion_list)
     print(f"phase: {phase}")
     return phase

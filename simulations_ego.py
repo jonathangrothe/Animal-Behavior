@@ -135,8 +135,8 @@ best_sigma = sigma_sweep_list[ind_best_sigma]
 #h0_list = h0_start_for_sim
 #sigma_list = sigma_list_from_h0
 
-h0_list = [[0.22,0.22,0.22],[0.24,0.24,0.24],[0.26,0.26,0.26],[0.28,0.28,0.28],[0.3,0.3,0.3],[0.32,0.32,0.32]]
-sigma_list = [0.5,0.5,0.5,0.3,0.3,0.3]
+h0_list = [[0.205,0.205,0.205],[0.21,0.21,0.21],[0.215,0.215,0.215],[0.22,0.22,0.22],[0.225,0.255,0.255],[0.23,0.23,0.23],[0.235,0.235,0.235],[0.24,0.24,0.24],[0.245,0.245,0.245],[0.25,0.25,0.25]]
+sigma_list = [0.5]*10
 
 change = {'sigma':sigma_list, 'h0':h0_list}
 target_list, time_list, decision_points, decision_pos, activity_df, x_list, y_list, headings_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
@@ -146,7 +146,7 @@ for i in range(len(target_list)):
     curr_activity = activity_df.iloc[i*100:(i+1)*100,:]
     curr_xpos = x_list[i:(i+1)][0]
     curr_ypos = y_list[i:(i+1)][0]
-    probabilities = sim_met.get_bump_type(initialxt,initialyt,curr_xpos,curr_ypos,curr_activity)
+    probabilities = sim_met.get_bump_type(initialxt,initialyt,curr_xpos,curr_ypos,curr_activity,1)
     phase = np.argmax(probabilities)
     phases.append(phase)
 

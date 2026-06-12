@@ -1,4 +1,5 @@
 import math
+import statistics
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
@@ -19,7 +20,7 @@ for a in range(nagents):
     initialx[a] = 50
     initialy[a] = 50
 initialxt = [50-(15*np.sqrt(3)),50,50+(15*np.sqrt(3))]
-initialyt = [35,80,35]
+initialyt = [65,80,65]
 
 # number of time steps
 T = 5000
@@ -99,12 +100,13 @@ base = {'N':N,
 plot_trajs = True
 include_neurons = True
 sample_size = 1
-
-base_sigma = np.linspace(0.05,1,num=10)
-start = 0.15
-finish = 0.35
-n_h0 = 10
-h0_range= np.linspace(start,finish,num=n_h0)
+sigma_start = 0.05
+sigma_finish = 1
+base_sigma = np.linspace(sigma_start,sigma_finish,num=20)
+h0_start = 0.15
+h0_finish = 0.35
+n_h0 = 20
+h0_range= np.linspace(h0_start,h0_finish,num=n_h0)
 h0_list = []
 for item in h0_range:
     h0_list.append([item,item,item])
@@ -115,53 +117,36 @@ subfigs, axs = plt.subplots(nrows=1,ncols=3, figsize = (20,5))
 target_grid = []
 phase_grid = []
 time_grid = []
-shift_grid = []
-switchs_grid = []
 for sigma_index in range(len(base_sigma)):
     sigma_list = [base_sigma[sigma_index]]*n_h0
     change= {'h0':h0_list,
              'sigma':sigma_list}
     target_list, time_list, decision_points, decision_pos, activity_df, x_list, y_list, headings_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=include_neurons)
     p_target, se_target = sim_met.get_success_rate(target_list, sample_size, ntargets)
-    target_reached = [1 if x >= 0 else x for x in target_list]
+    target_reached = [0 if (x == 0) or (x == 2) else x for x in target_list]
     phases = []
-    shift = []
-    switch = []
     for i in range(len(target_list)):
         curr_activity = activity_df.iloc[i*100:(i+1)*100]
         curr_xpos = x_list[i:(i+1)][0]
         curr_ypos = y_list[i:(i+1)][0]
-        probabilities = sim_met.get_bump_type(initialxt,initialyt,curr_xpos,curr_ypos,curr_activity,5)
-        phase = np.argmax(probabilities)
-        if target_reached == -1 and probabilities[3]>=0.3:
-            phase = 3
-        phases.append(phase) # can add to this later with bifurcation stuff when c4 is bigger and c2 is smaller in the c2 case
+        phase = sim_met.get_bump_type(initialxt,initialyt,curr_xpos,curr_ypos,curr_activity,1)
+        phases.append(phase)
         print(f"phase: {phase}")
         print(f"reaches target: {target_list[i]}")
     grid_phases = []
     grid_targets = []
     grid_times = []
-    grid_shift = []
-    grid_switch = []
     for s in range(n_h0):
         sim_phases = phases[s*sample_size:(s+1)*sample_size]
         sim_targets = target_reached[s*sample_size:(s+1)*sample_size]
         sim_times = time_list[s*sample_size:(s+1)*sample_size]
-        sim_shifts = shift[s*sample_size:(s+1)*sample_size]
-        sim_switchs = switch[s*sample_size:(s+1)*sample_size]
         n0 = sim_phases.count(0)
         n1 = sim_phases.count(1)
         n2 = sim_phases.count(2)
         n3 = sim_phases.count(3)
         nOther = sim_phases.count(4)
         nreach = sim_targets.count(1)
-        reach = 0
-        if nreach/sample_size >= 0.75:
-            reach = 1
-        elif nreach/sample_size <= 0.25:
-            reach = -1
-        else:
-            reach = 0
+        reach = statistics.mode(sim_targets)
         grid_phases.append(np.argmax([n0,n1,n2,n3,nOther]))
         grid_targets.append(reach)
         grid_times.append(np.mean(sim_times))
@@ -191,8 +176,8 @@ norm_phase = mcolors.BoundaryNorm(boundaries_phase,cmap2.N)
 
 
 
-categories_tar = ['Fails to reach', 'Both', 'Reaches']
-categories_phase = ['0 bumps', '1 bump', '2 bumps', '3 bumps']
+categories_tar = ['Fails to reach', 'reaches outer', 'reaches center']
+categories_phase = ['stalls', 'beeline', 'bifurcation','oscilation']
 
 im1 = axs[0].imshow(target_df, cmap=cmap1,origin='lower',extent=[h0_range[0], h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
 im2 = axs[1].imshow(phase_df,cmap=cmap2,origin='lower',extent=[h0_range[0], h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
