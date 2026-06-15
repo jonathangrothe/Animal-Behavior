@@ -174,8 +174,7 @@ def get_bump_type(initialxt,initialyt,xPos,yPos,activity,interval=10):
         yPos_interval = yPos[i*interval:end_int]
         target_neurons = []
         for t in range(ntargets):
-            angle = np.atan2(initialyt[t]-yPos_interval[0],initialxt[t]-xPos_interval[0]) #get this and return it, I think this will be nearly as interesting as trying to classify the bump and A LOT easier
-            angle = np.atan2(50-yPos_interval[0],50-xPos_interval[0])
+            angle = np.atan2(initialyt[t]-yPos_interval[0],initialxt[t]-xPos_interval[0]) 
             index = np.round(100*(angle/(2*np.pi)))
             if index < 0:
                 index += 100
@@ -184,9 +183,9 @@ def get_bump_type(initialxt,initialyt,xPos,yPos,activity,interval=10):
         activity_int = activity.iloc[target_neurons,i*interval:end_int]
         bump1 = np.mean(activity_int.iloc[0,:])
         bump2 = np.mean(activity_int.iloc[1,:])
-        bump3 = np.mean(activity_int.iloc[2,:]) # see if we can redo this whole thing but with expected bumps ?
+        bump3 = np.mean(activity_int.iloc[2,:])
         npositive = sum(1 for item in [bump1,bump2,bump3] if item > 0)
-        if npositive > 1: # this makes sure that if multiple are positive they are actually distinct bumps (there is a negative value between tem) rather than continuations of the same bump
+        if npositive > 1: # this makes sure that if multiple are positive they are actually distinct bumps (there is a negative value between them) rather than continuations of the same bump
             neuron_left = round(target_neurons[0])
             neuron_center = round(target_neurons[1])
             neuron_right = round(target_neurons[2])
@@ -194,12 +193,12 @@ def get_bump_type(initialxt,initialyt,xPos,yPos,activity,interval=10):
                 neuron_diff = neuron_left - neuron_center
                 between_min = 0
                 if 0 <= neuron_diff < 50:
-                    between_min = np.min(activity.iloc[neuron_left:neuron_center,i*interval:end_int]) 
+                    between_min = np.min(activity.iloc[(neuron_center+1):neuron_left,i*interval:end_int]) 
                 elif neuron_diff >= 50:
                     combined = pd.concat([activity.iloc[:neuron_center,i*interval:end_int],activity.iloc[neuron_left:,i*interval:end_int]])
                     between_min = np.min(combined)
                 else:
-                    between_min = np.min(activity.iloc[neuron_left:neuron_center,i*interval:end_int])
+                    between_min = np.min(activity.iloc[(neuron_left+1):neuron_center,i*interval:end_int])
                 if between_min >= 0:
                     npositive = npositive -1
             if bump2 > 0 and bump3 > 0:
@@ -211,7 +210,7 @@ def get_bump_type(initialxt,initialyt,xPos,yPos,activity,interval=10):
                     combined = pd.concat([activity.iloc[:neuron_right,i*interval:end_int],activity.iloc[neuron_center:,i*interval:end_int]])
                     between_min = np.min(combined)
                 else:
-                    between_min = np.min(activity.iloc[neuron_center:neuron_right,i*interval:end_int])
+                    between_min = np.min(activity.iloc[(neuron_center+1):neuron_right,i*interval:end_int])
                 if between_min >= 0:
                     npositive = npositive -1
         if npositive == 0:
@@ -249,6 +248,41 @@ def get_bump_type(initialxt,initialyt,xPos,yPos,activity,interval=10):
     print(proportion_list)
     print(f"phase: {phase}")
     return phase
+
+def get_bifurcation_angle(xPos, yPos, targetx, targety, targ_angle):
+    '''
+    takes the x positions, y positions, the x positions of the target reached, and the y positions of the target reached from a simulation 
+    and returns the first extreme value of the angle between the reached target and the agent's position
+    this represents the first bifurcation angle
+    '''
+    # scale this by angle between targets, 
+    if targetx < 0 or targety < 0:
+        return 0
+    angles_to_target = np.atan2(np.abs(targety-yPos),np.abs(targetx-xPos))
+    #angles_to_start = np.atan2(np.abs(yPos-yPos[0]),np.abs(xPos-xPos[0]))
+    initial_angle = angles_to_target[0]
+    peaks_t, _ = find_peaks(angles_to_target)
+    negative_peaks_t, _ = find_peaks(-angles_to_target)
+    peak_angles_t = angles_to_target[peaks_t]
+    #peak_angles_s = angles_to_start[peaks_t]
+    negative_peak_angles_t = angles_to_target[negative_peaks_t]
+    #negative_peak_angles_s = angles_to_start[negative_peaks_t]
+    #print(f"initial angle to t: {initial_angle}, peaks t: {peaks_t}, angle to t: {peak_angles_t}, angle to s: {peak_angles_s}, negative peaks t: {negative_peaks_t}, angle to t: {negative_peak_angles_t}, angle to s: {negative_peak_angles_s}")
+    best_positive = 0
+    best_negative = 0
+    for index in range(len(peaks_t)): 
+        if np.abs(peak_angles_t[index]-initial_angle) > (2*np.pi)/360:
+            best_positive = np.abs(peak_angles_t[index]-initial_angle)/targ_angle
+            break
+    for index in range(len(negative_peaks_t)): 
+        if np.abs(negative_peak_angles_t[index]-initial_angle) > (2*np.pi)/360:
+            best_negative = np.abs(negative_peak_angles_t[index]-initial_angle)/targ_angle
+            break
+    best_overall = max(best_negative,best_positive)
+    return best_overall
+
+    
+    
 
 def plot_metric(metrics,x,colors,labels,fig,title,xlabel,ylabel):
     '''

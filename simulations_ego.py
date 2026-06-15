@@ -18,7 +18,7 @@ for a in range(nagents):
     initialx[a] = 50
     initialy[a] = 50
 initialxt = [50-(15*np.sqrt(3)),50,50+(15*np.sqrt(3))]
-initialyt = [65,80,65]
+initialyt = [35,80,35]
 
 # number of time steps
 T = 5000
@@ -135,7 +135,7 @@ best_sigma = sigma_sweep_list[ind_best_sigma]
 #h0_list = h0_start_for_sim
 #sigma_list = sigma_list_from_h0
 
-h0_list = [[0.205,0.205,0.205],[0.21,0.21,0.21],[0.215,0.215,0.215],[0.22,0.22,0.22],[0.225,0.255,0.255],[0.23,0.23,0.23],[0.235,0.235,0.235],[0.24,0.24,0.24],[0.245,0.245,0.245],[0.25,0.25,0.25]]
+h0_list = [[0.255,0.255,0.255],[0.26,0.26,0.26],[0.265,0.265,0.265],[0.27,0.27,0.27],[0.275,0.275,0.275],[0.28,0.28,0.28],[0.285,0.285,0.285],[0.29,0.29,0.29],[0.295,0.295,0.295],[0.3,0.3,0.3]]
 sigma_list = [0.5]*10
 
 change = {'sigma':sigma_list, 'h0':h0_list}
@@ -146,6 +146,14 @@ for i in range(len(target_list)):
     curr_activity = activity_df.iloc[i*100:(i+1)*100,:]
     curr_xpos = x_list[i:(i+1)][0]
     curr_ypos = y_list[i:(i+1)][0]
+    target = target_list[i]
+    targx = -1
+    targy = -1
+    if target != -1:
+        targx = initialxt[target]
+        targy = initialyt[target]
+    bifurcation_angle = sim_met.get_bifurcation_angle(curr_xpos,curr_ypos,targx,targy,(2*np.pi)/3)
+    print(f"angle returned: {bifurcation_angle}")
     probabilities = sim_met.get_bump_type(initialxt,initialyt,curr_xpos,curr_ypos,curr_activity,1)
     phase = np.argmax(probabilities)
     phases.append(phase)
