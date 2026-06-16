@@ -1,19 +1,16 @@
 import time
 import statistics
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
-import pandas as pd
-import simulate_ringattractor as sim_ra
 import simulation_metrics as sim_met
 import repeated_sims
-from scipy.optimize import curve_fit
 
-# --------  PARAMETERS --------
 
 start_time = time.perf_counter()
 
-L = 100 # width of grid
+L = 100 
 ntargets = 3
 nagents = 1
 initialx = np.zeros(nagents)
@@ -24,29 +21,22 @@ for a in range(nagents):
 initialxt = [50-(15*np.sqrt(3)),50,50+(15*np.sqrt(3))]
 initialyt = [65,80,65]
 
-# number of time steps
 T = 5000
 periodicflag = 0
-rEgo = 0 # radius to switch to egocentric (for when close to another agent)
-rEgoTarget = 0 # radius for switch near target 
+rEgo = 0 
+rEgoTarget = 0
 Egonumber = 1
-
-# collision avoidance:
 hColl = -10
 rColl = 0
-
-# signal decay
 distf = 0
 adistf = 1
-
 dt = 0.1
 v0 = 0.05
-
 v0t = np.zeros(ntargets)
 for i in range(ntargets):
     v0t[i] = 0
 
-N = 100 # number of neurons
+N = 100
 nu = 0.5
 theta = np.linspace(0,2*np.pi,N+1)
 theta = theta[:-1]
@@ -58,16 +48,13 @@ for i in range(N):
     J[i,i] = 0.0
     J = np.squeeze(J)
 
-allocentricFlag = 1 # 1 is allo, 0 is ego
-h0s = [0.25,0.25,0.25] # attraction vector, first are attraction for targets, then agents
+allocentricFlag = 1
+h0s = [0.25,0.25,0.25]
 h_b = 0.2
 sigma = 0.5
 beta = 100
 
-
 # -------- Running the simulation --------
-
-# first we set out base parameters using the initializations above
 
 base = {'N':N,
         'L':L,
@@ -97,9 +84,7 @@ base = {'N':N,
         'sigma':sigma,
         'beta':beta}
 
-# plotting settings: controls what kind of simulations we're running
-# not plotting trajectories or neurons in this file
-plot_trajs = True
+include_pos = True
 include_neurons = True
 sample_size = 5
 sigma_start = 0.05
@@ -117,12 +102,13 @@ target_grid = []
 phase_grid = []
 time_grid = []
 angle_grid = []
+
 for sigma_index in range(len(base_sigma)):
     sigma_list = [base_sigma[sigma_index]]*n_h0
     change= {'h0':h0_list,
              'sigma':sigma_list}
     sample_time = time.perf_counter()
-    target_list, time_list, decision_points, decision_pos, activity_list, x_list, y_list, headings_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=include_neurons)
+    target_list, time_list, activity_list, x_list, y_list, headings_list  = repeated_sims.sample_sims(base,change,sample_size,include_pos,include_neurons)
     end_sample_time = time.perf_counter()
     sampling_time = end_sample_time - sample_time
     print(f"Sampling time: {sampling_time:.6f} seconds")
@@ -179,13 +165,9 @@ for sigma_index in range(len(base_sigma)):
 
 
 target_df = pd.DataFrame(target_grid,columns=h0_range,index=base_sigma)
-print(target_df)
 phase_df = pd.DataFrame(phase_grid,columns=h0_range,index=base_sigma)
-print(phase_df)
 time_df = pd.DataFrame(time_grid,columns=h0_range,index=base_sigma)
-print(time_df)
 angle_df = pd.DataFrame(angle_grid,columns=h0_range,index=base_sigma)
-print(angle_df)
 
 subfigs, axs = plt.subplots(nrows=2,ncols=2, figsize = (14,10))
 axs = axs.flatten()
@@ -202,8 +184,6 @@ boundaries_tar = np.arange(-1,3) - 0.5
 norm_tar = mcolors.BoundaryNorm(boundaries_tar,cmap1.N)
 boundaries_phase = np.arange(5) - 0.5
 norm_phase = mcolors.BoundaryNorm(boundaries_phase,cmap2.N)
-
-
 categories_tar = ['fails to reach', 'reaches outer', 'reaches center']
 categories_phase = ['0 bumps', '1 bump', '2 bumps','3 bumps']
 
@@ -220,22 +200,7 @@ cbar3.set_label('Time to target')
 cbar4 = plt.colorbar(im4)
 cbar4.set_label('Ratio of 1st bifur. angle to direct path (0.5 is midpoint)')
 
-# subfigs.supxlabel('h0')
-# subfigs.supylabel('sigma')
 subfigs.suptitle(f"Heatmaps for π/3 between targets, average of {sample_size} samples")
-'''
-ax.set_xticks(np.arange(len(target_df.columns)))
-ax.set_xticklabels(target_df.columns)
-ax.set_yticks(np.arange(len(target_df.index)))
-ax.set_yticklabels(target_df.index)
-
-area_list = [0.05,0.2,0.35,0.5]
-cmap = plt.get_cmap('cividis')
-colors_area = cmap(np.linspace(0, 1, len(area_list)))
-for area_index in range(len(area_list)):
-    sigma_list = repeated_sims.area_helper(area_list[area_index],'h0',h0_range)
-    sim_met.plot_phase_over_area(h0_range,sigma_list,target_reached,colors_area[area_index],axs[0])
-'''
 end_time = time.perf_counter()
 execution_time = end_time - start_time
 print(f"Execution time: {execution_time:.6f} seconds")

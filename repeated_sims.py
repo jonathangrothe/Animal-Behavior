@@ -4,37 +4,33 @@ import numpy as np
 import simulate_ringattractor as sim_ra
 import simulation_metrics as sim_met
 
-def sample_sims(bp, changing_params, n_samples, include_trajs=False, include_activity=False):
+def sample_sims(bp,changing_params,n_samples,include_trajs,include_activity):
     '''
     A function for running a variety of consecutive simulations over changing values of specified parameters
 
-    parameters:
-    bp: (base parameters) a dictionary which contains the base values to run the simulation on. It will contain an entry for every parameter in simulate_ring_attractor in sim_ra
-    changing_params: a dictionary which contains the parameters that are going to be changed throughout the simulations as keys, 
-                     and a list of values those parameters will take as values.
-    n_samples: the number of samples to run for each specific set of parameters
-    include_trajs: whether or not to return the trajectories
-    include_activity: whether or not to return the sum of activity
+    Parameters:
+        bp: (base parameters) a dictionary which contains every parameter in the simulate_ring_attractor function except plot, stop, and stopping distance as a key,
+            and an approriate value for that parameter as the corresponding value
+        changing_params: a dictionary which contains the parameters that are going to be changed throughout the simulations as keys, 
+                        and a list of values those parameters will take as values. The lists of values must all be the same size.
+        n_samples: an integer which represents the number of samples to run for each unique set of parameters
+        include_trajs: a boolean which controls whether or not to return the trajectories
+        include_activity: a boolean which controls whether or not to return the sum of activity
 
-    returns: 
-    target_list: a list of size n_samples * len(changing_params) which target the agent reaches each time, if the agent fails to reach a target it is -1
-    time_list: a list of size n_samples * len(changing_params) which contains the time the agent reaches the target, if no target is reached it is the number of timesteps + 1
-    decision_points: a list of lists where each list contains all the time steps when a decision is made, as according to the get_bifurcation_times function in sim_met
-    decision_pos: a list of list of tuples in which each list contains the positions (as x,y tuples) of the agent at the bifurcation time, as found using get_bifurcation_times in sim_met
-    sum_activity_list: TO BE DELETED, the sum of all neuron activity, I thought this would be interesting but I haven't found a great use for it
-    activity_df: a dataframe which contains all the neuron activity merged, each row is a neuron, simulations are differentiated by sets of 100 rows
-                 (ie: rows 0-99 is one simulation, 100-199 is the next, etc.). Each column corresponds to a time step, and each entry is the corresponding neuron's
-                 activity at that time. NaN entrys are present when a simulation ends before that time step. 
-    x_list: a list of size n_samples * len(changing_params) which contains numpy arrays which contain all the x positions for that simulation, 
-            each array is one dimensional and will have entries equal to the number of time steps that simulation runs for
-    y_list: a list of size n_samples * len(changing_params) designed the same as x_list but containing y positions instead of x positions
-    headings_list: a list of size n_samples * len(changing_params) designed the same as x_list and y_list but containing headings (in polar coordinates)
+    Returns: 
+        target_list: a list of size (n_samples * len(changing_params)) which contains which target the agent reaches each during each individual simulation, 
+                     if the agent fails to reach a target it is -1
+        time_list: a list of size (n_samples * len(changing_params)) which contains the time the agent takes to reach the target, 
+                   if no target is reached it is the number of timesteps + 1
+        activity_list: a list of size (n_samples * len(changing_params)) which contains a numpy array of size (bp['N'] x tsteps) 
+                       which contains the activity for each neuron at each timestep for each individual simulation
+        x_list: a list of size (n_samples * len(changing_params)) which contains 1d numpy arrays which contain all the x positions for the agent in each individual simulation
+        y_list: a list of size (n_samples * len(changing_params)) which contains 1d numpy arrays which contain all the y positions for the agent in each individual simulation
+        headings_list: a list of size (n_samples * len(changing_params)) which contains 1d numpy arrays which contain all the headings for the agent in each individual simulation
     '''
     time_list = []
     target_list = []
     activity_list = [] 
-    decision_points = []
-    decision_pos = []
     x_list = []
     y_list = []
     headings_list = []
@@ -71,7 +67,7 @@ def sample_sims(bp, changing_params, n_samples, include_trajs=False, include_act
                 if include_activity:
                     activity_list.append(activity[:,0,:])
 
-    return target_list, time_list, decision_points, decision_pos, activity_list, x_list, y_list, headings_list
+    return target_list, time_list, activity_list, x_list, y_list, headings_list
 
 
 def boundary_search(bp,base_min,base_max,sample_size,min_search,param,boundary_prob):
@@ -93,6 +89,18 @@ def boundary_search(bp,base_min,base_max,sample_size,min_search,param,boundary_p
     boundary: the boundary value we found after our search
     boundary_range: the range of the region that was being searched when the desired value was found
     '''
+
+    def search_helper(nt,h0_bool,val):
+        '''
+        A helper function that handles the fact that we need a list of h0s to run the simulation
+        '''
+        if h0_bool:
+            h0_list = []
+            for i in range(nt):
+                h0_list.append(val)
+            return h0_list
+        return val
+    
     ntargets = bp['ntargets']
     h0_bool = param == 'h0'
     boundary = 0
@@ -113,10 +121,10 @@ def boundary_search(bp,base_min,base_max,sample_size,min_search,param,boundary_p
                                                                                                 bp['adistf'],bp['J'],bp['beta'],bp['h0'],bp['h_b'],bp['dt'],bp['v0'],bp['v0t'],
                                                                                                 bp['sigma'],bp['hColl'],bp['rColl'],bp['initialx'],bp['initialy'],bp['initialxt'],bp['initialyt'],
                                                                                                 False,True)
-            target_reached, time_reached = sim_met.get_destination_metrics(xPos,yPos,targetsx,targetsy) # another vote to rework this function
+            target_reached, time_reached = sim_met.get_destination_metrics(xPos,yPos,targetsx,targetsy)
             target_list.append(target_reached)
         n_reached = 0
-        for item in target_list: # could try and make this into a more general loop which loops for a different metric
+        for item in target_list:
             if item != -1:
                 n_reached += 1
         print(f"n reached: {n_reached}")
@@ -143,65 +151,17 @@ def boundary_search(bp,base_min,base_max,sample_size,min_search,param,boundary_p
     return boundary, found_range
 
 
-def search_helper(nt,h0_bool,val):
-    '''
-    A helper function for the binary search function that handles the fact that we need a list of h0 values when searching over that parameter
-    could be expanded to encode an uneven parameter in h0 ? 
-
-    params: 
-    nt: number of targets
-    h0_bool: if the parameter we are interested in is h0
-    val: the value we will be using in the search
-
-    returns: 
-    h0_list: the list of h0s we need for the simulation
-    val: the value of the parameter when we aren't using h0
-    '''
-    if h0_bool:
-        h0_list = []
-        for i in range(nt):
-            h0_list.append(val)
-        return h0_list
-    return val
-
-def target_dist_test(min_val,max_val,nt,target_list,direction):
-    '''
-    a helper function for doing boundary search with three (+ ?) targets that sees how close to evenly distributed they are
-    if they are close to evenly distributed we're good; good enough for now is just reaching every target
-    '''
-    sample_size = len(target_list)
-    for i in range(nt):
-        times_reached = target_list.count(i)
-        if times_reached <= sample_size*0.1:
-            if direction=='min':
-                x=0
-    return (min_val + max_val)/2
-
-def target_range_test(min_val,max_val,target_list,direction,boundary_prob):
-    sample_size = len(target_list)
-    n_reached = 0
-    for item in target_list:
-        if item != -1:
-            n_reached += 1
-    print(f"n reached: {n_reached}")
-    if n_reached < int(boundary_prob*sample_size):
-        if direction=='min':
-            min_val = value
-        else:
-            max_val = value
-        return min_val, max_val
-    if n_reached > int((1-boundary_prob)*sample_size):
-        if direction=='max':
-            max_val = value
-        else:
-            min_val = value
-        return min_val, max_val
-    if int(boundary_prob*sample_size) < n_reached < int((1-boundary_prob)*sample_size):
-        curr_range = max_val - min_val
-        value = (min_val+max_val)/2
-        return value
-    
 def area_helper(area, param, param_list):
+    '''
+    A function that when given a certain area and either sigma or h0, calculates the value of the other parameter that will give the desired area
+    parameters:
+    area: the area of the input bump
+    param: the name of the parameter that we are given
+    param_list: a list of param values
+    returns: 
+    h0_list: returns a list of h0 values if the input list was of sigma values
+    sigma_list: returns a list of sigma values if the input list was of h0 values
+    '''
     if param == 'sigma':
         h0_list = []
         for item in param_list: 

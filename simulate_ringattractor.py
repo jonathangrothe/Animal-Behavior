@@ -6,7 +6,60 @@ import math
 def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag,rEgo,rEgoTarget,Egonumber,
                             distf,adistf,J,beta,h0,h_b,dt,v0,v0t,sigma,hColl,rColl,
                             initialx,initialy,initialxt,initialyt,plot,stop,stopping_dist=0.1):
-    # -------- INITIALIZATIONS WITHIN THE SIMULATION --------
+    '''
+    The code to run a single simulation of the ring attractor model. 
+    Designed to work with any number of agents but so far I've only really focused on one agent, which impacts stopping distance and v0 right now. 
+    Will need to change the logic of the stopping distance code and expand v0 to a list when changing this code.
+
+    Parameters:
+        N: an integer that is the number of neurons in the ring attractor
+        L: a float or integer that is the width and length of the arena
+        T: an integer that is the maximum number of time steps
+        ntargets: an integer that is the number of targets
+        allocentricFlag: a boolean that represents if we are using an allocentric coordinate system or not
+        periodic_flag: a boolean that represents if the arena is periodic (if we go past the end of the arena should we come out the other side)
+        rEgo: a float that represents how close an agent needs to be to another agent to consider switching from an allocentric representation to an egocentric representation
+        rEgoTarget: a float that represents how close an agent needs to be to a target to consider switching from an allocentric representation to an egocentric representation
+        Egonumber: an integer which represents the number of times within rEgo or rEgotarget required to induce the switch from allocentric to egocentric
+        distf: a boolean which controls whether or not the distance effects the strength of the input signal
+        adistf: a float which controls the exponential input signal decay if distf is 1
+        J: a 100x100 array that contains the connectivity profile between neurons. Each value is between -1 and 1, with 1 being more connected.
+        Each row is that neurons connectivity profile, and each entry is the connectivity relationship to the neuron corresponding to the column.
+        beta: a float or integer which represents the neural noise
+        h0: a list of floats which represent the attractiveness for each target, and then (if applicaple) the attractiveness of each agent
+        h_b: a float which represents the base inhibition, which is subtracted from the activity of all neurons
+        dt: a float which represents the activity step size for each time step
+        v0: a float which represents the velocity of the target
+        v0t: a list of floats which represent the velocities of the agents
+        sigma: a float which represents the width of the input signal
+        hColl: a float which is the updated input signal when the agent is within rColl of another agent, designed to avoid collisions within other agents
+        rColl: a float which the distance within which collision avoidance behavior is activated
+        initialx: a list of floats which contain the starting x positions of the agents
+        initialy: a list of floats which contain the starting y positions of the agents
+        intialxt: a list of floats which contain the starting x positions of the targets
+        initialyt: a list of floatas which contain the starting y positions of the targets
+        plot: a boolean which controls whether or not to plot the trajectory every 100 tsteps
+        stop: a boolean which controls whether or not to stop the simulation when the agent reaches a target (note: right now should be False if there is more than one agent)
+        stopping_dist: a float which controls how close to a target the agent has to get to stop the simulation when stop is True
+
+    Returns: 
+        headings: a numpy array of size (nagents x tsteps) which contains each agent's heading in polar coordinates at each point in the simulation 
+                  (tsteps is the total number of steps the simulation runs for)
+        xPos: a numpy array of size (nagents x tsteps) which contains each agent's x position at each point in the simulation
+        yPos: a numpy array of size (nagents x tsteps) which contains each agent's y position at each point in the simulation
+        targetXPos: if any target has a v0t above 0, a numpy array of size (ntargets x tsteps) which contains each target's x position at each point in the simulation
+                    if all targets have v0t = 0, a numpy array of size (ntargets x 1) which contains each targets initial (and constant) x position
+        targetYPos: if any target has a v0t above 0, a numpy array of size (ntargets x tsteps) which contains each target's y position at each point in the simulation
+                    if all targets have v0t = 0, a numpy array of size (ntargets x 1) which contains each targets initial (and constant) y position
+        uArray: a numpy array of size (N, nagents, tsteps) which contains the state of each neuron for each agent at each time step in the simulation
+    '''
+
+    # -------- INITIALIZATIONS --------
+
+    def fAct(u,beta):
+        # a function which introduces neural noise
+        return ((1+np.tanh(beta * u))/2)
+    
     alpharing0 = np.linspace(0,2*np.pi, N+1)
     alpharing0 = alpharing0[:-1]
     alpharing = np.zeros((nagents,N))
@@ -51,22 +104,18 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
         for a in range(nagents):
             xa = xPos[a,tstep]
             ya = yPos[a,tstep]
-
             for b in range(nagents):
                 if b == a:
                     continue
                 xb = xPos[b,tstep]
                 yb = yPos[b,tstep]
-
                 dx = xb - xa
                 dy = yb - ya
-
                 if periodic_flag == 1:
                     if abs(dx) > L / 2:
                         dx -= math.copysign(L, dx)
                     if abs(dy) > L / 2:
                         dy -= math.copysign(L, dy)
-
                 distAB = np.sqrt(dx**2 + dy**2)
                 ampl = h0[ntargets+b]
                 if distf != 0: 
@@ -96,27 +145,21 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
                 else: 
                     xt = targetXPos[ttarg]
                     yt = targetYPos[ttarg]
-
                 dx = xt - xa
                 dy = yt - ya
-
                 if periodic_flag == 1:
                     if abs(dx) > L / 2:
                         dx -= math.copysign(L, dx)
                     if abs(dy) > L / 2:
                         dy -= math.copysign(L, dy)
-
                 distAB = np.sqrt(dx**2 + dy**2)
                 if distAB < rEgoTarget:
                     Egocentric[a] = Egocentric[a] + 1
                     print("entered switch")
-                
                 ampl = h0[ttarg]
                 if distf != 0: 
                     ampl = ampl*(np.exp(-adistf*distAB/L))
-                
                 angleAB = np.atan2(dy,dx)
-                
                 if angleAB < 0:
                     angleAB = angleAB + 2*np.pi
                 for i in range(N):
@@ -134,7 +177,6 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
             uaNew = uaOld + dt * dU
             uArray[:,a,tstep+1] = uaNew
     
-
         # -------- STEP C --------
         for a in range(nagents):
             uaNow = uArray[:,a,tstep+1]
@@ -147,22 +189,18 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
                 cx = cx + (faPos[i] * np.cos(alpharing[a,i]))
                 cy = cy + (faPos[i] * np.sin(alpharing[a,i]))
             newAngle = 0
-            #if the centers are close to zero use old heading 
             if (np.abs(cx) < 1e-9) or (np.abs(cy) < 1e-9):
                 newAngle = headings[a,tstep]
             else:
                 newAngle = np.atan2(cy,cx)
                 if newAngle < 0:
                     newAngle = newAngle + 2*np.pi
-            
             headings[a,tstep+1] = newAngle
-            
             if allocentricFlag == 0:
                 alpharing[a,:] = np.mod(alpharing[a,:] - headings[a,tstep] + headings[a,tstep+1],2*np.pi)
             elif Egocentric[a] >= Egonumber:
                 alpharing[a,:] = np.mod(alpharing[a,:]-headings[a,tstep] + headings[a,tstep+1], 2*np.pi)
         
-
         # -------- STEP D --------
         for a in range(nagents):
             oldx = xPos[a,tstep]
@@ -211,14 +249,12 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
                     newYT = L
                 targetXPos[ttarg, tstep+1] = newXT
                 targetYPos[ttarg, tstep+1] = newYT
-            
 
-        # -------- STEP F - VIZ --------
+        # -------- STEP F --------
         if plot == True:
             plot_col= 'blue'
             if allocentricFlag == 1:
                 plot_col = 'green'
-
             if tstep % 100 == 0:
                 plt.scatter(
                     xPos[:, tstep + 1],
@@ -242,15 +278,13 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
                         marker = 's',
                         c = [[0.8, 0, 0.2]], 
                         )
-
                 plt.xlim(0, L)
                 plt.ylim(0, L)
                 plt.title(f"Time step {tstep}, allocentric:{allocentricFlag}, h0:{h0}, hb: {h_b}, beta: {beta}, sigma: {sigma}")
                 plt.pause(0.001)  
 
-        # -------- STEP G - STOP --------
+        # -------- STEP G --------
         if stop == True:
-            #for targ in range(ntargets):
             targ_x = 0
             targ_y = 0
             if v0t.any():
@@ -277,39 +311,3 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
 
     return headings, xPos, yPos, targetXPos, targetYPos, uArray
 
-def create_grid(ntargets,ncols,L):
-    '''
-    ntargets: number of targets
-    ncols: number of columns in the grid
-    L: total length of the space
-    returns: 2 lists (one for x one for y) of coordinates arranged in a grid
-    '''
-    initialxt = np.zeros(ntargets)
-    initialyt = np.zeros(ntargets)  
-    targets_percol = ntargets//ncols
-    for col in range(ncols):
-        for ti in range(targets_percol):
-            initialxt[targets_percol*col+ti] = col*(L/(ncols+1)) + (L/(ncols+1))
-            initialyt[targets_percol*col+ti] = ti*(L/(targets_percol+1)) + (L/(targets_percol+1))
-    return initialxt, initialyt
-
-def create_circle(ntargets,radius,L):
-    '''
-    ntargets: number of targets
-    radius: radius of the circle
-    L: total length of the space
-    returns: 2 lists (one for x and one for y) of coordinates arranged in a circle
-    '''
-    angles = np.linspace(0,2*np.pi,ntargets,endpoint=False)
-    x_coords = radius * np.cos(angles) + L/2
-    y_coords = radius * np.sin(angles) + L/2
-    return x_coords, y_coords
-
-def fAct(u,beta):
-    '''
-    Parameters: 
-    u: Value
-    beta: Neural noise parameter
-    returns: value put through the activation function
-    '''
-    return ((1+np.tanh(beta * u))/2)

@@ -1,6 +1,5 @@
 import numpy as np
 from scipy.signal import find_peaks
-import pandas as pd
 
 # -------- Getting metrics --------
 
@@ -63,22 +62,20 @@ def get_success_rate(target_list, sample_size, ntargets):
     return target_probs, target_ses
 
 
-def find_bumps(activity): # NEEDS TO BE EDITED TO ACCEPT A NUMPY ARRAY INSTEAD OF A DF
+def find_bumps(activity):
     '''
     A function which takes in the activity data for a simulation and returns a list of where indices that are the peak of bumps at each time point in that simulation
-    
     Parameters:
-    activity: a N x tsteps data frame of neuron activity over the entire simulation
-
+    activity: a N x tsteps array of neuron activity over the entire simulation
     Returns: 
     bump_list: a list of length tsteps which every entry is the indices of the peak of a bump at that time 
     '''
-    activity_to_insert = activity.iloc[0:4,1:]
-    activity_plus = pd.concat([activity,activity_to_insert]).reset_index(drop=True)
+    activity_to_insert = activity[0:4,1:]
+    activity_plus = np.concatenate([activity,activity_to_insert])
     tsteps = len(activity.iloc[0,:])
     bump_list = []
     for i in range(tsteps):
-        indices_bumps, _ = find_peaks(activity_plus.iloc[:,i])
+        indices_bumps, _ = find_peaks(activity_plus[:,i])
         true_bumps = [x for x in indices_bumps if x <= 100]
         bump_list.append(true_bumps)
     return bump_list
@@ -96,7 +93,7 @@ def get_bump_type(initialxt,initialyt,xPos,yPos,activity,interval=10):
     activity: a dataframe of neuron activity over the simulation
     interval: how small of an interval to consider at a time. 
               Intervals are considered as a static point, so they should be small enough that in most cases the bump doesn't shift majorly over one interval
-    returns: 
+    Returns: 
     phase: a number to classify the number of bumps that best describes the simulation, possible outputs are 0, 1, 2, 3, or 4 (4 is undesireable).
            Usually the phase corresponds to the most common number of bumps present across all the intervals, but occasionally that is not the case.
     '''
@@ -207,10 +204,9 @@ def get_bifurcation_angle(xPos, yPos, targetx, targety, targ_angle):
     return best_overall
 
     
-def plot_metric(metrics,x,colors,labels,fig,title,xlabel,ylabel):
+def plot_metric(metrics,x,colors,labels,fig,title,xlabel,ylabel): # Function not currently in use, but I will keep it for now
     '''
     A function which plots an aggregated metric over changing values of a parameter
-
     Parameters:
     metrics: a list of lists where each sublist is length sample_size*n_values and contains sample_size consecutive metric measurements
              for each time the simulation is run over a given parameter, p1. Each list of metrics corresponds to another parameter, p2.
@@ -222,22 +218,15 @@ def plot_metric(metrics,x,colors,labels,fig,title,xlabel,ylabel):
     title: the title of the plot
     xlabel: the label of the x axis
     ylabel: the label of the y axis
-
     Returns:
     mean_metric_list: a list of lists which contains the mean for each unique simulation setting. 
                       Same design as metrics, but instead of a,0 would correspond to the mean over a unique set of simulation settings, and a,1 a different set
-
     Expected output: 
     A line plot of metrics (y-axis) with standard error lines over x (x-axis)
     '''
-    # first step: get the dimesions to line up
-    # second step: plot it
-    #plt.figure(figsize=size)
-    #plt.figure(figurenum)
     n_values = len(x)
     sample_size = len(metrics[0])//n_values
     mean_metric_list = []
-    print(len(metrics))
     for m in range(len(metrics)):
         mean_metric = []
         se_metric = []
@@ -266,7 +255,6 @@ def plot_traj(xPos,yPos,targetsx,targetsy,sample_size,dec_points,figure,plot_dec
     '''
     A function that takes x trajectories and y trajectories and plots them over each other, with a low ish opacity so we can see overlap. 
     Designed to be used over the same simulation settings with a number s of samples.
-
     Parameters:
     xPos: a list of lists of x positions of the agent where each sublist contains all the positions in one simulation run
     yPos: a list of lists of y positions of the agent where each sublist contains all the positions in one simulation run
@@ -278,10 +266,8 @@ def plot_traj(xPos,yPos,targetsx,targetsy,sample_size,dec_points,figure,plot_dec
     plot_dec_point: whether or not to plot the bifurcation points
     start_ind: the time index to start plotting
     end_ind: the time index to stop plotting (if 0 plot until the final time step)
-    
-    returns: 
+    Returns: 
     None
-
     Expected output: 
     A line plot of the trajectories of the agent in blue that is darker on more commonly taken paths and lighter on less commonly taken paths. 
     The targets are plotted as small red dots, and if the bifurcation times are plotted then they will be larger, low opacity, green dots on the trajectory. 
@@ -301,6 +287,9 @@ def plot_traj(xPos,yPos,targetsx,targetsy,sample_size,dec_points,figure,plot_dec
             dist[0] =0
             dist[1:] = np.sqrt(deltax**2 + deltay**2)
             figure.scatter(xPos[sample][start_ind:end_ind],yPos[sample][start_ind:end_ind],c = dist, cmap = 'afmhot_r', alpha=0.5,s=8)
+            if plot_dec_point:
+                dec_time = dec_points[sample]
+                figure.scatter(xPos[sample][dec_time],yPos[sample][dec_time], color="green",alpha = 0.1)
     return None
 
 
