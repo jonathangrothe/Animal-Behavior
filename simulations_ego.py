@@ -1,11 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import pandas as pd
-import simulate_ringattractor as sim_ra
+import matplotlib.colors as mcolors
 import simulation_metrics as sim_met
 import repeated_sims
-import matplotlib.colors as mcolors
-from scipy.signal import find_peaks
 
 # --------  PARAMETERS --------
 
@@ -97,7 +94,7 @@ base = {'N':N,
 plot_neurons = True
 plot_trajs = True
 uneven = True
-sample_size = 20
+sample_size = 3
 
 # turn this into a sweep of sweeps, get the range each time
 # get a list of betas/sigmas we want to sweep over 
@@ -139,11 +136,13 @@ h0_list = [[0.218,0.218,0.218],[0.2,0.2,0.2],[0.222,0.222,0.222],[0.224,0.224,0.
 sigma_list = [0.22]*4
 
 change = {'sigma':sigma_list, 'h0':h0_list}
-target_list, time_list, decision_points, decision_pos, activity_df, x_list, y_list, headings_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
+target_list, time_list, decision_points, decision_pos, activity_list, x_list, y_list, headings_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
 
 phases = []
+angles = []
 for i in range(len(target_list)):
-    curr_activity = activity_df.iloc[i*100:(i+1)*100,:]
+    curr_activity = activity_list[i]
+    #curr_activity = activity_df.iloc[i*100:(i+1)*100,:]
     curr_xpos = x_list[i:(i+1)][0]
     curr_ypos = y_list[i:(i+1)][0]
     target = target_list[i]
@@ -153,26 +152,20 @@ for i in range(len(target_list)):
         targx = initialxt[target]
         targy = initialyt[target]
     bifurcation_angle = sim_met.get_bifurcation_angle(curr_xpos,curr_ypos,targx,targy,(np.pi)/3)
-    print(f"angle returned: {bifurcation_angle}")
-    probabilities = sim_met.get_bump_type(initialxt,initialyt,curr_xpos,curr_ypos,curr_activity,1)
-    phase = np.argmax(probabilities)
+    phase = sim_met.get_bump_type(initialxt,initialyt,curr_xpos,curr_ypos,curr_activity)
+    angles.append(bifurcation_angle)
     phases.append(phase)
 
-    
 
-# functionize this plotting ? in the future...
 n_plots = len(h0_list)
 ncols = n_plots//2
 nrows = 2
-# neuron heat maps - maybe just do one example for each? 
 fig = plt.figure(layout='constrained',figsize=(16,8))
-#fig, ax = plt.subplots(nrows,ncols,num=figure_num)
 subfigs = fig.subfigures(2,1, wspace=0.1)
 axs0 = subfigs[0].subplots(nrows,ncols)
 axs0 = axs0.flatten()
 axs1 = subfigs[1].subplots(nrows,ncols)
 axs1 = axs1.flatten()
-#axs2 = subfigs[2].subplots(nrows,ncols)
 
 grey_to_blue = ["#D3D3D3", "#A9A9A9", "#708090", "#4682B4", "#000080"]
 cmap = mcolors.LinearSegmentedColormap.from_list("GreyBlue", grey_to_blue)
@@ -181,12 +174,13 @@ for s in range(n_plots):
     sim_met.plot_traj(x_list[s*sample_size:(s+1)*sample_size],y_list[s*sample_size:(s+1)*sample_size],initialxt,initialyt,sample_size,[0],axs0[s],False,0,0)
     axs0[s].set_title(f"{"allocentric" if allocentricFlag==1 else "egocentric"}, sigma: {round(sigma_list[s],4)}, h0: {round(h0_list[s][0],4)}, beta: {beta}")
 
-    rolled= activity_df.iloc[s*100*sample_size:s*100*sample_size+100,:].dropna(axis=1)
-    col_min = np.min(activity_df.iloc[s*100*sample_size:s*100*sample_size+100,40:])
-    col_max = np.max(activity_df.iloc[s*100*sample_size:s*100*sample_size+100,40:])
-    axs1[s].imshow(rolled,cmap=cmap,aspect='auto',vmin=col_min,vmax=col_max)
+    sim_activity = activity_list[s*sample_size]
+    col_min = np.min(sim_activity[:,40:])
+    col_max = np.max(sim_activity[:,40:])
+    axs1[s].imshow(sim_activity,cmap=cmap,aspect='auto',vmin=col_min,vmax=col_max)
 
     sim_phases = phases[s*sample_size:(s+1)*sample_size]
+    sim_angles = angles[s*sample_size:(s+1)*sample_size]
     n0 = sim_phases.count(0)
     n1 = sim_phases.count(1)
     n2 = sim_phases.count(2)
@@ -194,7 +188,8 @@ for s in range(n_plots):
     n4 = sim_phases.count(4)
     print(f"Plot: {s}")
     print(f"outcome: 0: {n0}, 1: {n1}, 2: {n2}, 3: {n3}, other: {n4}")
-    print(f"target list: {target_list[s*sample_size:(s+1)*sample_size]}")
     print(f"overall: {np.argmax([n0,n1,n2,n3,n4])}")
+    print(f"target list: {target_list[s*sample_size:(s+1)*sample_size]}")
+    print(f"angles: {sim_angles}")
 
 plt.show()

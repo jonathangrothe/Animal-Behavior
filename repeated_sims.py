@@ -1,11 +1,8 @@
 # file which contains a function for running the simulation many times (with the option to alter the settings each time)
 # and returns data on 'success' and trajectories
-import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 import simulate_ringattractor as sim_ra
 import simulation_metrics as sim_met
-from scipy.stats import binom
 
 def sample_sims(bp, changing_params, n_samples, include_trajs=False, include_activity=False):
     '''
@@ -38,7 +35,6 @@ def sample_sims(bp, changing_params, n_samples, include_trajs=False, include_act
     activity_list = [] 
     decision_points = []
     decision_pos = []
-    activity_df = None
     x_list = []
     y_list = []
     headings_list = []
@@ -72,14 +68,10 @@ def sample_sims(bp, changing_params, n_samples, include_trajs=False, include_act
                     y_list.append(ypos_1d)
                     headings_list.append(headings)
 
-                if include_activity: # inefficient I think 
-                    for neuron in range(np.shape(activity)[0]):
-                        activity_list.append(activity[neuron,0,:])
+                if include_activity:
+                    activity_list.append(activity[:,0,:])
 
-    if include_activity:
-        activity_df = pd.DataFrame(activity_list)
-    
-    return target_list, time_list, decision_points, decision_pos, activity_df, x_list, y_list, headings_list
+    return target_list, time_list, decision_points, decision_pos, activity_list, x_list, y_list, headings_list
 
 
 def boundary_search(bp,base_min,base_max,sample_size,min_search,param,boundary_prob):

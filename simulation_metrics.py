@@ -1,8 +1,5 @@
-import random
 import numpy as np
 from scipy.signal import find_peaks
-from scipy import stats
-import matplotlib.pyplot as plt
 import pandas as pd
 
 # -------- Getting metrics --------
@@ -66,7 +63,7 @@ def get_success_rate(target_list, sample_size, ntargets):
     return target_probs, target_ses
 
 
-def find_bumps(activity):
+def find_bumps(activity): # NEEDS TO BE EDITED TO ACCEPT A NUMPY ARRAY INSTEAD OF A DF
     '''
     A function which takes in the activity data for a simulation and returns a list of where indices that are the peak of bumps at each time point in that simulation
     
@@ -103,8 +100,6 @@ def get_bump_type(initialxt,initialyt,xPos,yPos,activity,interval=10):
     phase: a number to classify the number of bumps that best describes the simulation, possible outputs are 0, 1, 2, 3, or 4 (4 is undesireable).
            Usually the phase corresponds to the most common number of bumps present across all the intervals, but occasionally that is not the case.
     '''
-    activity = activity.dropna(axis=1)
-    activity = activity.to_numpy()
     total_time = activity.shape[1]
     total_intervals = int(total_time/interval)
     xPos = np.asarray(xPos)
@@ -185,8 +180,6 @@ def get_bifurcation_angle(xPos, yPos, targetx, targety, targ_angle):
     peaks_t, _ = find_peaks(angles_to_target)
     negative_peaks_t, _ = find_peaks(-angles_to_target)
     x0, y0 = xPos[0], yPos[0]
-    #peak_angles_t = angles_to_target[peaks_t]
-    #negative_peak_angles_t = angles_to_target[negative_peaks_t]
     best_positive = 0
     best_negative = 0
 
@@ -210,20 +203,6 @@ def get_bifurcation_angle(xPos, yPos, targetx, targety, targ_angle):
 
     best_positive = first_valid_ratio(peaks_t)
     best_negative = first_valid_ratio(negative_peaks_t)
-    '''
-    for i in range(len(peaks_t)):
-        start_dist = np.sqrt((xPos[0]-xPos[peaks_t[i]])**2+(yPos[0]-yPos[peaks_t[i]])**2)
-        end_dist = np.sqrt((targetx-xPos[peaks_t[i]])**2+(targety-yPos[peaks_t[i]])**2)
-        if start_dist > 1 and end_dist > 1: 
-            best_positive = np.abs(peak_angles_t[i]-initial_angle)/targ_angle
-            break
-    for index in range(len(negative_peaks_t)): 
-        start_dist = np.sqrt((xPos[0]-xPos[negative_peaks_t[index]])**2+(yPos[0]-yPos[negative_peaks_t[index]])**2)
-        end_dist = np.sqrt((targetx-xPos[negative_peaks_t[index]])**2+(targety-yPos[negative_peaks_t[index]])**2)
-        if start_dist > 1 and end_dist > 1: 
-            best_negative = np.abs(negative_peak_angles_t[index]-initial_angle)/targ_angle
-            break
-    '''
     best_overall = max(best_negative,best_positive)
     return best_overall
 
@@ -324,13 +303,5 @@ def plot_traj(xPos,yPos,targetsx,targetsy,sample_size,dec_points,figure,plot_dec
             figure.scatter(xPos[sample][start_ind:end_ind],yPos[sample][start_ind:end_ind],c = dist, cmap = 'afmhot_r', alpha=0.5,s=8)
     return None
 
-def plot_phase_over_area(h0_list,sigma_list,target_list,acolor,figure):
-    '''
-    This function will take a set of simulations done over a constant area and plot a line plot with h0 as the x axis and sigma as the y axis
-    each point will be highlighted in a different color or tick mark or something to note which phase its in (maybe one for bump and one for outcome)
-    We'll first just start with reaching the target
-    '''
-    figure.plot(h0_list,sigma_list,c=acolor)
-    #figure.scatter(x=h0_list,y=sigma_list,c=target_list,cmap="RdYlGn")
 
 

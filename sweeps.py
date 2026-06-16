@@ -104,10 +104,10 @@ include_neurons = True
 sample_size = 5
 sigma_start = 0.05
 sigma_finish = 0.75
-base_sigma = np.linspace(sigma_start,sigma_finish,num=10)
+base_sigma = np.linspace(sigma_start,sigma_finish,num=71)
 h0_start = 0.15
 h0_finish = 0.35
-n_h0 = 10
+n_h0 = 101
 h0_range= np.linspace(h0_start,h0_finish,num=n_h0)
 h0_list = []
 for item in h0_range:
