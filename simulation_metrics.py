@@ -6,15 +6,16 @@ from scipy.signal import find_peaks
 def get_destination_metrics(xPos, yPos, targetsx, targetsy):
     '''
     A function which finds the target the agent reached (if it reached a target) and the time it reached that target
+
     Parameters: 
-    xPos: a numpy array of size nagents x tsteps of each agent's x position at each point in the simulation
-    yPos: a numpy array of size nagents x tsteps of each agent's y position at each point in the simulation
-    targetsx: a list of size ntargets of the targets x positions (this is assumed to be static )
-    targetsy: a list of size ntargets of the targets y positions (this is assumed to be static)
+        xPos: a numpy array of size nagents x tsteps of each agent's x position at each point in the simulation
+        yPos: a numpy array of size nagents x tsteps of each agent's y position at each point in the simulation
+        targetsx: a list of size ntargets of the targets x positions (this is assumed to be static )
+        targetsy: a list of size ntargets of the targets y positions (this is assumed to be static)
 
     Returns: 
-    target_reached: the target (indexed as they are in the targetsx and targetsy list) the agent reaches
-    time_target_reached: the number of time steps in the simulation, the length of xPos and yPos
+        target_reached: the target (indexed as they are in the targetsx and targetsy list) the agent reaches
+        time_target_reached: the number of time steps in the simulation, the length of xPos and yPos
     '''
     if np.shape(xPos)[0] == 1:
         xPos = xPos.ravel()
@@ -35,13 +36,13 @@ def get_success_rate(target_list, sample_size, ntargets):
     A function which takes a list of targets over a number of samples and returns the probability of reaching a target for each sample
 
     Parameters:
-    target_list: a list of targets reached by the agent in each simulation, arranged so that all runs with the same settings are consecutive
-    sample_size: the number of samples taken for each unique set of settings
-    ntargets: the number of targets
+        target_list: a list of targets reached by the agent in each simulation, arranged so that all runs with the same settings are consecutive
+        sample_size: the number of samples taken for each unique set of settings
+        ntargets: the number of targets
 
     Returns:
-    target_probs: a list of size ntargets with the probability of reaching each target in consecutive order
-    target_ses: a list of size ntargets with the standard error of reaching each target in consecutive order
+        target_probs: a list of size ntargets with the probability of reaching each target in consecutive order
+        target_ses: a list of size ntargets with the standard error of reaching each target in consecutive order
     '''
     n_samples = len(target_list)//sample_size
     target_probs = []
@@ -65,10 +66,12 @@ def get_success_rate(target_list, sample_size, ntargets):
 def find_bumps(activity):
     '''
     A function which takes in the activity data for a simulation and returns a list of where indices that are the peak of bumps at each time point in that simulation
+    
     Parameters:
-    activity: a N x tsteps array of neuron activity over the entire simulation
+        activity: a N x tsteps array of neuron activity over the entire simulation
+
     Returns: 
-    bump_list: a list of length tsteps which every entry is the indices of the peak of a bump at that time 
+        bump_list: a list of length tsteps which every entry is the indices of the peak of a bump at that time 
     '''
     activity_to_insert = activity[0:4,1:]
     activity_plus = np.concatenate([activity,activity_to_insert])
@@ -85,17 +88,19 @@ def get_bump_type(initialxt,initialyt,xPos,yPos,activity,interval=10):
     A function that analyses the neural activity of a simulation in small intervals 
     and returns a number corresponding to the number of bumps that best describe the simulation.
     Designed to handle three targets only right now.
+
     Paramters:
-    initialxt: a list of initial x positions of the targets
-    initialyt: a list of initial y positions of the targets
-    xPos: a list of x positions over the simulation
-    yPos: a list of y positions over the simulation
-    activity: a dataframe of neuron activity over the simulation
-    interval: how small of an interval to consider at a time. 
-              Intervals are considered as a static point, so they should be small enough that in most cases the bump doesn't shift majorly over one interval
+        initialxt: a list of initial x positions of the targets
+        initialyt: a list of initial y positions of the targets
+        xPos: a list of x positions over the simulation
+        yPos: a list of y positions over the simulation
+        activity: a dataframe of neuron activity over the simulation
+        interval: how small of an interval to consider at a time. 
+                Intervals are considered as a static point, so they should be small enough that in most cases the bump doesn't shift majorly over one interval
+
     Returns: 
-    phase: a number to classify the number of bumps that best describes the simulation, possible outputs are 0, 1, 2, 3, or 4 (4 is undesireable).
-           Usually the phase corresponds to the most common number of bumps present across all the intervals, but occasionally that is not the case.
+        phase: a number to classify the number of bumps that best describes the simulation, possible outputs are 0, 1, 2, 3, or 4 (4 is undesireable).
+               Usually the phase corresponds to the most common number of bumps present across all the intervals, but occasionally that is not the case.
     '''
     total_time = activity.shape[1]
     total_intervals = int(total_time/interval)
@@ -157,16 +162,18 @@ def get_bifurcation_angle(xPos, yPos, targetx, targety, targ_angle):
     '''
     A function that calculates the local extrema of the angle between the agent and the target, and uses them to 
     find the ratio of the difference between the angle of the agent at the bifurcation and the most direct path to the target
+
     Parameters:
-    xPos: a list of x positions from a simulation
-    yPos: a list of y positions from a simulation
-    targetx: the x position of the target that the agent reached, -1 is expected if no target was reached
-    targety: the y position of the target that the agent reached, -1 is expected if no target was reached
-    targ_angle: the angle between the targets, relative to the agents starting position
+        xPos: a list of x positions from a simulation
+        yPos: a list of y positions from a simulation
+        targetx: the x position of the target that the agent reached, -1 is expected if no target was reached
+        targety: the y position of the target that the agent reached, -1 is expected if no target was reached
+        targ_angle: the angle between the targets, relative to the agents starting position
+
     Returns: 
-    best_overall: a ratio representing the difference between the angle of the agent at the bifurcation and the most direct path. 
-                 Calculated by taking both the local max and local mins of the angle, finding the first one where the agent has moved more than 1 total unit, 
-                 then seeing if the difference between the most direct path and the first local max or first local min is bigger.
+        best_overall: a ratio representing the difference between the angle of the agent at the bifurcation and the most direct path. 
+                    Calculated by taking both the local max and local mins of the angle, finding the first one where the agent has moved more than 1 total unit, 
+                    then seeing if the difference between the most direct path and the first local max or first local min is bigger.
     '''
     if targetx < 0 or targety < 0:
         return 0
@@ -207,22 +214,25 @@ def get_bifurcation_angle(xPos, yPos, targetx, targety, targ_angle):
 def plot_metric(metrics,x,colors,labels,fig,title,xlabel,ylabel): # Function not currently in use, but I will keep it for now
     '''
     A function which plots an aggregated metric over changing values of a parameter
+
     Parameters:
-    metrics: a list of lists where each sublist is length sample_size*n_values and contains sample_size consecutive metric measurements
-             for each time the simulation is run over a given parameter, p1. Each list of metrics corresponds to another parameter, p2.
-             If metrics was an array, there would be p2 rows and sample_size*p1 columns, a,0:sample_size would correspond to one set of simulation settings
-    x: the values of the parameter we are measuring our metric over (the x axis)
-    colors: a list of size n_values which contains colors for each value of p2
-    labels: the labels for each other parameter (p2), just the first and last labels are shown to avoid overcrowding the plot
-    fig: the figure we are doing the plotting in
-    title: the title of the plot
-    xlabel: the label of the x axis
-    ylabel: the label of the y axis
+        metrics: a list of lists where each sublist is length sample_size*n_values and contains sample_size consecutive metric measurements
+                for each time the simulation is run over a given parameter, p1. Each list of metrics corresponds to another parameter, p2.
+                If metrics was an array, there would be p2 rows and sample_size*p1 columns, a,0:sample_size would correspond to one set of simulation settings
+        x: the values of the parameter we are measuring our metric over (the x axis)
+        colors: a list of size n_values which contains colors for each value of p2
+        labels: the labels for each other parameter (p2), just the first and last labels are shown to avoid overcrowding the plot
+        fig: the figure we are doing the plotting in
+        title: the title of the plot
+        xlabel: the label of the x axis
+        ylabel: the label of the y axis
+        
     Returns:
-    mean_metric_list: a list of lists which contains the mean for each unique simulation setting. 
-                      Same design as metrics, but instead of a,0 would correspond to the mean over a unique set of simulation settings, and a,1 a different set
+        mean_metric_list: a list of lists which contains the mean for each unique simulation setting. 
+                        Same design as metrics, but instead of a,0 would correspond to the mean over a unique set of simulation settings, and a,1 a different set
+
     Expected output: 
-    A line plot of metrics (y-axis) with standard error lines over x (x-axis)
+        A line plot of metrics (y-axis) with standard error lines over x (x-axis)
     '''
     n_values = len(x)
     sample_size = len(metrics[0])//n_values
@@ -255,22 +265,25 @@ def plot_traj(xPos,yPos,targetsx,targetsy,sample_size,dec_points,figure,plot_dec
     '''
     A function that takes x trajectories and y trajectories and plots them over each other, with a low ish opacity so we can see overlap. 
     Designed to be used over the same simulation settings with a number s of samples.
+
     Parameters:
-    xPos: a list of lists of x positions of the agent where each sublist contains all the positions in one simulation run
-    yPos: a list of lists of y positions of the agent where each sublist contains all the positions in one simulation run
-    targetsx: a list of x positions of the targets
-    targetsy: a list of y positions of the targets
-    sample_size: the number of repitions of the same exact simulation settings
-    dec_points: a list of times where bifurcations are found, which will optionally plotted
-    figure: the figure to plot the trajectories in
-    plot_dec_point: whether or not to plot the bifurcation points
-    start_ind: the time index to start plotting
-    end_ind: the time index to stop plotting (if 0 plot until the final time step)
+        xPos: a list of lists of x positions of the agent where each sublist contains all the positions in one simulation run
+        yPos: a list of lists of y positions of the agent where each sublist contains all the positions in one simulation run
+        targetsx: a list of x positions of the targets
+        targetsy: a list of y positions of the targets
+        sample_size: the number of repitions of the same exact simulation settings
+        dec_points: a list of times where bifurcations are found, which will optionally plotted
+        figure: the figure to plot the trajectories in
+        plot_dec_point: whether or not to plot the bifurcation points
+        start_ind: the time index to start plotting
+        end_ind: the time index to stop plotting (if 0 plot until the final time step)
+
     Returns: 
-    None
+        None
+
     Expected output: 
-    A line plot of the trajectories of the agent in blue that is darker on more commonly taken paths and lighter on less commonly taken paths. 
-    The targets are plotted as small red dots, and if the bifurcation times are plotted then they will be larger, low opacity, green dots on the trajectory. 
+        A line plot of the trajectories of the agent in blue that is darker on more commonly taken paths and lighter on less commonly taken paths. 
+        The targets are plotted as small red dots, and if the bifurcation times are plotted then they will be larger, low opacity, green dots on the trajectory. 
     '''
     if end_ind == 0:
         for sample in range(sample_size):
