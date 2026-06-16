@@ -1,23 +1,21 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import pandas as pd
-import simulate_ringattractor as sim_ra
+import matplotlib.colors as mcolors
 import simulation_metrics as sim_met
 import repeated_sims
-import matplotlib.colors as mcolors
 
 # --------  PARAMETERS --------
 
 L = 100 # width of grid
-ntargets = 2
+ntargets = 3
 nagents = 1
 initialx = np.zeros(nagents)
 initialy = np.zeros(nagents)
 for a in range(nagents):
-    initialx[a] = 20
+    initialx[a] = 50
     initialy[a] = 50
-initialxt = [80,80]
-initialyt = [20,80]
+initialxt = [50-(15*np.sqrt(3)),50,50+(15*np.sqrt(3))]
+initialyt = [65,80,65]
 
 # number of time steps
 T = 5000
@@ -53,11 +51,11 @@ for i in range(N):
     J[i,i] = 0.0
     J = np.squeeze(J)
 
-allocentricFlag = 0 # 1 is allo, 0 is ego 
-h0s = [0.27,0.27005] 
+allocentricFlag = 1 # 1 is allo, 0 is ego 
+h0s = [0.21903,0.21903,0.21904] # attraction vector, first are attraction for targets, then agents
 h_b = 0.2
-sigma = 0.5 # narrower sigma means more bifurcations in 3 (+?) target case
-beta = 20
+sigma = 0.25 
+beta = 100 
 
 
 # -------- Running the simulation --------
@@ -95,54 +93,103 @@ base = {'N':N,
 # plotting settings: controls what kind of simulations we're running
 plot_neurons = True
 plot_trajs = True
-sample_size = 1
+uneven = True
+sample_size = 3
+
+# turn this into a sweep of sweeps, get the range each time
+# get a list of betas/sigmas we want to sweep over 
+'''
+sigma_sweep_list = np.linspace(0.175,0.55,num=10)
+sigma_h0range_list = []
+sigma_extrema = []
+
+min_low = 0.2- 0.04 + 0.01*np.random.rand()
+min_high = 0.2 + 0.04 + 0.01*np.random.rand()
+max_low = 0.25 - 0.04 + 0.01*np.random.rand()
+max_high = 0.25 + 0.04 + 0.01*np.random.rand()
 
 
-h0_list = [[0.23,0.23005],[0.23,0.23001],[0.25,0.25002],[0.25,0.250005]]
-allo_list = [0,1]
+for item in sigma_sweep_list:
+    base['sigma'] = item
+    # first run a mini sweep to see if there might be something worthwhile? IDK
+    min_est,range_min = repeated_sims.boundary_search(base,min_low,min_high,10,True,'h0',0.2)
+    max_est, range_max = repeated_sims.boundary_search(base,max_low,max_high,10,False,'h0',0.2)
+    print(f"boundaries, sigma: {item}: min: {min_est} (range: {range_min}), max: {max_est} (range: {range_max})")
+    sigma_h0range_list.append(max_est-min_est)
+    sigma_extrema.append((min_est,max_est))
+    min_low = min_est - 0.04 + 0.01*np.random.rand()
+    min_high = min_est + 0.04 + 0.01*np.random.rand()
+    max_low = max_est - 0.04 + 0.01*np.random.rand()
+    max_high = max_est + 0.04 + 0.01*np.random.rand()
 
-for i in range(2):
-    base['allocentricFlag'] = allo_list[i] # add title to reflect allocentricflag
+print(f"range list: {sigma_h0range_list}")
+ind_best_sigma = np.argmax(sigma_h0range_list)
+best_sigma = sigma_sweep_list[ind_best_sigma]
+'''
+    
+#beta_list = [[11],[15],[20],[40],[90],[250]]
+#allo_list = [[0],[1]]
+#h0_list = h0_start_for_sim
+#sigma_list = sigma_list_from_h0
 
-    change = {'h0':h0_list}
-    target_list, time_list, decision_points, decision_pos, activity_df, x_list, y_list, headings_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
-        
-    # look at activity, get the times of bifurcation and max activated values around them ?
+h0_list = [[0.218,0.218,0.218],[0.2,0.2,0.2],[0.222,0.222,0.222],[0.224,0.224,0.224]]
+sigma_list = [0.22]*4
 
-    one_sample = activity_df.dropna(axis=1).iloc[0:100,:]
-    max_act = 0.9
-    tanh_val = max_act*2-1
-    u_cutoff = (0.5*np.log((1+tanh_val)/(1-tanh_val)))/beta
-    print(f"u cutoff: {u_cutoff}")
-    for x in range(len(one_sample.columns)):
-        max_u = np.max(one_sample.iloc[:,x]) 
-        if x % 5 == 0:
-            print(f"tstep: {x}, max activ: {max_u}")
-        if max_u < u_cutoff:
-            print(f"low activity alert! tstep: {x}, max_activ: {max_u}")
+change = {'sigma':sigma_list, 'h0':h0_list}
+target_list, time_list, decision_points, decision_pos, activity_list, x_list, y_list, headings_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
 
-    n_plots = len(h0_list)
-    ncols = len(h0_list)
-    nrows = 1
+phases = []
+angles = []
+for i in range(len(target_list)):
+    curr_activity = activity_list[i]
+    #curr_activity = activity_df.iloc[i*100:(i+1)*100,:]
+    curr_xpos = x_list[i:(i+1)][0]
+    curr_ypos = y_list[i:(i+1)][0]
+    target = target_list[i]
+    targx = -1
+    targy = -1
+    if target != -1:
+        targx = initialxt[target]
+        targy = initialyt[target]
+    bifurcation_angle = sim_met.get_bifurcation_angle(curr_xpos,curr_ypos,targx,targy,(np.pi)/3)
+    phase = sim_met.get_bump_type(initialxt,initialyt,curr_xpos,curr_ypos,curr_activity)
+    angles.append(bifurcation_angle)
+    phases.append(phase)
 
-    fig = plt.figure(layout='constrained',figsize=(10,5),num=i+1)
-    subfigs = fig.subfigures(2,1, wspace=0.1)
-    axs0 = subfigs[0].subplots(nrows,ncols)
-    axs1 = subfigs[1].subplots(nrows,ncols)
 
-    grey_to_blue = ["#D3D3D3", "#A9A9A9", "#708090", "#4682B4", "#000080"]
-    cmap = mcolors.LinearSegmentedColormap.from_list("GreyBlue", grey_to_blue)
+n_plots = len(h0_list)
+ncols = n_plots//2
+nrows = 2
+fig = plt.figure(layout='constrained',figsize=(16,8))
+subfigs = fig.subfigures(2,1, wspace=0.1)
+axs0 = subfigs[0].subplots(nrows,ncols)
+axs0 = axs0.flatten()
+axs1 = subfigs[1].subplots(nrows,ncols)
+axs1 = axs1.flatten()
 
-    for s in range(n_plots):
-        dec_points = []
-        dec_positions = []
-        sim_met.plot_traj(x_list[s*sample_size:(s+1)*sample_size],y_list[s*sample_size:(s+1)*sample_size],initialxt,initialyt,sample_size,[0],axs0[s],False,0,0)
-        axs0[s].set_title(f"{"allocentric" if allo_list[i]==1 else "egocentric"},h0: {h0_list[s]}")
+grey_to_blue = ["#D3D3D3", "#A9A9A9", "#708090", "#4682B4", "#000080"]
+cmap = mcolors.LinearSegmentedColormap.from_list("GreyBlue", grey_to_blue)
 
-        rolled= np.roll(activity_df.dropna(axis=1).iloc[s*100*sample_size:s*100*sample_size+100,:].values, shift=50, axis=0)
-        col_min = np.min(activity_df.iloc[:,40:])
-        col_max = np.max(activity_df.iloc[:,40:])
-        axs1[s].imshow(rolled,cmap=cmap,aspect='auto',vmin=col_min,vmax=col_max)
+for s in range(n_plots):
+    sim_met.plot_traj(x_list[s*sample_size:(s+1)*sample_size],y_list[s*sample_size:(s+1)*sample_size],initialxt,initialyt,sample_size,[0],axs0[s],False,0,0)
+    axs0[s].set_title(f"{"allocentric" if allocentricFlag==1 else "egocentric"}, sigma: {round(sigma_list[s],4)}, h0: {round(h0_list[s][0],4)}, beta: {beta}")
 
+    sim_activity = activity_list[s*sample_size]
+    col_min = np.min(sim_activity[:,40:])
+    col_max = np.max(sim_activity[:,40:])
+    axs1[s].imshow(sim_activity,cmap=cmap,aspect='auto',vmin=col_min,vmax=col_max)
+
+    sim_phases = phases[s*sample_size:(s+1)*sample_size]
+    sim_angles = angles[s*sample_size:(s+1)*sample_size]
+    n0 = sim_phases.count(0)
+    n1 = sim_phases.count(1)
+    n2 = sim_phases.count(2)
+    n3 = sim_phases.count(3)
+    n4 = sim_phases.count(4)
+    print(f"Plot: {s}")
+    print(f"outcome: 0: {n0}, 1: {n1}, 2: {n2}, 3: {n3}, other: {n4}")
+    print(f"overall: {np.argmax([n0,n1,n2,n3,n4])}")
+    print(f"target list: {target_list[s*sample_size:(s+1)*sample_size]}")
+    print(f"angles: {sim_angles}")
 
 plt.show()

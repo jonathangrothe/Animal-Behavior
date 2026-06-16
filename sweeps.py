@@ -204,7 +204,7 @@ boundaries_phase = np.arange(5) - 0.5
 norm_phase = mcolors.BoundaryNorm(boundaries_phase,cmap2.N)
 
 
-categories_tar = ['Fails to reach', 'reaches outer at least once', 'reaches center']
+categories_tar = ['fails to reach', 'reaches outer', 'reaches center']
 categories_phase = ['0 bumps', '1 bump', '2 bumps','3 bumps']
 
 im1 = axs[0].imshow(target_df, cmap=cmap1,origin='lower',extent=[h0_range[0], h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
