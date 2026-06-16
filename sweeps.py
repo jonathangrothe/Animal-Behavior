@@ -22,7 +22,7 @@ for a in range(nagents):
     initialx[a] = 50
     initialy[a] = 50
 initialxt = [50-(15*np.sqrt(3)),50,50+(15*np.sqrt(3))]
-initialyt = [35,80,35]
+initialyt = [65,80,65]
 
 # number of time steps
 T = 5000
@@ -101,13 +101,13 @@ base = {'N':N,
 # not plotting trajectories or neurons in this file
 plot_trajs = True
 include_neurons = True
-sample_size = 10
+sample_size = 5
 sigma_start = 0.05
-sigma_finish = 1
-base_sigma = np.linspace(sigma_start,sigma_finish,num=10)
+sigma_finish = 0.75
+base_sigma = np.linspace(sigma_start,sigma_finish,num=71)
 h0_start = 0.15
 h0_finish = 0.35
-n_h0 = 10
+n_h0 = 101
 h0_range= np.linspace(h0_start,h0_finish,num=n_h0)
 h0_list = []
 for item in h0_range:
@@ -142,11 +142,11 @@ for sigma_index in range(len(base_sigma)):
         if target_list[i] >=0:
             xt = initialxt[target_list[i]]
             yt = initialyt[target_list[i]]
-        angle = sim_met.get_bifurcation_angle(curr_xpos, curr_ypos, xt, yt, (2*np.pi)/3)
+        angle = sim_met.get_bifurcation_angle(curr_xpos, curr_ypos, xt, yt, (np.pi)/3)
         angles.append(angle)
-        print(f"phase: {phase}")
-        print(f"reaches target: {target_list[i]}")
-        print(f"angle: {angle}")
+        #print(f"phase: {phase}")
+        #print(f"reaches target: {target_list[i]}")
+        #print(f"angle: {angle}")
     grid_phases = []
     grid_targets = []
     grid_times = []
@@ -163,6 +163,8 @@ for sigma_index in range(len(base_sigma)):
         nOther = sim_phases.count(4)
         nreach = sim_targets.count(1)
         reach = statistics.mode(sim_targets)
+        if 0 in sim_targets or 2 in sim_targets:
+            reach = 0 
         grid_phases.append(np.argmax([n0,n1,n2,n3,nOther]))
         grid_targets.append(reach)
         grid_times.append(np.mean(sim_times))
@@ -187,7 +189,7 @@ print(time_df)
 angle_df = pd.DataFrame(angle_grid,columns=h0_range,index=base_sigma)
 print(angle_df)
 
-subfigs, axs = plt.subplots(nrows=2,ncols=2, figsize = (20,5))
+subfigs, axs = plt.subplots(nrows=2,ncols=2, figsize = (14,10))
 axs = axs.flatten()
 
 bwr_r = plt.colormaps['bwr_r']
@@ -197,15 +199,15 @@ discrete_viridis = viridis.resampled(5)(np.linspace(0,1,5))
 cmap1 = mcolors.ListedColormap(discrete_bwrr)
 cmap2 = mcolors.ListedColormap(discrete_viridis)
 cmap3 = 'inferno_r'
-cmap4 = 'Greys'
+cmap4 = 'plasma'
 boundaries_tar = np.arange(-1,3) - 0.5
 norm_tar = mcolors.BoundaryNorm(boundaries_tar,cmap1.N)
 boundaries_phase = np.arange(5) - 0.5
 norm_phase = mcolors.BoundaryNorm(boundaries_phase,cmap2.N)
 
 
-categories_tar = ['Fails to reach', 'reaches outer', 'reaches center']
-categories_phase = ['stalls', 'beeline', 'bifurcation','oscilation']
+categories_tar = ['Fails to reach', 'reaches outer at least once', 'reaches center']
+categories_phase = ['0 bumps', '1 bump', '2 bumps','3 bumps']
 
 im1 = axs[0].imshow(target_df, cmap=cmap1,origin='lower',extent=[h0_range[0], h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
 im2 = axs[1].imshow(phase_df,cmap=cmap2,origin='lower',extent=[h0_range[0], h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
@@ -217,10 +219,12 @@ cbar2 = plt.colorbar(im2, ticks=np.arange(4))
 cbar2.ax.set_yticklabels(categories_phase)
 cbar3 = plt.colorbar(im3)
 cbar3.set_label('Time to target')
+cbar4 = plt.colorbar(im4)
+cbar4.set_label('Ratio of 1st bifur. angle to direct path (0.5 is midpoint)')
 
-subfigs.supxlabel('h0')
-subfigs.supylabel('sigma')
-subfigs.suptitle(f"Heatmaps for 2π/3 between targets, average of {sample_size} samples")
+# subfigs.supxlabel('h0')
+# subfigs.supylabel('sigma')
+subfigs.suptitle(f"Heatmaps for π/3 between targets, average of {sample_size} samples")
 '''
 ax.set_xticks(np.arange(len(target_df.columns)))
 ax.set_xticklabels(target_df.columns)

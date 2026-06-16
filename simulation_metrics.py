@@ -138,10 +138,9 @@ def find_bumps(activity):
 
 def get_bump_type(initialxt,initialyt,xPos,yPos,activity,interval=10):
     '''
-    A function that takes the targets position and the activity over a simulation and returns a list of probabilities of the bump behavior.
-    Designed right now for three targets, expanding to more should be straightforward but requires close reading.
-    Does not handle bifurcations specifically yet, but that could come from observing some 1 bump and some 2 bump behavior. 
-    Still need to get that solid before doing more sweeps
+    A function that analyses the neural activity of a simulation in small intervals 
+    and returns a number corresponding to the number of bumps that best describe the simulation.
+    Designed to handle three targets only right now.
     Paramters:
     initialxt: a list of initial x positions of the targets
     initialyt: a list of initial y positions of the targets
@@ -151,10 +150,8 @@ def get_bump_type(initialxt,initialyt,xPos,yPos,activity,interval=10):
     interval: how small of an interval to consider at a time. 
               Intervals are considered as a static point, so they should be small enough that in most cases the bump doesn't shift majorly over one interval
     returns: 
-    proportion_list: a list of proportions of each bump outcome. The bump outcomes are defined as: 0 bumps, 1 bump, 2 bumps, 3 bumps, and more than 3 bumps.
-                      The proportions are calculated as total number of intervals in which each bump state occurs over the total number of intervals.
-                      This doesn't describe behavior exactly, but does offer a good idea of what kinds of behavior occur at each time. 
-
+    phase: a number to classify the number of bumps that best describes the simulation, possible outputs are 0, 1, 2, 3, or 4 (4 is undesireable).
+           Usually the phase corresponds to the most common number of bumps present across all the intervals, but occasionally that is not the case.
     '''
     activity = activity.dropna(axis=1)
     total_time = activity.shape[1]
@@ -185,7 +182,7 @@ def get_bump_type(initialxt,initialyt,xPos,yPos,activity,interval=10):
         bump2 = np.mean(activity_int.iloc[1,:])
         bump3 = np.mean(activity_int.iloc[2,:])
         npositive = sum(1 for item in [bump1,bump2,bump3] if item > 0)
-        if npositive > 1: # this makes sure that if multiple are positive they are actually distinct bumps (there is a negative value between them) rather than continuations of the same bump
+        if npositive > 1: # this controls for the possibility that there is one large bump that spans all the locations of the expected bumps
             neuron_left = round(target_neurons[0])
             neuron_center = round(target_neurons[1])
             neuron_right = round(target_neurons[2])
@@ -222,7 +219,7 @@ def get_bump_type(initialxt,initialyt,xPos,yPos,activity,interval=10):
         if npositive == 3:
             counter_3 += 1
         if npositive > 3:
-            print(f"nc, time: {i*interval}: neuron at t1: {bump1}, neuron at t2: {bump2}, neuron at t3: {bump3}, npos: {npositive}")
+            print(f"more than 3 bumps, time: {i*interval}: neuron at t1: {bump1}, neuron at t2: {bump2}, neuron at t3: {bump3}, npos: {npositive}")
             counter_other += 1
 
     situation_sum = counter_0 + counter_1 + counter_2 + counter_3 + counter_other
@@ -231,59 +228,60 @@ def get_bump_type(initialxt,initialyt,xPos,yPos,activity,interval=10):
     p_2 = counter_2/situation_sum
     p_3 = counter_3/situation_sum
     p_other = counter_other/situation_sum
-    # what we need to do here is use our info to determine if a majority one bump is a bifurcation (or if it is a misclassified 2
     proportion_list = [p_0,p_1,p_2,p_3,p_other]
     phase = np.argmax(proportion_list)
     if phase == 1:
         if counter_2 > 100/interval and total_time >= 5000:
             phase = 2
     if phase == 3:
-        if total_time <= 3000:
+        if total_time <= 4900:
             phase = 1
-        else:
-            phase = 0
     if phase == 4:
         print("PHASE is other ALERT")
         phase = -1
-    print(proportion_list)
-    print(f"phase: {phase}")
     return phase
 
 def get_bifurcation_angle(xPos, yPos, targetx, targety, targ_angle):
     '''
-    takes the x positions, y positions, the x positions of the target reached, and the y positions of the target reached from a simulation 
-    and returns the first extreme value of the angle between the reached target and the agent's position
-    this represents the first bifurcation angle
+    A function that calculates the local extrema of the angle between the agent and the target, and uses them to 
+    find the ratio of the difference between the angle of the agent at the bifurcation and the most direct path to the target
+    Parameters:
+    xPos: a list of x positions from a simulation
+    yPos: a list of y positions from a simulation
+    targetx: the x position of the target that the agent reached, -1 is expected if no target was reached
+    targety: the y position of the target that the agent reached, -1 is expected if no target was reached
+    targ_angle: the angle between the targets, relative to the agents starting position
+    Returns: 
+    best_overall: a ratio representing the difference between the angle of the agent at the bifurcation and the most direct path. 
+                 Calculated by taking both the local max and local mins of the angle, finding the first one where the agent has moved more than 1 total unit, 
+                 then seeing if the difference between the most direct path and the first local max or first local min is bigger.
     '''
-    # scale this by angle between targets, 
     if targetx < 0 or targety < 0:
         return 0
     angles_to_target = np.atan2(np.abs(targety-yPos),np.abs(targetx-xPos))
-    #angles_to_start = np.atan2(np.abs(yPos-yPos[0]),np.abs(xPos-xPos[0]))
     initial_angle = angles_to_target[0]
     peaks_t, _ = find_peaks(angles_to_target)
     negative_peaks_t, _ = find_peaks(-angles_to_target)
     peak_angles_t = angles_to_target[peaks_t]
-    #peak_angles_s = angles_to_start[peaks_t]
     negative_peak_angles_t = angles_to_target[negative_peaks_t]
-    #negative_peak_angles_s = angles_to_start[negative_peaks_t]
-    #print(f"initial angle to t: {initial_angle}, peaks t: {peaks_t}, angle to t: {peak_angles_t}, angle to s: {peak_angles_s}, negative peaks t: {negative_peaks_t}, angle to t: {negative_peak_angles_t}, angle to s: {negative_peak_angles_s}")
     best_positive = 0
     best_negative = 0
-    for index in range(len(peaks_t)): 
-        if np.abs(peak_angles_t[index]-initial_angle) > (2*np.pi)/360:
-            best_positive = np.abs(peak_angles_t[index]-initial_angle)/targ_angle
+    for i in range(len(peaks_t)):
+        start_dist = np.sqrt((xPos[0]-xPos[peaks_t[i]])**2+(yPos[0]-yPos[peaks_t[i]])**2)
+        end_dist = np.sqrt((targetx-xPos[peaks_t[i]])**2+(targety-yPos[peaks_t[i]])**2)
+        if start_dist > 1 and end_dist > 1: 
+            best_positive = np.abs(peak_angles_t[i]-initial_angle)/targ_angle
             break
     for index in range(len(negative_peaks_t)): 
-        if np.abs(negative_peak_angles_t[index]-initial_angle) > (2*np.pi)/360:
+        start_dist = np.sqrt((xPos[0]-xPos[negative_peaks_t[index]])**2+(yPos[0]-yPos[negative_peaks_t[index]])**2)
+        end_dist = np.sqrt((targetx-xPos[negative_peaks_t[index]])**2+(targety-yPos[negative_peaks_t[index]])**2)
+        if start_dist > 1 and end_dist > 1: 
             best_negative = np.abs(negative_peak_angles_t[index]-initial_angle)/targ_angle
             break
     best_overall = max(best_negative,best_positive)
     return best_overall
 
     
-    
-
 def plot_metric(metrics,x,colors,labels,fig,title,xlabel,ylabel):
     '''
     A function which plots an aggregated metric over changing values of a parameter

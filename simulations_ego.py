@@ -18,7 +18,7 @@ for a in range(nagents):
     initialx[a] = 50
     initialy[a] = 50
 initialxt = [50-(15*np.sqrt(3)),50,50+(15*np.sqrt(3))]
-initialyt = [35,80,35]
+initialyt = [65,80,65]
 
 # number of time steps
 T = 5000
@@ -97,7 +97,7 @@ base = {'N':N,
 plot_neurons = True
 plot_trajs = True
 uneven = True
-sample_size = 1
+sample_size = 20
 
 # turn this into a sweep of sweeps, get the range each time
 # get a list of betas/sigmas we want to sweep over 
@@ -135,8 +135,8 @@ best_sigma = sigma_sweep_list[ind_best_sigma]
 #h0_list = h0_start_for_sim
 #sigma_list = sigma_list_from_h0
 
-h0_list = [[0.255,0.255,0.255],[0.26,0.26,0.26],[0.265,0.265,0.265],[0.27,0.27,0.27],[0.275,0.275,0.275],[0.28,0.28,0.28],[0.285,0.285,0.285],[0.29,0.29,0.29],[0.295,0.295,0.295],[0.3,0.3,0.3]]
-sigma_list = [0.5]*10
+h0_list = [[0.218,0.218,0.218],[0.2,0.2,0.2],[0.222,0.222,0.222],[0.224,0.224,0.224]]
+sigma_list = [0.22]*4
 
 change = {'sigma':sigma_list, 'h0':h0_list}
 target_list, time_list, decision_points, decision_pos, activity_df, x_list, y_list, headings_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
@@ -152,7 +152,7 @@ for i in range(len(target_list)):
     if target != -1:
         targx = initialxt[target]
         targy = initialyt[target]
-    bifurcation_angle = sim_met.get_bifurcation_angle(curr_xpos,curr_ypos,targx,targy,(2*np.pi)/3)
+    bifurcation_angle = sim_met.get_bifurcation_angle(curr_xpos,curr_ypos,targx,targy,(np.pi)/3)
     print(f"angle returned: {bifurcation_angle}")
     probabilities = sim_met.get_bump_type(initialxt,initialyt,curr_xpos,curr_ypos,curr_activity,1)
     phase = np.argmax(probabilities)
