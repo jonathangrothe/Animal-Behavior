@@ -122,7 +122,7 @@ for sigma_index in range(len(base_sigma)):
     change= {'h0':h0_list,
              'sigma':sigma_list}
     sample_time = time.perf_counter()
-    target_list, time_list, decision_points, decision_pos, activity_df, x_list, y_list, headings_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=include_neurons)
+    target_list, time_list, decision_points, decision_pos, activity_list, x_list, y_list, headings_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=include_neurons)
     end_sample_time = time.perf_counter()
     sampling_time = end_sample_time - sample_time
     print(f"Sampling time: {sampling_time:.6f} seconds")
@@ -132,7 +132,7 @@ for sigma_index in range(len(base_sigma)):
     phases = []
     angles = []
     for i in range(len(target_list)):
-        curr_activity = activity_df.iloc[i*100:(i+1)*100]
+        curr_activity = activity_list[i]
         curr_xpos = x_list[i:(i+1)][0]
         curr_ypos = y_list[i:(i+1)][0]
         phase = sim_met.get_bump_type(initialxt,initialyt,curr_xpos,curr_ypos,curr_activity,1)
@@ -144,9 +144,7 @@ for sigma_index in range(len(base_sigma)):
             yt = initialyt[target_list[i]]
         angle = sim_met.get_bifurcation_angle(curr_xpos, curr_ypos, xt, yt, (np.pi)/3)
         angles.append(angle)
-        #print(f"phase: {phase}")
-        #print(f"reaches target: {target_list[i]}")
-        #print(f"angle: {angle}")
+
     grid_phases = []
     grid_targets = []
     grid_times = []
