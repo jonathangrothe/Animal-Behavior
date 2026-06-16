@@ -64,9 +64,6 @@ def sample_sims(bp, changing_params, n_samples, include_trajs=False, include_act
                     target_reached, time_reached = sim_met.get_destination_metrics(xPos,yPos,targetsx,targetsy)
                     target_list.append(target_reached)
                     time_list.append(time_reached)
-                    #dec_points_list, dec_pos = sim_met.get_bifurcation_times(xPos[0,:],yPos[0,:]) #change this when we get more agents (this might be solvable in sim_met)
-                    #decision_points.append(dec_points_list)
-                    #decision_pos.append(dec_pos)
 
                 if include_trajs:
                     xpos_1d = xPos.ravel()
@@ -75,7 +72,7 @@ def sample_sims(bp, changing_params, n_samples, include_trajs=False, include_act
                     y_list.append(ypos_1d)
                     headings_list.append(headings)
 
-                if include_activity:
+                if include_activity: # inefficient I think 
                     for neuron in range(np.shape(activity)[0]):
                         activity_list.append(activity[neuron,0,:])
 

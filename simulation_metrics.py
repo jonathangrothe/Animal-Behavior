@@ -7,81 +7,31 @@ import pandas as pd
 
 # -------- Getting metrics --------
 
-def get_destination_metrics(xPos, yPos, targetsx, targetsy , stopping_distance = 0.5):
+def get_destination_metrics(xPos, yPos, targetsx, targetsy):
     '''
-    A function which takes the positional outputs from a simulation run and returns which target the agent reaches (-1 if no target) 
-    and at what time the agent reaches that target
-
-    Parameters:
-    xPos: a list of lists of x positions of the agent where each sublist contains all the positions in one simulation run
-    yPos: a list of lists of y positions of the agent where each sublist contains all the positions in one simulation run
-    targetsx: all the x positions of the targets
-    targetsy: all the y positions of the targets
-    stopping_distance: the maximum distance between the agent and target at which the agent is considered to have reached the target
-
-    Returns:
-    final_target: the final target the agent ends up at (defined as being within stopping_distance of a target), zero indexed, -1 if the agent doesn't end up at a target
-    time_target_reached: the time the agent got within the stopping_distance of the final target
-    '''
-    ntargets = len(targetsx[:,0])
-    tsteps = len(xPos[0,:])
-    time_target_reached = tsteps
-    target_reached = -1
-    for index in range(len(xPos[0,:])):
-        agent_x = xPos[0,index]
-        agent_y = yPos[0,index]
-        for target in range(ntargets):
-            target_x = targetsx[target,index]
-            target_y = targetsy[target,index]
-            distance = np.sqrt((agent_x - target_x)**2 + (agent_y-target_y)**2)
-            if distance < stopping_distance:
-                time_target_reached = index
-                target_reached = target
-                break
-
-    return target_reached, time_target_reached
-
-
-def get_bifurcation_times(xPos,yPos,min_diff=1): # this function needs work...
-    '''
-    A function which takes the x positions and y positions and returns an approximate list of time steps where bifurcations occurred.
-    Assumes that trajectories are approximately straight and fits a linear regression to approximate the trajectory. 
-    A bifurcation is considered to have happened when the actual trajectory differs from the linear regression by a certain amount.
-
-    Parameters:
-    xPos: a list of lists of x positions of the agent where each sublist contains all the positions in one simulation run
-    yPos: a list of lists of y positions of the agent where each sublist contains all the positions in one simulation run
+    A function which finds the target the agent reached (if it reached a target) and the time it reached that target
+    Parameters: 
+    xPos: a numpy array of size nagents x tsteps of each agent's x position at each point in the simulation
+    yPos: a numpy array of size nagents x tsteps of each agent's y position at each point in the simulation
+    targetsx: a list of size ntargets of the targets x positions (this is assumed to be static )
+    targetsy: a list of size ntargets of the targets y positions (this is assumed to be static)
 
     Returns: 
-    dec_points: a list of time steps where bifurcations were found
-    dec_pos: a list of tuples which are the coordinates where bifurcations occurred
+    target_reached: the target (indexed as they are in the targetsx and targetsy list) the agent reaches
+    time_target_reached: the number of time steps in the simulation, the length of xPos and yPos
     '''
-    dec_points = []
-    curr_index = len(xPos)-1
-    complete = False
-    while not complete:
-        backtrack = curr_index - 30
-        diff = 0
-        while diff < min_diff:
-            slope, intercept, r_value, p_value, std_err = stats.linregress(xPos[backtrack:curr_index], yPos[backtrack:curr_index])
-            predicted_backtrack = intercept + slope*xPos[backtrack]
-            diff = np.abs(predicted_backtrack - yPos[backtrack])
-            if diff < min_diff: 
-                backtrack = backtrack - 1
-            if backtrack < 0:
-                complete = True
-                break
-        if not complete:
-            dec_points.append(backtrack)
-
-        curr_index = backtrack
-        if curr_index < 40:
-            complete = True
-    dec_points.reverse()
-    dec_pos = []
-    for item in dec_points:
-        dec_pos.append((xPos[item],yPos[item]))
-    return dec_points, dec_pos
+    if np.shape(xPos)[0] == 1:
+        xPos = xPos.ravel()
+        yPos = yPos.ravel()
+    xPos = np.asarray(xPos)
+    yPos = np.asarray(yPos)
+    tsteps = len(xPos)
+    time_target_reached = tsteps
+    target_reached = -1
+    distance = (xPos[-1]-targetsx)**2+(yPos[-1]-targetsy)**2
+    if time_target_reached < 5000:
+        target_reached = np.argmin(distance)
+    return target_reached, time_target_reached
 
 
 def get_success_rate(target_list, sample_size, ntargets):
@@ -154,88 +104,58 @@ def get_bump_type(initialxt,initialyt,xPos,yPos,activity,interval=10):
            Usually the phase corresponds to the most common number of bumps present across all the intervals, but occasionally that is not the case.
     '''
     activity = activity.dropna(axis=1)
+    activity = activity.to_numpy()
     total_time = activity.shape[1]
     total_intervals = int(total_time/interval)
-    ntargets = len(initialxt)
-    counter_0 = 0
-    counter_1 = 0
-    counter_2 = 0
-    counter_3 = 0
-    counter_other = 0
-    target_neurons_list = []
+    xPos = np.asarray(xPos)
+    yPos = np.asarray(yPos)
+    initialxt = np.asarray(initialxt)
+    initialyt = np.asarray(initialyt)
+    counters = np.zeros(5, dtype=np.int32)
     for i in range(total_intervals):
-        end_int = (i+1)*interval
-        if end_int > total_time:
-            end_int = total_time
-        xPos_interval = xPos[i*interval:end_int]
-        yPos_interval = yPos[i*interval:end_int]
-        target_neurons = []
-        for t in range(ntargets):
-            angle = np.atan2(initialyt[t]-yPos_interval[0],initialxt[t]-xPos_interval[0]) 
-            index = np.round(100*(angle/(2*np.pi)))
-            if index < 0:
-                index += 100
-            target_neurons.append(index)
-        target_neurons_list.append(target_neurons)
-        activity_int = activity.iloc[target_neurons,i*interval:end_int]
-        bump1 = np.mean(activity_int.iloc[0,:])
-        bump2 = np.mean(activity_int.iloc[1,:])
-        bump3 = np.mean(activity_int.iloc[2,:])
-        npositive = sum(1 for item in [bump1,bump2,bump3] if item > 0)
-        if npositive > 1: # this controls for the possibility that there is one large bump that spans all the locations of the expected bumps
-            neuron_left = round(target_neurons[0])
-            neuron_center = round(target_neurons[1])
-            neuron_right = round(target_neurons[2])
-            if bump1 > 0 and bump2 > 0:
-                neuron_diff = neuron_left - neuron_center
-                between_min = 0
-                if 0 <= neuron_diff < 50:
-                    between_min = np.min(activity.iloc[(neuron_center+1):neuron_left,i*interval:end_int]) 
-                elif neuron_diff >= 50:
-                    combined = pd.concat([activity.iloc[:neuron_center,i*interval:end_int],activity.iloc[neuron_left:,i*interval:end_int]])
-                    between_min = np.min(combined)
-                else:
-                    between_min = np.min(activity.iloc[(neuron_left+1):neuron_center,i*interval:end_int])
-                if between_min >= 0:
-                    npositive = npositive -1
-            if bump2 > 0 and bump3 > 0:
-                neuron_diff = neuron_center - neuron_right
-                between_min = 0
-                if 0 <= neuron_diff < 50:
-                    between_min = np.min(activity.iloc[(neuron_right+1):neuron_center,i*interval:end_int])
-                elif neuron_diff >= 50:
-                    combined = pd.concat([activity.iloc[:neuron_right,i*interval:end_int],activity.iloc[neuron_center:,i*interval:end_int]])
-                    between_min = np.min(combined)
-                else:
-                    between_min = np.min(activity.iloc[(neuron_center+1):neuron_right,i*interval:end_int])
-                if between_min >= 0:
-                    npositive = npositive -1
-        if npositive == 0:
-            counter_0 += 1
-        if npositive == 1:
-            counter_1 += 1
-        if npositive == 2:
-            counter_2 += 1
-        if npositive == 3:
-            counter_3 += 1
-        if npositive > 3:
-            print(f"more than 3 bumps, time: {i*interval}: neuron at t1: {bump1}, neuron at t2: {bump2}, neuron at t3: {bump3}, npos: {npositive}")
-            counter_other += 1
+        start = i*interval
+        end_int = min(start+interval,total_time)
+        x0 = xPos[start]
+        y0 = yPos[start]
+        angles = np.atan2(initialyt - y0, initialxt - x0)
+        indices = np.round(100 * (angles / (2 * np.pi))).astype(int) % 100
+        act_int = activity[indices, start:end_int]
+        bump_means = act_int.mean(axis=1) 
+        npositive = int(np.sum(bump_means > 0))
+        if npositive > 1:
+            n0, n1, n2 = indices[0], indices[1], indices[2]
+            b0, b1, b2 = bump_means[0], bump_means[1], bump_means[2]
+            act_slice = activity[:, start:end_int]
 
-    situation_sum = counter_0 + counter_1 + counter_2 + counter_3 + counter_other
-    p_0 = counter_0/situation_sum
-    p_1 = counter_1/situation_sum
-    p_2 = counter_2/situation_sum
-    p_3 = counter_3/situation_sum
-    p_other = counter_other/situation_sum
-    proportion_list = [p_0,p_1,p_2,p_3,p_other]
-    phase = np.argmax(proportion_list)
-    if phase == 1:
-        if counter_2 > 100/interval and total_time >= 5000:
-            phase = 2
-    if phase == 3:
-        if total_time <= 4900:
-            phase = 1
+            def between_min(na, nb):
+                diff = na - nb
+                if 0 <= diff < 50:
+                    return act_slice[nb+1:na].min() if nb+1 < na else 0.0
+                elif diff >= 50:
+                    part = np.concatenate([act_slice[:nb], act_slice[na:]])
+                    return part.min() if part.size > 0 else 0.0
+                else:
+                    return act_slice[n0+1:nb].min() if n0+1 < nb else 0.0 
+                
+            if b0 > 0 and b1 > 0:
+                if between_min(n0, n1) >= 0:
+                    npositive -= 1
+
+            if b1 > 0 and b2 > 0:
+                if between_min(n1, n2) >= 0:
+                    npositive -= 1
+        if npositive > 3:
+            print(f"more than 3 bumps, time: {start}: neuron at t1: {bump_means[0]:.3f}, "
+                  f"t2: {bump_means[1]:.3f}, t3: {bump_means[2]:.3f}, npos: {npositive}")
+            counters[4] += 1
+        else:
+            counters[npositive] += 1
+    proportions = counters / counters.sum()
+    phase = int(np.argmax(proportions))
+    if phase == 1 and counters[2] > 100 / interval and total_time >= 5000:
+        phase = 2
+    if phase == 3 and total_time <= 4900:
+        phase = 1
     if phase == 4:
         print("PHASE is other ALERT")
         phase = -1
@@ -258,14 +178,39 @@ def get_bifurcation_angle(xPos, yPos, targetx, targety, targ_angle):
     '''
     if targetx < 0 or targety < 0:
         return 0
+    xPos = np.asarray(xPos)
+    yPos = np.asarray(yPos)
     angles_to_target = np.atan2(np.abs(targety-yPos),np.abs(targetx-xPos))
     initial_angle = angles_to_target[0]
     peaks_t, _ = find_peaks(angles_to_target)
     negative_peaks_t, _ = find_peaks(-angles_to_target)
-    peak_angles_t = angles_to_target[peaks_t]
-    negative_peak_angles_t = angles_to_target[negative_peaks_t]
+    x0, y0 = xPos[0], yPos[0]
+    #peak_angles_t = angles_to_target[peaks_t]
+    #negative_peak_angles_t = angles_to_target[negative_peaks_t]
     best_positive = 0
     best_negative = 0
+
+    def first_valid_ratio(peak_indices):
+        if len(peak_indices) == 0:
+            return 0
+        dx_start = xPos[peak_indices] - x0
+        dy_start = yPos[peak_indices] - y0
+        dx_end   = xPos[peak_indices] - targetx
+        dy_end   = yPos[peak_indices] - targety
+
+        start_dist_sq = dx_start**2 + dy_start**2
+        end_dist_sq   = dx_end**2   + dy_end**2
+
+        valid = np.where((start_dist_sq > 1) & (end_dist_sq > 1))[0]
+        if len(valid) == 0:
+            return 0
+
+        first = peak_indices[valid[0]]
+        return np.abs(angles_to_target[first] - initial_angle) / targ_angle
+
+    best_positive = first_valid_ratio(peaks_t)
+    best_negative = first_valid_ratio(negative_peaks_t)
+    '''
     for i in range(len(peaks_t)):
         start_dist = np.sqrt((xPos[0]-xPos[peaks_t[i]])**2+(yPos[0]-yPos[peaks_t[i]])**2)
         end_dist = np.sqrt((targetx-xPos[peaks_t[i]])**2+(targety-yPos[peaks_t[i]])**2)
@@ -278,6 +223,7 @@ def get_bifurcation_angle(xPos, yPos, targetx, targety, targ_angle):
         if start_dist > 1 and end_dist > 1: 
             best_negative = np.abs(negative_peak_angles_t[index]-initial_angle)/targ_angle
             break
+    '''
     best_overall = max(best_negative,best_positive)
     return best_overall
 

@@ -5,8 +5,7 @@ import math
 # ---------- Simulation code!! ----------
 def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag,rEgo,rEgoTarget,Egonumber,
                             distf,adistf,J,beta,h0,h_b,dt,v0,v0t,sigma,hColl,rColl,
-                            initialx,initialy,initialxt,initialyt,plot,stop,stopping_dist=0.5,steps_after_reach=5): # REMEMBER TO TAKE OFFSET OUT LATER
-    
+                            initialx,initialy,initialxt,initialyt,plot,stop,stopping_dist=0.1):
     # -------- INITIALIZATIONS WITHIN THE SIMULATION --------
     alpharing0 = np.linspace(0,2*np.pi, N+1)
     alpharing0 = alpharing0[:-1]
@@ -27,22 +26,20 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
         headings[a,0] = 2*math.pi*np.random.rand() 
         if allocentricFlag == 0:
             alpharing[a,:] = np.mod(alpharing[a,:]+headings[a,0], 2*np.pi)
-
-    targetXPos = np.zeros((ntargets, T+1))
-    targetYPos = np.zeros((ntargets, T+1))
-    for targ in range(ntargets):
-        targetXPos[targ,0] = initialxt[targ]
-        targetYPos[targ,0] = initialyt[targ]
+    if v0t.any():
+        targetXPos = np.zeros((ntargets, T+1))
+        targetYPos = np.zeros((ntargets, T+1))
+        for targ in range(ntargets):
+            targetXPos[targ,0] = initialxt[targ]
+            targetYPos[targ,0] = initialyt[targ]
+    else:
+        targetXPos = initialxt
+        targetYPos = initialyt
 
     if plot == True:
         plt.figure(1)
         plt.gca().set_aspect('equal', adjustable='box')
 
-    # if stop is true, we will let it go 100 tsteps before ending
-    stopped = False
-    stopping_time = 0
-    counter_u = 0
-    counter_val = 0
     for tstep in range(0,T):
 
         # -------- STEP A --------
@@ -93,8 +90,12 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
             xa = xPos[a,tstep]
             ya = yPos[a,tstep]
             for ttarg in range(ntargets):
-                xt = targetXPos[ttarg,tstep]
-                yt = targetYPos[ttarg,tstep]
+                if v0t.any():
+                    xt = targetXPos[ttarg,tstep]
+                    yt = targetYPos[ttarg,tstep]
+                else: 
+                    xt = targetXPos[ttarg]
+                    yt = targetYPos[ttarg]
 
                 dx = xt - xa
                 dy = yt - ya
@@ -140,7 +141,6 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
             faNow = fAct(uaNow,beta)
             faPos = faNow.copy()
             faPos[faPos < 0] = 0
-            #calculate centers
             cx = 0
             cy = 0
             for i in range(N):
@@ -149,7 +149,6 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
             newAngle = 0
             #if the centers are close to zero use old heading 
             if (np.abs(cx) < 1e-9) or (np.abs(cy) < 1e-9):
-                #print(f"no heading update at time: {tstep}, ")
                 newAngle = headings[a,tstep]
             else:
                 newAngle = np.atan2(cy,cx)
@@ -157,20 +156,6 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
                     newAngle = newAngle + 2*np.pi
             
             headings[a,tstep+1] = newAngle
-            
-            low_movement = False
-            if np.max(faPos) <=0.7:
-                if tstep >=200:
-                    counter_val += 1
-            if np.max(uArray[:,a,tstep+1])<=0:
-                if tstep >=200:
-                    counter_u += 1
-                low_movement = True
-                #print(f"tstep: {tstep}")
-                #print(f"cx step c: {round(cx,5)}, cy step c: {round(cy,5)}")
-                #print(f"curr angle: {round(headings[a,tstep],5)}, new angle: {round(newAngle,5)}")
-            else:
-                low_movement = False
             
             if allocentricFlag == 0:
                 alpharing[a,:] = np.mod(alpharing[a,:] - headings[a,tstep] + headings[a,tstep+1],2*np.pi)
@@ -182,15 +167,10 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
         for a in range(nagents):
             oldx = xPos[a,tstep]
             oldy = yPos[a,tstep]
-
-            #calculating the centers again
             cx_d = 0
             cy_d = 0
             for i in range(N):
                 val = fAct(uArray[i,a,tstep+1],beta) 
-                #if low_movement and tstep % 5 ==0:
-                    #with np.printoptions(threshold=np.inf):
-                        #print(f"unactivated: {uArray[i,a,tstep+1]}, activated: {val}")
                 if val < 0:
                     val = 0
                 cx_d = cx_d + val * np.cos(alpharing[a,i])
@@ -208,38 +188,29 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
                 newy = 0
             elif newy > L:
                 newy = L
-            
-            #if low_movement:
-                #print(f"cx step d: {round(cx_d,5)}, cy step d: {round(cy_d,5)}")
-                #print(f"old x: {round(oldx,5)}, new x: {round(newx,5)}, old y: {round(oldy,5)}, new y: {round(newy,5)}")
-            
             xPos[a,tstep+1] = newx
             yPos[a,tstep+1] = newy
 
         # -------- STEP E --------
-
-        for ttarg in range(ntargets):
-            oldXT = targetXPos[ttarg,tstep]
-            oldYT = targetYPos[ttarg,tstep]
-
-            newXT = oldXT + v0t[ttarg] * np.sign(np.random.randn())
-            newYT = oldYT + v0t[ttarg] * np.sign(np.random.randn())
-
-            if periodic_flag == 1:
-                newx = np.mod(newXT,L)
-                newy = np.mod(newYT,L)
-
-            if newXT < 0:
-                newXT = 0
-            elif newXT > L:
-                newXT = L
-            if newYT < 0:
-                newYT = 0
-            elif newYT > L:
-                newYT = L
-                
-            targetXPos[ttarg, tstep+1] = newXT
-            targetYPos[ttarg, tstep+1] = newYT
+        if v0t.any():
+            for ttarg in range(ntargets):
+                oldXT = targetXPos[ttarg,tstep]
+                oldYT = targetYPos[ttarg,tstep]
+                newXT = oldXT + v0t[ttarg] * np.sign(np.random.randn())
+                newYT = oldYT + v0t[ttarg] * np.sign(np.random.randn())
+                if periodic_flag == 1:
+                    newx = np.mod(newXT,L)
+                    newy = np.mod(newYT,L)
+                if newXT < 0:
+                    newXT = 0
+                elif newXT > L:
+                    newXT = L
+                if newYT < 0:
+                    newYT = 0
+                elif newYT > L:
+                    newYT = L
+                targetXPos[ttarg, tstep+1] = newXT
+                targetYPos[ttarg, tstep+1] = newYT
             
 
         # -------- STEP F - VIZ --------
@@ -249,19 +220,24 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
                 plot_col = 'green'
 
             if tstep % 100 == 0:
-                # Plot agents
                 plt.scatter(
                     xPos[:, tstep + 1],
                     yPos[:, tstep + 1],
                     s = 10,
                     color = plot_col
                 )
-
-                # Plot targets
+                xtarg = 0
+                ytarg = 0
+                if v0t.any():
+                    xtarg = targetXPos[:, tstep + 1]
+                    ytarg = targetYPos[:, tstep + 1]
+                else:
+                    xtarg = targetXPos
+                    ytarg = targetYPos
                 if ntargets > 0:
                     plt.scatter(
-                        targetXPos[:, tstep + 1],
-                        targetYPos[:, tstep + 1],
+                        xtarg,
+                        ytarg,
                         s = 10,
                         marker = 's',
                         c = [[0.8, 0, 0.2]], 
@@ -273,34 +249,34 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
                 plt.pause(0.001)  
 
         # -------- STEP G - STOP --------
-        if stop == True and stopped == False:
-            for targ in range(ntargets):
-                targ_x = targetXPos[targ,tstep]
-                targ_y = targetYPos[targ,tstep]
-                x_dist = np.abs(xPos[0,tstep] - targ_x)
-                y_dist = np.abs(yPos[0,tstep] - targ_y)
-                total_dist = np.sqrt((x_dist**2)+(y_dist**2))
-                if total_dist <= stopping_dist:
-                    stopped = True
-                    stopping_time = tstep + steps_after_reach
-
-        if stop == True and stopped == True:
-            if tstep >= stopping_time:
-                headings = headings[:,:tstep+1]
-                xPos = xPos[:,:tstep+1]
-                yPos = yPos[:,:tstep+1]
-                targetXPos = targetXPos[:,:tstep+1]
-                targetYPos = targetYPos[:,:tstep+1]
-                uArray = uArray[:,:,:tstep+1]
-                #print(f"n inhib: {counter_u}, n low active: {counter_val}")
+        if stop == True:
+            #for targ in range(ntargets):
+            targ_x = 0
+            targ_y = 0
+            if v0t.any():
+                targ_x = targetXPos[:,tstep]
+                targ_y = targetYPos[:,tstep]
+            else:
+                targ_x = targetXPos
+                targ_y = targetYPos
+            x_dist = np.abs(xPos[0,tstep] - targ_x)
+            y_dist = np.abs(yPos[0,tstep] - targ_y)
+            total_dist = (x_dist**2)+(y_dist**2)
+            if np.min(total_dist) <= stopping_dist:
+                headings = headings[:,:tstep]
+                xPos = xPos[:,:tstep]
+                yPos = yPos[:,:tstep]
+                if v0t.any():
+                    targetXPos = targetXPos[:,:tstep]
+                    targetYPos = targetYPos[:,:tstep]
+                uArray = uArray[:,:,:tstep]
                 return headings, xPos, yPos, targetXPos, targetYPos, uArray
-                
+            
         if plot == True:
             plt.show(block = False)
-    #print(f"n inhib: {counter_u}, n low active: {counter_val}")
+
     return headings, xPos, yPos, targetXPos, targetYPos, uArray
 
-#function for creating an evenly spaced grid
 def create_grid(ntargets,ncols,L):
     '''
     ntargets: number of targets
@@ -314,12 +290,9 @@ def create_grid(ntargets,ncols,L):
     for col in range(ncols):
         for ti in range(targets_percol):
             initialxt[targets_percol*col+ti] = col*(L/(ncols+1)) + (L/(ncols+1))
-            #this spreads the targets equally vertically,
-            #for a grid need to do this several times
             initialyt[targets_percol*col+ti] = ti*(L/(targets_percol+1)) + (L/(targets_percol+1))
     return initialxt, initialyt
 
-#function for creating an evenly spaced circle
 def create_circle(ntargets,radius,L):
     '''
     ntargets: number of targets
@@ -332,11 +305,11 @@ def create_circle(ntargets,radius,L):
     y_coords = radius * np.sin(angles) + L/2
     return x_coords, y_coords
 
-#activation function
 def fAct(u,beta):
     '''
-    u: Value we are activating
-    beta: Noise parameter
+    Parameters: 
+    u: Value
+    beta: Neural noise parameter
     returns: value put through the activation function
     '''
     return ((1+np.tanh(beta * u))/2)
