@@ -20,6 +20,10 @@ def get_destination_metrics(xPos, yPos, targetsx, targetsy):
     if np.shape(xPos)[0] == 1:
         xPos = xPos.ravel()
         yPos = yPos.ravel()
+    if xPos.size != yPos.size:
+        raise ValueError("arrays for x position and y position are different sizes")
+    if len(targetsx) != len(targetsy):
+        raise ValueError("target x positions and target y positions are different sizes")
     xPos = np.asarray(xPos)
     yPos = np.asarray(yPos)
     tsteps = len(xPos)
@@ -103,7 +107,7 @@ def get_bump_type(initialxt,initialyt,xPos,yPos,activity,interval=10):
     '''
     total_time = activity.shape[1]
     total_intervals = int(total_time/interval)
-    xPos = np.asarray(xPos)
+    xPos = np.asarray(xPos) # can probably remove this
     yPos = np.asarray(yPos)
     initialxt = np.asarray(initialxt)
     initialyt = np.asarray(initialyt)
@@ -140,7 +144,7 @@ def get_bump_type(initialxt,initialyt,xPos,yPos,activity,interval=10):
             if b1 > 0 and b2 > 0:
                 if between_min(n1, n2) >= 0:
                     npositive -= 1
-        if npositive > 3:
+        if npositive > 3: # probably don't need this because it shouldn't be possible
             print(f"more than 3 bumps, time: {start}: neuron at t1: {bump_means[0]:.3f}, "
                   f"t2: {bump_means[1]:.3f}, t3: {bump_means[2]:.3f}, npos: {npositive}")
             counters[4] += 1
