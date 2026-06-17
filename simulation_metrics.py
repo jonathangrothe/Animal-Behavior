@@ -23,12 +23,11 @@ def get_destination_metrics(xPos, yPos, targetsx, targetsy):
     xPos = np.asarray(xPos)
     yPos = np.asarray(yPos)
     tsteps = len(xPos)
-    time_target_reached = tsteps
     target_reached = -1
     distance = (xPos[-1]-targetsx)**2+(yPos[-1]-targetsy)**2
-    if time_target_reached < 5000:
+    if tsteps < 5000:
         target_reached = np.argmin(distance)
-    return target_reached, time_target_reached
+    return target_reached, tsteps
 
 
 def get_success_rate(target_list, sample_size, ntargets):
