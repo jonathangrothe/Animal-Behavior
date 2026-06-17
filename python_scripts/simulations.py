@@ -81,9 +81,9 @@ base = {'N':N,
 
 plot_neurons = True
 plot_trajs = True
-sample_size = 3
-h0_list = [[0.218,0.218,0.218],[0.2,0.2,0.2],[0.222,0.222,0.222],[0.224,0.224,0.224]]
-sigma_list = [0.22]*4
+sample_size = 1
+h0_list = [[0.2,0.2,0.2],[0.3,0.3,0.3]]
+sigma_list = [0.5,0.5]
 change = {'sigma':sigma_list, 'h0':h0_list}
 target_list, time_list, activity_list, x_list, y_list, headings_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
 
@@ -105,9 +105,9 @@ for i in range(len(target_list)):
     phases.append(phase)
 
 n_plots = len(h0_list)
-ncols = n_plots//2
-nrows = 2
-fig = plt.figure(layout='constrained',figsize=(16,8))
+ncols = n_plots
+nrows = 1
+fig = plt.figure(layout='constrained',figsize=(9,8))
 subfigs = fig.subfigures(2,1, wspace=0.1)
 axs0 = subfigs[0].subplots(nrows,ncols)
 axs0 = axs0.flatten()
@@ -135,5 +135,13 @@ for s in range(n_plots):
     print(f"overall: {np.argmax([n0,n1,n2,n3,n4])}")
     print(f"target list: {target_list[s*sample_size:(s+1)*sample_size]}")
     print(f"angles: {sim_angles}")
+
+#positions = np.array([x_list[0],y_list[0]])
+#positions2 = np.array([x_list[1],y_list[1]])
+targets = np.array([[70,70],[30,70]])
+print(len(x_list[0]))
+#np.savetxt("xypositions_3targ_reaches.csv", positions, delimiter = ",")
+#np.savetxt("xypositions_3targ_fails.csv", positions2, delimiter = ",")
+np.savetxt("targetpositions_2targ.csv", targets, delimiter = ",")
 
 plt.show()

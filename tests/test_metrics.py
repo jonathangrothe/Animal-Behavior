@@ -1,6 +1,7 @@
 import unittest
+from pathlib import Path
 import numpy as np
-from .. import simulation_metrics as sim_met
+from python_scripts.simulation_metrics import get_destination_metrics
 
 class DestinationMetricTests(unittest.TestCase):
     '''
@@ -16,28 +17,82 @@ class DestinationMetricTests(unittest.TestCase):
         targetsx = [40,50,60]
         targetsy = [70,70,70]
         with self.assertRaises(ValueError):
-            reached, tsteps = sim_met.get_destination_metrics(xPos, yPos, targetsx, targetsy)
+            reached, tsteps = get_destination_metrics(xPos, yPos, targetsx, targetsy)
         targetsx2 = [40,50]
         yPos_correct = np.array([50,60,70])
         with self.assertRaises(ValueError):
-            reached, tsteps = sim_met.get_destination_metrics(xPos, yPos_correct, targetsx2, targetsy)
-        self.assertEqual((1,3),sim_met.get_destination_metrics(xPos, yPos_correct, targetsx, targetsy))
+            reached, tsteps = get_destination_metrics(xPos, yPos_correct, targetsx2, targetsy)
+        self.assertEqual((1,3), get_destination_metrics(xPos, yPos_correct, targetsx, targetsy))
         
     
-    def test_reaching():
+    def test_reaching(self):
         '''
         Testing the ability to detect when the agent doesn't reach a target 
         '''
+        targetsx = [30,70]
+        targetsy = [70,70]
+        xPos = np.zeros(5000)
+        yPos = np.zeros(5000)
+        xPos[-1] = 30.1
+        yPos[-1] = 69.9
+        xPos_long = np.zeros(5001)
+        yPos_long = np.zeros(5001)
+        xPos_long[-1] = 30.1
+        yPos_long[-1] = 69.9
+        self.assertEqual((0,5000), get_destination_metrics(xPos,yPos,targetsx,targetsy))
+        self.assertEqual((-1,5001),get_destination_metrics(xPos_long,yPos_long,targetsx,targetsy))
+        self.assertEqual((-1,3001), get_destination_metrics(xPos,yPos,targetsx,targetsy,3000))
+        self.assertEqual((0,5001),get_destination_metrics(xPos_long,yPos_long,targetsx,targetsy,6000))
 
-    def test_samedistance():
+
+    def test_samedistance(self):
         '''
         Testing when a target has been reached but the distance between two or more targets is the same
         '''
+        targetsx = [30,50,70]
+        targetsy = [70,70,70]
+        xPos = np.array([50,45,42,40])
+        yPos = np.array([50,57,64,70])
+        targetsx1 = [50,50,50]
+        targetsy1 = [70,70,70]
+        self.assertEqual(((0,4)),get_destination_metrics(xPos,yPos,targetsx,targetsy))
+        self.assertEqual((0,4), get_destination_metrics(xPos,yPos,targetsx1,targetsy1))
 
-    def test_expectectedcase():
+    def test_expectectedcase(self):
         '''
         Testing expected 'normal' cases
         '''
+        xy_reaches_3targpath = Path('tests') / 'test_inputs' / 'destination_metrics' / 'xypositions_3targ_reaches.csv'
+        xy_fails_3targpath = Path('tests') / 'test_inputs' / 'destination_metrics' / 'xypositions_3targ_fails.csv'
+        targ_3targpath = Path('tests') / 'test_inputs' / 'destination_metrics' / 'targetpositions_3targ.csv'
+        xy_reaches_2targpath = Path('tests') / 'test_inputs' / 'destination_metrics' / 'xypositions_2targ_reaches.csv'
+        xy_fails_2targpath = Path('tests') / 'test_inputs' / 'destination_metrics' / 'xypositions_2targ_fails.csv'
+        targ_2targpath = Path('tests') / 'test_inputs' / 'destination_metrics' / 'targetpositions_2targ.csv'
+
+        xy_reaches_3targ = np.loadtxt(xy_reaches_3targpath, delimiter=',')
+        xy_fails_3targ = np.loadtxt(xy_fails_3targpath, delimiter=',')
+        targ_3targ = np.loadtxt(targ_3targpath, delimiter=',')
+        xy_reaches_2targ = np.loadtxt(xy_reaches_2targpath, delimiter=',')
+        xy_fails_2targ = np.loadtxt(xy_fails_2targpath, delimiter=',')
+        targ_2targ = np.loadtxt(targ_2targpath, delimiter=',')
+
+        x3r = xy_reaches_3targ[0,:]
+        y3r = xy_reaches_3targ[1,:]
+        targx3 = targ_3targ[0,:]
+        targy3 = targ_3targ[1,:]
+        x3f = xy_fails_3targ[0,:]
+        y3f = xy_fails_3targ[1,:]
+        x2r = xy_reaches_2targ[0,:]
+        y2r = xy_reaches_2targ[1,:]
+        x2f = xy_fails_2targ[0,:]
+        y2f = xy_fails_2targ[1,:]
+        targx2 = targ_2targ[0,:]
+        targy2 = targ_2targ[1,:]
+
+        self.assertEqual((1,379), get_destination_metrics(x3r,y3r,targx3,targy3))
+        self.assertEqual((-1,5001), get_destination_metrics(x3f,y3f,targx3,targy3))
+        self.assertEqual((1,831), get_destination_metrics(x2r,y2r,targx2,targy2))
+        self.assertEqual((-1,3001), get_destination_metrics(x2f,y2f,targx2,targy2,3000))
 
 class SuccessRateTests(unittest.TestCase):
     '''
@@ -152,7 +207,7 @@ class BifurcationAngleTests(unittest.TestCase):
     
     
 
-
+'''
 metrics = unittest.TestLoader().loadTestsFromTestCase(DestinationMetricTests)
 success = unittest.TestLoader().loadTestsFromTestCase(SuccessRateTests)
 bump = unittest.TestLoader().loadTestsFromTestCase(BumpTypeTests)
@@ -161,3 +216,4 @@ _ = unittest.TextTestRunner().run(metrics)
 _ = unittest.TextTestRunner().run(success)
 _ = unittest.TextTestRunner().run(bump)
 _ = unittest.TextTestRunner().run(bifurcation)
+'''

@@ -3,7 +3,7 @@ from scipy.signal import find_peaks
 
 # -------- Getting metrics --------
 
-def get_destination_metrics(xPos, yPos, targetsx, targetsy):
+def get_destination_metrics(xPos, yPos, targetsx, targetsy, maxtime = 5000):
     '''
     A function which finds the target the agent reached (if it reached a target) and the time it reached that target
 
@@ -12,6 +12,7 @@ def get_destination_metrics(xPos, yPos, targetsx, targetsy):
         yPos: a numpy array of size nagents x tsteps of each agent's y position at each point in the simulation
         targetsx: a list of size ntargets of the targets x positions (this is assumed to be static )
         targetsy: a list of size ntargets of the targets y positions (this is assumed to be static)
+        maxtime: the number of time steps will run without reaching a target
 
     Returns: 
         target_reached: the target (indexed as they are in the targetsx and targetsy list) the agent reaches
@@ -29,8 +30,10 @@ def get_destination_metrics(xPos, yPos, targetsx, targetsy):
     tsteps = len(xPos)
     target_reached = -1
     distance = (xPos[-1]-targetsx)**2+(yPos[-1]-targetsy)**2
-    if tsteps < 5000:
+    if tsteps <= maxtime:
         target_reached = np.argmin(distance)
+    else:
+        tsteps = maxtime+1
     return target_reached, tsteps
 
 
