@@ -217,8 +217,8 @@ class BumpTypeTests(unittest.TestCase):
         xPos_wrong = np.array([50,22])
         xPos = np.array([50,51,49,52,48,50])
         yPos = np.array([50,54,58,62,70,75])
-        activity_wrong = np.zeros((10,2)) # N is 10 in this case
-        activity = np.zeros([10,6])
+        activity_wrong = np.zeros((100,2))
+        activity = np.zeros([100,6])
         with self.assertRaises(ValueError):
             phase = get_bump_type(initialxt_wrong,initialyt,xPos,yPos,activity)
         with self.assertRaises(ValueError):
@@ -230,78 +230,6 @@ class BumpTypeTests(unittest.TestCase):
         phase = get_bump_type(initialxt,initialyt,xPos,yPos,activity)
         self.assertEqual(0,phase)
     
-    # GOAL: DESTROY THESE INTERVAL TESTS BECAUSE WE ARE DESTROYING THE INTERVAL PARAMETER
-    def test_interval_basics(self):
-        '''
-        Testing different interval values, including 0, negative numbers, non integers, a value bigger than the size of activity, as well as valid inputs
-        '''
-        initialxt_simple = [20,50,80]
-        initialyt_simple = [65,80,65]
-        xPos_simple = np.array([50,49,50,49,50,50,50,47,49,50])
-        yPos_simple = np.array([50,55,55,60,62,65,70,73,75,80])
-        activity_simple = np.zeros((100,10))
-        activity_simple[10:40,:] = 1
-        activity_simple[0:10,:] = -1
-        activity_simple[40:,:] = -1
-
-        with self.assertRaises(ValueError):
-            phase = get_bump_type(initialxt_simple,initialyt_simple,xPos_simple,yPos_simple,activity_simple,2.5)
-
-        with self.assertRaises(ValueError):
-            phase = get_bump_type(initialxt_simple,initialyt_simple,xPos_simple,yPos_simple,activity_simple,0)
-        
-        with self.assertRaises(ValueError):
-            phase = get_bump_type(initialxt_simple,initialyt_simple,xPos_simple,yPos_simple,activity_simple,-2)
-
-        for i in range(10):
-            phase = get_bump_type(initialxt_simple,initialyt_simple,xPos_simple,yPos_simple,activity_simple,i+1)
-            self.assertEqual(1,phase)
-
-    def test_interval_short(self):
-        '''
-        Testing all 'short' interval values with data from simulations (one loop for each bump type)
-        '''
-        targ_path = Path('tests') / 'test_inputs' / 'bump_type' / 'targetpositions_pt1.csv'
-        xy0_path = Path('tests') / 'test_inputs' / 'bump_type' / 'xypositions_0bumps.csv'
-        xy1_path= Path('tests') / 'test_inputs' / 'bump_type' / 'xypositions_1bump.csv'
-        xy2_path = Path('tests') / 'test_inputs' / 'bump_type' / 'xypositions_2bumps.csv'
-        xy3_path = Path('tests') / 'test_inputs' / 'bump_type' / 'xypositions_3bumps.csv'
-        activity0_path = Path('tests') / 'test_inputs' / 'bump_type' / 'activity_0bumps.csv'
-        activity1_path = Path('tests') / 'test_inputs' / 'bump_type' / 'activity_1bump.csv'
-        activity2_path = Path('tests') / 'test_inputs' / 'bump_type' / 'activity_2bumps.csv'
-        activity3_path = Path('tests') / 'test_inputs' / 'bump_type' / 'activity_3bumps.csv'
-
-        targetpos = np.loadtxt(targ_path, delimiter=',')
-        xy0 = np.loadtxt(xy0_path, delimiter=',')
-        xy1 = np.loadtxt(xy1_path, delimiter=',')
-        xy2 = np.loadtxt(xy2_path, delimiter=',')
-        xy3 = np.loadtxt(xy3_path, delimiter=',')
-        act0 = np.loadtxt(activity0_path, delimiter=',')
-        act1 = np.loadtxt(activity1_path, delimiter=',')
-        act2 = np.loadtxt(activity2_path, delimiter=',')
-        act3 = np.loadtxt(activity3_path, delimiter=',')
-
-        max_short_int0 = len(xy0[0,:])//25
-        max_short_int1 = len(xy1[0,:])//25
-        max_short_int2 = len(xy2[0,:])//25
-        max_short_int3 = len(xy3[0,:])//25
-
-        for i in range(max_short_int0):
-            phase = get_bump_type(targetpos[0,:],targetpos[1,:],xy0[0,:],xy0[1,:],act0,i+1)
-            self.assertEqual(0,phase)
-            
-        for i in range(max_short_int1):
-            phase = get_bump_type(targetpos[0,:],targetpos[1,:],xy1[0,:],xy1[1,:],act1,i+1)
-            self.assertEqual(1,phase)
-        
-        for i in range(max_short_int2):
-            phase = get_bump_type(targetpos[0,:],targetpos[1,:],xy2[0,:],xy2[1,:],act2,i+1)
-            self.assertEqual(2,phase)
-        
-        for i in range(max_short_int3):
-            phase = get_bump_type(targetpos[0,:],targetpos[1,:],xy3[0,:],xy3[1,:],act3,i+1)
-            self.assertEqual(3,phase)
-
     
     def test_bumpneurons(self):
         '''
@@ -314,8 +242,12 @@ class BumpTypeTests(unittest.TestCase):
         ydiff_1neuron = np.cos((2*np.pi)/100)*80
         initialxt = [50-xdiff_1neuron,50,50+xdiff_1neuron]
         initialyt = [80-ydiff_1neuron,80,80-ydiff_1neuron]
-        xPos = np.array([50,])
-        yPos = np.array([0,]) 
+        xPos = np.array([50,50,50,50,50])
+        yPos = np.array([0,0,0,0,0]) 
+        activity = np.zeros((100,5))
+        activity[24:27,:] = 1
+        activity[0:24,:] = -1
+        activity[27:,:] = -1
 
         targ_path = Path('tests') / 'test_inputs' / 'bump_type' / 'targetpositions_1neuronaway.csv'
         xy_path = Path('tests') / 'test_inputs' / 'bump_type' / 'xypositions_1neuronaway.csv'
@@ -324,7 +256,9 @@ class BumpTypeTests(unittest.TestCase):
         targetpos = np.loadtxt(targ_path, delimiter=',')
         xy_1na = np.loadtxt(xy_path, delimiter =',')
         activity_1na = np.loadtxt(activity_path, delimiter=',')
-
+        phase_simple = get_bump_type(initialxt,initialyt,xPos,yPos,activity)
+        self.assertEqual(1,phase_simple)
+        
         phase = get_bump_type(targetpos[0,:],targetpos[1,:],xy_1na[0,:],xy_1na[1,:],activity_1na)
         self.assertEqual(0,phase)
 
@@ -354,10 +288,41 @@ class BumpTypeTests(unittest.TestCase):
         test when two or more proportions are equal
         '''
     
-    #def test_expectedcase():
+    def test_expectedcase(self):
         '''
         Testing a few 'normal' cases
         '''
+        targ_path = Path('tests') / 'test_inputs' / 'bump_type' / 'targetpositions_pt1.csv'
+        xy0_path = Path('tests') / 'test_inputs' / 'bump_type' / 'xypositions_0bumps.csv'
+        xy1_path= Path('tests') / 'test_inputs' / 'bump_type' / 'xypositions_1bump.csv'
+        xy2_path = Path('tests') / 'test_inputs' / 'bump_type' / 'xypositions_2bumps.csv'
+        xy3_path = Path('tests') / 'test_inputs' / 'bump_type' / 'xypositions_3bumps.csv'
+        activity0_path = Path('tests') / 'test_inputs' / 'bump_type' / 'activity_0bumps.csv'
+        activity1_path = Path('tests') / 'test_inputs' / 'bump_type' / 'activity_1bump.csv'
+        activity2_path = Path('tests') / 'test_inputs' / 'bump_type' / 'activity_2bumps.csv'
+        activity3_path = Path('tests') / 'test_inputs' / 'bump_type' / 'activity_3bumps.csv'
+
+        targetpos = np.loadtxt(targ_path, delimiter=',')
+        xy0 = np.loadtxt(xy0_path, delimiter=',')
+        xy1 = np.loadtxt(xy1_path, delimiter=',')
+        xy2 = np.loadtxt(xy2_path, delimiter=',')
+        xy3 = np.loadtxt(xy3_path, delimiter=',')
+        act0 = np.loadtxt(activity0_path, delimiter=',')
+        act1 = np.loadtxt(activity1_path, delimiter=',')
+        act2 = np.loadtxt(activity2_path, delimiter=',')
+        act3 = np.loadtxt(activity3_path, delimiter=',')
+
+        phase0 = get_bump_type(targetpos[0,:],targetpos[1,:],xy0[0,:],xy0[1,:],act0)
+        self.assertEqual(0,phase0)
+            
+        phase1 = get_bump_type(targetpos[0,:],targetpos[1,:],xy1[0,:],xy1[1,:],act1)
+        self.assertEqual(1,phase1)
+        
+        phase2 = get_bump_type(targetpos[0,:],targetpos[1,:],xy2[0,:],xy2[1,:],act2)
+        self.assertEqual(2,phase2)
+        
+        phase3 = get_bump_type(targetpos[0,:],targetpos[1,:],xy3[0,:],xy3[1,:],act3)
+        self.assertEqual(3,phase3)
 
 class BifurcationAngleTests(unittest.TestCase):
     '''

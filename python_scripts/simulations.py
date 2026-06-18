@@ -81,9 +81,9 @@ base = {'N':N,
 
 plot_neurons = True
 plot_trajs = True
-sample_size = 1
-h0_list = [[0.22,0.22,0.22],[0.23,0.23,0.23],[0.24,0.24,0.24],[0.25,0.25,0.25]]
-sigma_list = [0.43,0.43,0.43,0.43]
+sample_size = 20
+h0_list = [[0.28,0.28,0.28],[0.284,0.284,0.284]]
+sigma_list = [0.5,0.5]
 change = {'sigma':sigma_list, 'h0':h0_list}
 target_list, time_list, activity_list, x_list, y_list, headings_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
 
@@ -105,9 +105,9 @@ for i in range(len(target_list)):
     phases.append(phase)
 
 n_plots = len(h0_list)
-ncols = 4
+ncols = 2
 nrows = 1
-fig = plt.figure(layout='constrained',figsize=(14,6))
+fig = plt.figure(layout='constrained',figsize=(7,6))
 subfigs = fig.subfigures(2,1, wspace=0.1)
 axs0 = subfigs[0].subplots(nrows,ncols)
 axs0 = axs0.flatten()
@@ -140,11 +140,11 @@ positions_1neuron = np.array([x_list[0],y_list[0]])
 activity_1neuron = activity_list[0]
 targets = np.array([initialxt,initialyt])
 
-np.savetxt("xypositions_1neuronaway.csv", positions_1neuron, delimiter = ",")
-np.savetxt("activity_1neuronaway.csv", activity_1neuron, delimiter = ",")
+#np.savetxt("xypositions_1neuronaway.csv", positions_1neuron, delimiter = ",")
+#np.savetxt("activity_1neuronaway.csv", activity_1neuron, delimiter = ",")
 #np.savetxt("xypositions_1bump.csv", positions_1bump, delimiter = ",")
 #np.savetxt("activity_1bump.csv", activity_1bump, delimiter = ",")
-np.savetxt("targetpositions_1neuronaway.csv", targets, delimiter = ",")
+#np.savetxt("targetpositions_1neuronaway.csv", targets, delimiter = ",")
 
 
 plt.show()

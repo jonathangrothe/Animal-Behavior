@@ -113,7 +113,6 @@ def get_bump_type(initialxt,initialyt,xPos,yPos,activity):
     start = 0
     for item in intervals:
         end = min(start+item,total_time)
-        print(f"start: {start}, end: {end}")
         x0 = xPos[start]
         y0 = yPos[start]
         angles = np.atan2(initialyt - y0, initialxt - x0)
@@ -149,7 +148,10 @@ def get_bump_type(initialxt,initialyt,xPos,yPos,activity):
         
     proportions = counters / sum(counters)
     print(f"proportions: {proportions}")
+    print(xPos.size)
     phase = int(np.argmax(proportions))
+    if proportions[2] > 0.1 and phase == 1 and total_time == 5001:
+        phase = 2
     return phase
 
 def get_bifurcation_angle(xPos, yPos, targetx, targety, targ_angle):
