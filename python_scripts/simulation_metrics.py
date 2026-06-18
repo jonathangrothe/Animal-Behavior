@@ -73,27 +73,8 @@ def get_success_rate(target_list, sample_size, ntargets):
     return target_probs, target_ses
 
 
-def find_bumps(activity):
-    '''
-    A function which takes in the activity data for a simulation and returns a list of where indices that are the peak of bumps at each time point in that simulation
-    
-    Parameters:
-        activity: a N x tsteps array of neuron activity over the entire simulation
-
-    Returns: 
-        bump_list: a list of length tsteps which every entry is the indices of the peak of a bump at that time 
-    '''
-    activity_to_insert = activity[0:4,1:]
-    activity_plus = np.concatenate([activity,activity_to_insert])
-    tsteps = len(activity.iloc[0,:])
-    bump_list = []
-    for i in range(tsteps):
-        indices_bumps, _ = find_peaks(activity_plus[:,i])
-        true_bumps = [x for x in indices_bumps if x <= 100]
-        bump_list.append(true_bumps)
-    return bump_list
-
-def get_bump_type(initialxt,initialyt,xPos,yPos,activity,interval=10):
+def get_bump_type(initialxt,initialyt,xPos,yPos,activity):
+    # UPDATED FROM WHAT WE USED FOR HIGH RESOLUTION SWEEPS - NEEDS TESTING 
     '''
     A function that analyses the neural activity of a simulation in small intervals 
     and returns a number corresponding to the number of bumps that best describe the simulation.
@@ -112,27 +93,38 @@ def get_bump_type(initialxt,initialyt,xPos,yPos,activity,interval=10):
         phase: a number to classify the number of bumps that best describes the simulation, possible outputs are 0, 1, 2, 3, or 4 (4 is undesireable).
                Usually the phase corresponds to the most common number of bumps present across all the intervals, but occasionally that is not the case.
     '''
+    if xPos.size != yPos.size:
+        raise ValueError("arrays for x position and y position are different sizes")
+    if len(initialxt) != len(initialyt):
+        raise ValueError("target x positions and target y positions are different sizes")
+    if xPos.size != activity.shape[1]:
+        raise ValueError("position arrays and activity arrays are different sizes")
+    
     total_time = activity.shape[1]
-    total_intervals = int(total_time/interval)
-    xPos = np.asarray(xPos) # can probably remove this
-    yPos = np.asarray(yPos)
-    initialxt = np.asarray(initialxt)
-    initialyt = np.asarray(initialyt)
-    counters = np.zeros(5, dtype=np.int32)
-    for i in range(total_intervals):
-        start = i*interval
-        end_int = min(start+interval,total_time)
+    rng = np.random.default_rng()
+    intervals = []
+    sum_intervals = 0
+    while sum_intervals < total_time:
+        rand_int = rng.integers(5, 16)
+        intervals.append(rand_int)
+        sum_intervals += rand_int
+
+    counters = np.zeros(4, dtype=np.int32)
+    start = 0
+    for item in intervals:
+        end = min(start+item,total_time)
+        print(f"start: {start}, end: {end}")
         x0 = xPos[start]
         y0 = yPos[start]
         angles = np.atan2(initialyt - y0, initialxt - x0)
         indices = np.round(100 * (angles / (2 * np.pi))).astype(int) % 100
-        act_int = activity[indices, start:end_int]
+        act_int = activity[indices, start:end]
         bump_means = act_int.mean(axis=1) 
         npositive = int(np.sum(bump_means > 0))
         if npositive > 1:
             n0, n1, n2 = indices[0], indices[1], indices[2]
             b0, b1, b2 = bump_means[0], bump_means[1], bump_means[2]
-            act_slice = activity[:, start:end_int]
+            act_slice = activity[:, start:end]
 
             def between_min(na, nb):
                 diff = na - nb
@@ -151,21 +143,13 @@ def get_bump_type(initialxt,initialyt,xPos,yPos,activity,interval=10):
             if b1 > 0 and b2 > 0:
                 if between_min(n1, n2) >= 0:
                     npositive -= 1
-        if npositive > 3: # probably don't need this because it shouldn't be possible
-            print(f"more than 3 bumps, time: {start}: neuron at t1: {bump_means[0]:.3f}, "
-                  f"t2: {bump_means[1]:.3f}, t3: {bump_means[2]:.3f}, npos: {npositive}")
-            counters[4] += 1
-        else:
-            counters[npositive] += 1
-    proportions = counters / counters.sum()
+        
+        counters[npositive] += 1
+        start += item
+        
+    proportions = counters / sum(counters)
+    print(f"proportions: {proportions}")
     phase = int(np.argmax(proportions))
-    if phase == 1 and counters[2] > 100 / interval and total_time >= 5000:
-        phase = 2
-    if phase == 3 and total_time <= 4900:
-        phase = 1
-    if phase == 4:
-        print("PHASE is other ALERT")
-        phase = -1
     return phase
 
 def get_bifurcation_angle(xPos, yPos, targetx, targety, targ_angle):
@@ -219,6 +203,26 @@ def get_bifurcation_angle(xPos, yPos, targetx, targety, targ_angle):
     best_negative = first_valid_ratio(negative_peaks_t)
     best_overall = max(best_negative,best_positive)
     return best_overall
+
+def find_bumps(activity): # function not currently use, will keep it for now
+    '''
+    A function which takes in the activity data for a simulation and returns a list of where indices that are the peak of bumps at each time point in that simulation
+    
+    Parameters:
+        activity: a N x tsteps array of neuron activity over the entire simulation
+
+    Returns: 
+        bump_list: a list of length tsteps which every entry is the indices of the peak of a bump at that time 
+    '''
+    activity_to_insert = activity[0:4,1:]
+    activity_plus = np.concatenate([activity,activity_to_insert])
+    tsteps = len(activity.iloc[0,:])
+    bump_list = []
+    for i in range(tsteps):
+        indices_bumps, _ = find_peaks(activity_plus[:,i])
+        true_bumps = [x for x in indices_bumps if x <= 100]
+        bump_list.append(true_bumps)
+    return bump_list
 
     
 def plot_metric(metrics,x,colors,labels,fig,title,xlabel,ylabel): # Function not currently in use, but I will keep it for now

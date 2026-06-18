@@ -18,8 +18,8 @@ initialy = np.zeros(nagents)
 for a in range(nagents):
     initialx[a] = 50
     initialy[a] = 50
-initialxt = [35,50,65]
-initialyt = [50+(15*np.sqrt(3)),80,50+(15*np.sqrt(3))]
+initialxt = [50-(15*np.sqrt(3)),50,50+(15*np.sqrt(3))]
+initialyt = [65,80,65]
 
 T = 5000
 periodicflag = 0
@@ -87,12 +87,12 @@ base = {'N':N,
 include_pos = True
 include_neurons = True
 sample_size = 5
-sigma_start = 0.05
-sigma_finish = 0.75
-base_sigma = np.linspace(sigma_start,sigma_finish,num=71)
-h0_start = 0.15
-h0_finish = 0.35
-n_h0 = 101
+sigma_start = 0.4
+sigma_finish = 0.45
+base_sigma = np.linspace(sigma_start,sigma_finish,num=5)
+h0_start = 0.22
+h0_finish = 0.245
+n_h0 = 5
 h0_range= np.linspace(h0_start,h0_finish,num=n_h0)
 h0_list = []
 for item in h0_range:
@@ -121,7 +121,7 @@ for sigma_index in range(len(base_sigma)):
         curr_activity = activity_list[i]
         curr_xpos = x_list[i:(i+1)][0]
         curr_ypos = y_list[i:(i+1)][0]
-        phase = sim_met.get_bump_type(initialxt,initialyt,curr_xpos,curr_ypos,curr_activity,1)
+        phase = sim_met.get_bump_type(initialxt,initialyt,curr_xpos,curr_ypos,curr_activity)
         phases.append(phase)
         xt = -1
         yt = -1

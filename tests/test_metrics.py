@@ -3,6 +3,7 @@ from pathlib import Path
 import numpy as np
 from python_scripts.simulation_metrics import get_destination_metrics
 from python_scripts.simulation_metrics import get_success_rate
+from python_scripts.simulation_metrics import get_bump_type
 
 class DestinationMetricTests(unittest.TestCase):
     '''
@@ -205,26 +206,139 @@ class BumpTypeTests(unittest.TestCase):
     '''
     get_bump_type tests
     '''
-    def test_dimensions():
+    def test_dimensions(self):
         '''
         Testing the dimensions of the inputs: initialxt, initialyt, xPos, yPos, and activity
         checking for mismatches: initialxt and initialyt, xPos and yPos, activity and xPos (after testing to ensure xPos and yPos are the same dimension)
         '''
+        initialxt_wrong = [40,60]
+        initialxt = [30,50,70]
+        initialyt = [65,75,65]
+        xPos_wrong = np.array([50,22])
+        xPos = np.array([50,51,49,52,48,50])
+        yPos = np.array([50,54,58,62,70,75])
+        activity_wrong = np.zeros((10,2)) # N is 10 in this case
+        activity = np.zeros([10,6])
+        with self.assertRaises(ValueError):
+            phase = get_bump_type(initialxt_wrong,initialyt,xPos,yPos,activity)
+        with self.assertRaises(ValueError):
+            phase = get_bump_type(initialxt,initialyt,xPos_wrong,yPos,activity)
+        with self.assertRaises(ValueError):
+            phase = get_bump_type(initialxt,initialyt,xPos_wrong,yPos,activity_wrong)
+        with self.assertRaises(ValueError):
+            phase = get_bump_type(initialxt,initialyt,xPos,yPos,activity_wrong)
+        phase = get_bump_type(initialxt,initialyt,xPos,yPos,activity)
+        self.assertEqual(0,phase)
     
-    def test_bumpneurons():
+    # GOAL: DESTROY THESE INTERVAL TESTS BECAUSE WE ARE DESTROYING THE INTERVAL PARAMETER
+    def test_interval_basics(self):
+        '''
+        Testing different interval values, including 0, negative numbers, non integers, a value bigger than the size of activity, as well as valid inputs
+        '''
+        initialxt_simple = [20,50,80]
+        initialyt_simple = [65,80,65]
+        xPos_simple = np.array([50,49,50,49,50,50,50,47,49,50])
+        yPos_simple = np.array([50,55,55,60,62,65,70,73,75,80])
+        activity_simple = np.zeros((100,10))
+        activity_simple[10:40,:] = 1
+        activity_simple[0:10,:] = -1
+        activity_simple[40:,:] = -1
+
+        with self.assertRaises(ValueError):
+            phase = get_bump_type(initialxt_simple,initialyt_simple,xPos_simple,yPos_simple,activity_simple,2.5)
+
+        with self.assertRaises(ValueError):
+            phase = get_bump_type(initialxt_simple,initialyt_simple,xPos_simple,yPos_simple,activity_simple,0)
+        
+        with self.assertRaises(ValueError):
+            phase = get_bump_type(initialxt_simple,initialyt_simple,xPos_simple,yPos_simple,activity_simple,-2)
+
+        for i in range(10):
+            phase = get_bump_type(initialxt_simple,initialyt_simple,xPos_simple,yPos_simple,activity_simple,i+1)
+            self.assertEqual(1,phase)
+
+    def test_interval_short(self):
+        '''
+        Testing all 'short' interval values with data from simulations (one loop for each bump type)
+        '''
+        targ_path = Path('tests') / 'test_inputs' / 'bump_type' / 'targetpositions_pt1.csv'
+        xy0_path = Path('tests') / 'test_inputs' / 'bump_type' / 'xypositions_0bumps.csv'
+        xy1_path= Path('tests') / 'test_inputs' / 'bump_type' / 'xypositions_1bump.csv'
+        xy2_path = Path('tests') / 'test_inputs' / 'bump_type' / 'xypositions_2bumps.csv'
+        xy3_path = Path('tests') / 'test_inputs' / 'bump_type' / 'xypositions_3bumps.csv'
+        activity0_path = Path('tests') / 'test_inputs' / 'bump_type' / 'activity_0bumps.csv'
+        activity1_path = Path('tests') / 'test_inputs' / 'bump_type' / 'activity_1bump.csv'
+        activity2_path = Path('tests') / 'test_inputs' / 'bump_type' / 'activity_2bumps.csv'
+        activity3_path = Path('tests') / 'test_inputs' / 'bump_type' / 'activity_3bumps.csv'
+
+        targetpos = np.loadtxt(targ_path, delimiter=',')
+        xy0 = np.loadtxt(xy0_path, delimiter=',')
+        xy1 = np.loadtxt(xy1_path, delimiter=',')
+        xy2 = np.loadtxt(xy2_path, delimiter=',')
+        xy3 = np.loadtxt(xy3_path, delimiter=',')
+        act0 = np.loadtxt(activity0_path, delimiter=',')
+        act1 = np.loadtxt(activity1_path, delimiter=',')
+        act2 = np.loadtxt(activity2_path, delimiter=',')
+        act3 = np.loadtxt(activity3_path, delimiter=',')
+
+        max_short_int0 = len(xy0[0,:])//25
+        max_short_int1 = len(xy1[0,:])//25
+        max_short_int2 = len(xy2[0,:])//25
+        max_short_int3 = len(xy3[0,:])//25
+
+        for i in range(max_short_int0):
+            phase = get_bump_type(targetpos[0,:],targetpos[1,:],xy0[0,:],xy0[1,:],act0,i+1)
+            self.assertEqual(0,phase)
+            
+        for i in range(max_short_int1):
+            phase = get_bump_type(targetpos[0,:],targetpos[1,:],xy1[0,:],xy1[1,:],act1,i+1)
+            self.assertEqual(1,phase)
+        
+        for i in range(max_short_int2):
+            phase = get_bump_type(targetpos[0,:],targetpos[1,:],xy2[0,:],xy2[1,:],act2,i+1)
+            self.assertEqual(2,phase)
+        
+        for i in range(max_short_int3):
+            phase = get_bump_type(targetpos[0,:],targetpos[1,:],xy3[0,:],xy3[1,:],act3,i+1)
+            self.assertEqual(3,phase)
+
+    
+    def test_bumpneurons(self):
         '''
         Testing for when two expected bumps are at the same neuron
         test for when they are adjacent (and both positive, both negative, one positive one negative)
         '''
-    
-    def test_spanningbump():
+        # idk if the csvs I saved for this one really work with this iteration of the function but we'll see
+
+        xdiff_1neuron = np.sin((2*np.pi)/100)*80
+        ydiff_1neuron = np.cos((2*np.pi)/100)*80
+        initialxt = [50-xdiff_1neuron,50,50+xdiff_1neuron]
+        initialyt = [80-ydiff_1neuron,80,80-ydiff_1neuron]
+        xPos = np.array([50,])
+        yPos = np.array([0,]) 
+
+        targ_path = Path('tests') / 'test_inputs' / 'bump_type' / 'targetpositions_1neuronaway.csv'
+        xy_path = Path('tests') / 'test_inputs' / 'bump_type' / 'xypositions_1neuronaway.csv'
+        activity_path = Path('tests') / 'test_inputs' / 'bump_type' / 'activity_1neuronaway.csv'
+
+        targetpos = np.loadtxt(targ_path, delimiter=',')
+        xy_1na = np.loadtxt(xy_path, delimiter =',')
+        activity_1na = np.loadtxt(activity_path, delimiter=',')
+
+        phase = get_bump_type(targetpos[0,:],targetpos[1,:],xy_1na[0,:],xy_1na[1,:],activity_1na)
+        self.assertEqual(0,phase)
+
+
+
+
+    #def test_spanningbump():
         '''
         Testing the classification of a bump that spans all of the expected bump positions or any 2 of the bump positions, should classify it as one bump
         Include testing bumps at left and right but not center, should classify as two bumps, 
         Also test for when they are distinct bumps
         '''
 
-    def test_bumpedgecases():
+    #def test_bumpedgecases():
         '''
         Testing edge cases where a bump is small
         Include one neuron bumps, target neurons with activity of 0, probably good to include target neuron with activity 0 adjacent with some activity ? 
@@ -233,14 +347,14 @@ class BumpTypeTests(unittest.TestCase):
         Test for all positive except one 0 neuron between    
         '''
     
-    def test_proportions():
+    #def test_proportions():
         '''
         Testing the transition from proportions into phases
         test all edge cases for the special classification 
         test when two or more proportions are equal
         '''
     
-    def test_expectedcase():
+    #def test_expectedcase():
         '''
         Testing a few 'normal' cases
         '''
@@ -293,15 +407,3 @@ class BifurcationAngleTests(unittest.TestCase):
         Testing 'normal' cases
         '''
     
-    
-
-'''
-metrics = unittest.TestLoader().loadTestsFromTestCase(DestinationMetricTests)
-success = unittest.TestLoader().loadTestsFromTestCase(SuccessRateTests)
-bump = unittest.TestLoader().loadTestsFromTestCase(BumpTypeTests)
-bifurcation = unittest.TestLoader().loadTestsFromTestCase(BifurcationAngleTests)
-_ = unittest.TextTestRunner().run(metrics)
-_ = unittest.TextTestRunner().run(success)
-_ = unittest.TextTestRunner().run(bump)
-_ = unittest.TextTestRunner().run(bifurcation)
-'''
