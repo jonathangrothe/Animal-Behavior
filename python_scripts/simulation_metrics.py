@@ -50,6 +50,8 @@ def get_success_rate(target_list, sample_size, ntargets):
         target_probs: a list of size ntargets with the probability of reaching each target in consecutive order
         target_ses: a list of size ntargets with the standard error of reaching each target in consecutive order
     '''
+    if len(target_list) % sample_size != 0:
+        raise ValueError("Sample size does not evenly divide total number of simulations")
     n_samples = len(target_list)//sample_size
     target_probs = []
     target_ses = []
@@ -63,9 +65,11 @@ def get_success_rate(target_list, sample_size, ntargets):
             se = np.sqrt((prob*(1-prob))/sample_size)
             probs.append(prob)
             ses.append(se)
+        p_fail = sample_list.count(-1)/sample_size
+        if sum(probs) + p_fail != 1:
+            print(f"Warning: unexpected input in target list, counted as failure, target list: {sample_list}")
         target_probs.append(probs)
         target_ses.append(ses)
-
     return target_probs, target_ses
 
 

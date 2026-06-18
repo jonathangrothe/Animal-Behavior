@@ -2,6 +2,7 @@ import unittest
 from pathlib import Path
 import numpy as np
 from python_scripts.simulation_metrics import get_destination_metrics
+from python_scripts.simulation_metrics import get_success_rate
 
 class DestinationMetricTests(unittest.TestCase):
     '''
@@ -22,7 +23,9 @@ class DestinationMetricTests(unittest.TestCase):
         yPos_correct = np.array([50,60,70])
         with self.assertRaises(ValueError):
             reached, tsteps = get_destination_metrics(xPos, yPos_correct, targetsx2, targetsy)
-        self.assertEqual((1,3), get_destination_metrics(xPos, yPos_correct, targetsx, targetsy))
+        reached_cor, tsteps_cor = get_destination_metrics(xPos, yPos_correct, targetsx, targetsy)
+        self.assertEqual(reached_cor, 1)
+        self.assertEqual(tsteps_cor, 3)
         
     
     def test_reaching(self):
@@ -39,10 +42,20 @@ class DestinationMetricTests(unittest.TestCase):
         yPos_long = np.zeros(5001)
         xPos_long[-1] = 30.1
         yPos_long[-1] = 69.9
-        self.assertEqual((0,5000), get_destination_metrics(xPos,yPos,targetsx,targetsy))
-        self.assertEqual((-1,5001),get_destination_metrics(xPos_long,yPos_long,targetsx,targetsy))
-        self.assertEqual((-1,3001), get_destination_metrics(xPos,yPos,targetsx,targetsy,3000))
-        self.assertEqual((0,5001),get_destination_metrics(xPos_long,yPos_long,targetsx,targetsy,6000))
+
+        tar_5000, time_5000 = get_destination_metrics(xPos,yPos,targetsx,targetsy)
+        tar_fail, time_fail = get_destination_metrics(xPos_long,yPos_long,targetsx,targetsy)
+        tar_3000fail, time_3000 = get_destination_metrics(xPos,yPos,targetsx,targetsy,3000)
+        tar_6000, time_6000 = get_destination_metrics(xPos_long,yPos_long,targetsx,targetsy,6000)
+
+        self.assertEqual(0,tar_5000)
+        self.assertEqual(5000, time_5000)
+        self.assertEqual(-1,tar_fail)
+        self.assertEqual(5001, time_fail)
+        self.assertEqual(-1,tar_3000fail)
+        self.assertEqual(3001, time_3000)
+        self.assertEqual(0,tar_6000)
+        self.assertEqual(5001, time_6000)
 
 
     def test_samedistance(self):
@@ -53,10 +66,21 @@ class DestinationMetricTests(unittest.TestCase):
         targetsy = [70,70,70]
         xPos = np.array([50,45,42,40])
         yPos = np.array([50,57,64,70])
-        targetsx1 = [50,50,50]
-        targetsy1 = [70,70,70]
-        self.assertEqual(((0,4)),get_destination_metrics(xPos,yPos,targetsx,targetsy))
-        self.assertEqual((0,4), get_destination_metrics(xPos,yPos,targetsx1,targetsy1))
+        targetsx2 = [50,50,50]
+        targetsy2 = [70,70,70]
+        xPos3 = np.array([50,50,50,45,42,40])
+        yPos3 = np.array([50,60,65,67,69,70])
+        targetsx3 = [0,40,40]
+        targetsy3 = [0,70,70]
+        tar_1, time_1 = get_destination_metrics(xPos,yPos,targetsx,targetsy)
+        tar_2, time_2 = get_destination_metrics(xPos,yPos,targetsx2,targetsy2)
+        tar_3, time_3 = get_destination_metrics(xPos3,yPos3,targetsx3,targetsy3)
+        self.assertEqual(0,tar_1)
+        self.assertEqual(4,time_1)
+        self.assertEqual(0, tar_2)
+        self.assertEqual(4, time_2)
+        self.assertEqual(1, tar_3)
+        self.assertEqual(6, time_3)
 
     def test_expectectedcase(self):
         '''
@@ -89,29 +113,93 @@ class DestinationMetricTests(unittest.TestCase):
         targx2 = targ_2targ[0,:]
         targy2 = targ_2targ[1,:]
 
-        self.assertEqual((1,379), get_destination_metrics(x3r,y3r,targx3,targy3))
-        self.assertEqual((-1,5001), get_destination_metrics(x3f,y3f,targx3,targy3))
-        self.assertEqual((1,831), get_destination_metrics(x2r,y2r,targx2,targy2))
-        self.assertEqual((-1,3001), get_destination_metrics(x2f,y2f,targx2,targy2,3000))
+        tar3r, time3r = get_destination_metrics(x3r,y3r,targx3,targy3)
+        tar3f, time3f = get_destination_metrics(x3f,y3f,targx3,targy3)
+        tar2r, time2r = get_destination_metrics(x2r,y2r,targx2,targy2)
+        tar2f, time2f = get_destination_metrics(x2f,y2f,targx2,targy2,3000)
+
+        self.assertEqual(1, tar3r)
+        self.assertEqual(379, time3r)
+        self.assertEqual(-1, tar3f)
+        self.assertEqual(5001, time3f)
+        self.assertEqual(1, tar2r)
+        self.assertEqual(831, time2r)
+        self.assertEqual(-1, tar2f)
+        self.assertEqual(3001, time2f)
+
 
 class SuccessRateTests(unittest.TestCase):
     '''
     get_succes_rate tests
     '''
-    def test_samplesize():
+    def test_samplesize(self):
         '''
         Testing that the sample size evenly divides the total number of targets
         '''
+        target_list = [0,0,0,0,0,0,0,0,0]
+        with self.assertRaises(ValueError):
+            pr, se = get_success_rate(target_list,2,2)
+        pr_cor, se_cor = get_success_rate(target_list,3,2)
+        self.assertEqual([[1,0],[1,0],[1,0]], pr_cor)
+        self.assertEqual([[0,0],[0,0],[0,0]], se_cor)
     
-    def test_targets():
+    def test_targets(self):
         '''
-        Testing the values in target_list to ensure they are integers in the range -1,0,1,...,ntargets-1
+        Testing the values in target_list to ensure they are in the range -1,0,1,...,ntargets-1
+        Note: all non integer values in the range will be counted as missing the target
         '''
+        target_list1 = [-1,0.3,0,0,-1]
+        target_list2 = [-1,54,23,67,1,0, 2,3,56,-1,6,4]
+        pr1, se1 = get_success_rate(target_list1,5,2)
+        pr2, se2 = get_success_rate(target_list2,6,3)
+        expected_pr1 = [[0.4,0]]
+        expected_se1 = [[np.sqrt(0.24/5),0]]
+        expected_pr2 = [[1/6,1/6,0],[0,0,1/6]]
+        expected_se2 = [[np.sqrt(5/216),np.sqrt(5/216),0],[0,0,np.sqrt(5/216)]]
+        
+        for i in range(len(expected_pr1)):
+            for pr, se, ex_pr, ex_se in zip(pr1[i],se1[i],expected_pr1[i],expected_se1[i], strict=True):
+                self.assertAlmostEqual(pr,ex_pr)
+                self.assertAlmostEqual(se, ex_se)
+        
+        for i in range(len(expected_pr2)):
+            for pr, se, ex_pr, ex_se in zip(pr2[i],se2[i],expected_pr2[i],expected_se2[i], strict=True):
+                self.assertAlmostEqual(pr,ex_pr)
+                self.assertAlmostEqual(se, ex_se)
 
-    def test_expectedcase():
+
+    def test_expectedcase(self):
         '''
         Testing expected 'normal' cases
         '''
+        target_list_s1 = [0, 1, -1, 0, 2, 1, 0, 0, -1, 0, 2, 1, 2, 2, 1, 0, 0, 1, 0, -1]
+        target_list_s5 = [0,0,0,0,1, -1,-1,0,-1,0, 0,2,0,2,1, 1,2,1,1,0, -1,1,1,-1,-1, 1,1,1,1,1]
+        target_list_s20 = [0,1,2,0,1,1,1,1,0,0,0,1,0,0,2,0,1,1,0,1, 1,-1,0,-1,-1,2,0,1,1,-1,-1,-1,0,-1,2,0,1,0,-1,1, 0,2,2,0,2,2,2,2,0,0,0,2,0,0,2,0,0,2,0,2]
+
+        pr_s1, se_s1 = get_success_rate(target_list_s1,1,3)
+        pr_s5, se_s5 = get_success_rate(target_list_s5,5,3)
+        pr_s20, se_s20 = get_success_rate(target_list_s20,20,3)
+        expected_pr_s1 = [[1,0,0],[0,1,0],[0,0,0],[1,0,0],[0,0,1],[0,1,0],[1,0,0],[1,0,0],[0,0,0],[1,0,0],[0,0,1],[0,1,0],[0,0,1],[0,0,1],[0,1,0],[1,0,0],[1,0,0],[0,1,0],[1,0,0],[0,0,0]]
+        expected_se_s1 = [[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0]]
+        expected_pr_s5 = [[4/5,1/5,0],[2/5,0,0],[2/5,1/5,2/5],[1/5,3/5,1/5],[0,2/5,0],[0,1,0]]
+        expected_se_s5 = [[np.sqrt(4/125),np.sqrt(4/125),0],[np.sqrt(6/125),0,0],[np.sqrt(6/125),np.sqrt(4/125),np.sqrt(6/125)],[np.sqrt(4/125),np.sqrt(6/125),np.sqrt(4/125)],[0,np.sqrt(6/125),0],[0,0,0]]
+        expected_pr_s20 = [[9/20,9/20,2/20],[5/20,5/20,2/20],[10/20,0,10/20]]
+        expected_se_s20 = [[np.sqrt(99/8000),np.sqrt(99/8000),np.sqrt(36/8000)],[np.sqrt(75/8000),np.sqrt(75/8000),np.sqrt(36/8000)],[np.sqrt(100/8000),0,np.sqrt(100/8000)]]
+
+        for i in range(len(expected_pr_s1)):
+            for pr, se, ex_pr, ex_se in zip(pr_s1[i],se_s1[i],expected_pr_s1[i],expected_se_s1[i],strict=True):
+                self.assertAlmostEqual(pr,ex_pr)
+                self.assertAlmostEqual(se,ex_se)
+        
+        for i in range(len(expected_pr_s5)):
+            for pr, se, ex_pr, ex_se in zip(pr_s5[i],se_s5[i],expected_pr_s5[i],expected_se_s5[i],strict=True):
+                self.assertAlmostEqual(pr,ex_pr)
+                self.assertAlmostEqual(se,ex_se)
+
+        for i in range(len(expected_pr_s20)):
+            for pr, se, ex_pr, ex_se in zip(pr_s20[i],se_s20[i],expected_pr_s20[i],expected_se_s20[i],strict=True):
+                self.assertAlmostEqual(pr,ex_pr)
+                self.assertAlmostEqual(se,ex_se)
 
 class BumpTypeTests(unittest.TestCase):
     '''

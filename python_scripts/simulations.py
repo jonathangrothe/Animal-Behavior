@@ -13,7 +13,7 @@ initialy = np.zeros(nagents)
 for a in range(nagents):
     initialx[a] = 50
     initialy[a] = 50
-initialxt = [50-(15*np.sqrt(3)),50,50+(15*np.sqrt(3))]
+initialxt = [50-(15*np.sqrt(3)),50,50+(15*np.sqrt(3)),]
 initialyt = [65,80,65]
 
 T = 5000
@@ -81,9 +81,9 @@ base = {'N':N,
 
 plot_neurons = True
 plot_trajs = True
-sample_size = 1
-h0_list = [[0.2,0.2,0.2],[0.3,0.3,0.3]]
-sigma_list = [0.5,0.5]
+sample_size = 20
+h0_list = [[0.208,0.208,0.208],[0.209,0.209,0.209],[0.21,0.21,0.21],[0.2155,0.2155,0.2155],[0.216,0.216,0.216],[0.2165,0.2165,0.2165]]
+sigma_list = [0.2,0.2,0.2,0.2,0.2,0.2]
 change = {'sigma':sigma_list, 'h0':h0_list}
 target_list, time_list, activity_list, x_list, y_list, headings_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
 
@@ -105,9 +105,9 @@ for i in range(len(target_list)):
     phases.append(phase)
 
 n_plots = len(h0_list)
-ncols = n_plots
-nrows = 1
-fig = plt.figure(layout='constrained',figsize=(9,8))
+ncols = 3
+nrows = 2
+fig = plt.figure(layout='constrained',figsize=(9,12))
 subfigs = fig.subfigures(2,1, wspace=0.1)
 axs0 = subfigs[0].subplots(nrows,ncols)
 axs0 = axs0.flatten()
@@ -118,7 +118,7 @@ cmap = mcolors.LinearSegmentedColormap.from_list("GreyBlue", grey_to_blue)
 
 for s in range(n_plots):
     sim_met.plot_traj(x_list[s*sample_size:(s+1)*sample_size],y_list[s*sample_size:(s+1)*sample_size],initialxt,initialyt,sample_size,[0],axs0[s],False,0,0)
-    axs0[s].set_title(f"{"allocentric" if allocentricFlag==1 else "egocentric"}, sigma: {round(sigma_list[s],4)}, h0: {round(h0_list[s][0],4)}, beta: {beta}")
+    axs0[s].set_title(f"sigma: {round(sigma_list[s],4)}, h0: {round(h0_list[s][0],4)}, beta: {beta}")
     sim_activity = activity_list[s*sample_size]
     col_min = np.min(sim_activity[:,40:])
     col_max = np.max(sim_activity[:,40:])
@@ -142,6 +142,6 @@ targets = np.array([[70,70],[30,70]])
 print(len(x_list[0]))
 #np.savetxt("xypositions_3targ_reaches.csv", positions, delimiter = ",")
 #np.savetxt("xypositions_3targ_fails.csv", positions2, delimiter = ",")
-np.savetxt("targetpositions_2targ.csv", targets, delimiter = ",")
+#np.savetxt("targetpositions_2targ.csv", targets, delimiter = ",")
 
 plt.show()
