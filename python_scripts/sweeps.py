@@ -18,8 +18,8 @@ initialy = np.zeros(nagents)
 for a in range(nagents):
     initialx[a] = 50
     initialy[a] = 50
-initialxt = [50-(15*np.sqrt(3)),50,50+(15*np.sqrt(3))]
-initialyt = [35,80,35]
+initialxt = [20,50,80]
+initialyt = [50,80,50]
 
 T = 5000
 periodicflag = 0
@@ -89,10 +89,10 @@ include_neurons = True
 sample_size = 5
 sigma_start = 0.05
 sigma_finish = 0.75
-base_sigma = np.linspace(sigma_start,sigma_finish,num=7)
+base_sigma = np.linspace(sigma_start,sigma_finish,num=71)
 h0_start = 0.15
 h0_finish = 0.35
-n_h0 = 7
+n_h0 = 101
 h0_range= np.linspace(h0_start,h0_finish,num=n_h0)
 h0_list = []
 for item in h0_range:
@@ -114,7 +114,7 @@ for sigma_index in range(len(base_sigma)):
     print(f"Sampling time: {sampling_time:.6f} seconds")
     analysis_time = time.perf_counter()
     p_target, se_target = sim_met.get_success_rate(target_list, sample_size, ntargets)
-    target_reached = [1 if (x >= 0) else x for x in target_list]
+    target_reached = [0 if (x == 0) or (x == 2) else x for x in target_list]
     phases = []
     angles = []
     for i in range(len(target_list)):
@@ -147,8 +147,8 @@ for sigma_index in range(len(base_sigma)):
         nOther = sim_phases.count(4)
         nreach = sim_targets.count(1)
         reach = statistics.mode(sim_targets)
-        if sim_targets.count(reach) != sample_size:
-            reach = 0
+        if 0 in sim_targets or 2 in sim_targets:
+            reach = 0 
         grid_phases.append(np.argmax([n0,n1,n2,n3,nOther]))
         grid_targets.append(reach)
         grid_times.append(np.mean(sim_times))
@@ -184,7 +184,7 @@ boundaries_tar = np.arange(-1,3) - 0.5
 norm_tar = mcolors.BoundaryNorm(boundaries_tar,cmap1.N)
 boundaries_phase = np.arange(5) - 0.5
 norm_phase = mcolors.BoundaryNorm(boundaries_phase,cmap2.N)
-categories_tar = ['fails to reach', 'both', 'reaches a target']
+categories_tar = ['fails to reach', 'reaches outer', 'reaches a target']
 categories_phase = ['0 bumps', '1 bump', '2 bumps','3 bumps']
 
 im1 = axs[0].imshow(target_df, cmap=cmap1,origin='lower',extent=[h0_range[0], h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
@@ -200,7 +200,7 @@ cbar3.set_label('Time to target')
 cbar4 = plt.colorbar(im4)
 cbar4.set_label('Ratio of 1st bifur. angle to direct path (0.5 is midpoint)')
 
-subfigs.suptitle(f"Heatmaps for 2π/3 between targets, average of {sample_size} samples")
+subfigs.suptitle(f"Heatmaps for π/2 between targets, average of {sample_size} samples")
 end_time = time.perf_counter()
 execution_time = end_time - start_time
 print(f"Execution time: {execution_time:.6f} seconds")
