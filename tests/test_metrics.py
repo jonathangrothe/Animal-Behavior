@@ -258,19 +258,99 @@ class BumpTypeTests(unittest.TestCase):
         activity_1na = np.loadtxt(activity_path, delimiter=',')
         phase_simple = get_bump_type(initialxt,initialyt,xPos,yPos,activity)
         self.assertEqual(1,phase_simple)
-        
+
         phase = get_bump_type(targetpos[0,:],targetpos[1,:],xy_1na[0,:],xy_1na[1,:],activity_1na)
         self.assertEqual(0,phase)
 
 
 
 
-    #def test_spanningbump():
+    def test_spanningbump(self):
         '''
         Testing the classification of a bump that spans all of the expected bump positions or any 2 of the bump positions, should classify it as one bump
         Include testing bumps at left and right but not center, should classify as two bumps, 
         Also test for when they are distinct bumps
         '''
+        initialxt = [50+(50/np.sqrt(2)),50,50-(50/np.sqrt(2))]
+        initialyt = [50+(50/np.sqrt(2)),100,50+(50/np.sqrt(2))]
+        xPos = np.array([50]*50)
+        yPos = np.array([50]*50)
+        activity = np.zeros((100,50))
+        activity[0:51,:] = 1
+        activity[51:,:] = -1
+        activity_lc = np.zeros((100,50))
+        activity_lc[20:43,:] = 1
+        activity_lc[0:20] = -1
+        activity_lc[43:,:] = -1
+        activity_rc = np.zeros((100,50))
+        activity_rc[8:31,:] = 1
+        activity_rc[0:8,:] = -1
+        activity_rc[31:,:] = -1
+        activity_spread = np.zeros((100,50))
+        activity_spread[8:18,:] = 1
+        activity_spread[18:33,:] = -1
+        activity_spread[33:43,:] = 1
+        activity_spread[0:8,:] = -1
+        activity_spread[43:,:] = -1
+        activity_three = np.zeros((100,50))
+        activity_three[0:11,:] = -1
+        activity_three[11:15,:] = 1
+        activity_three[15:22,:] = -1
+        activity_three[23:28,:] = 1
+        activity_three[28:35,:] = -1
+        activity_three[36:40,:] = 1
+        activity_three[40:,:] = -1
+        print("big bump:")
+        phase_bigbump = get_bump_type(initialxt,initialyt,xPos,yPos,activity)
+        print("lc:")
+        phase_lc = get_bump_type(initialxt,initialyt,xPos,yPos,activity_lc)
+        print("rc:")
+        phase_rc = get_bump_type(initialxt,initialyt,xPos,yPos,activity_rc)
+        print("spread:")
+        phase_spread = get_bump_type(initialxt,initialyt,xPos,yPos,activity_spread)
+        print("three:")
+        phase_three = get_bump_type(initialxt,initialyt,xPos,yPos,activity_three)
+
+        self.assertEqual(1,phase_bigbump)
+        self.assertEqual(1,phase_lc)
+        self.assertEqual(1,phase_rc)
+        self.assertEqual(2,phase_spread)
+        self.assertEqual(3,phase_three)
+    
+    def test_wrappingbumps(self):
+        '''
+        Testing for when the absolute values between the indices of bumps is large, and they need to wrap around the ring
+        '''
+        initialxt_two = [50+(50/np.sqrt(2)),50]
+        initialyt_two = [50+(50/np.sqrt(2)),0]
+        initialxt_three = [50,50-(50/np.sqrt(2)),50]
+        initialyt_three = [50,50-(50/np.sqrt(2)),0]
+        xPos = np.array([50]*50)
+        yPos = np.array([50]*50)
+        activity_2t_1b = np.zeros((100,50))
+        activity_2t_1b[0:14,:] = 1
+        activity_2t_1b[14:73] = -1
+        activity_2t_1b[73:] = 1
+        activity_2t_2b = np.zeros((100,50))
+        activity_2t_2b[0:11] = -1
+        activity_2t_2b[11:14] = 1
+        activity_2t_2b[14:73] = -1
+        activity_2t_2b[73:78] = 1
+        activity_2t_2b[78:,:] = -1
+        activity_3t_1b = np.zeros((100,50))
+        activity_3t_2b = np.zeros((100,50))
+        activity_3t_3b = np.zeros((100,50))
+
+        print("2 targets 1 bump")
+        phase_2t_1b = get_bump_type(initialxt_two,initialyt_two,xPos,yPos,activity_2t_1b)
+        print("2 targets 2 bumps")
+        phase_2t_2b = get_bump_type(initialxt_two,initialyt_two,xPos,yPos,activity_2t_2b)
+
+        self.assertEqual(1,phase_2t_1b)
+        self.assertEqual(2,phase_2t_2b)
+
+
+
 
     #def test_bumpedgecases():
         '''

@@ -120,38 +120,38 @@ def get_bump_type(initialxt,initialyt,xPos,yPos,activity):
         act_int = activity[indices, start:end]
         bump_means = act_int.mean(axis=1) 
         npositive = int(np.sum(bump_means > 0))
+        print(f"npositive start: {npositive}, indices: {indices}, bump means: {bump_means}")
         if npositive > 1:
-            n0, n1, n2 = indices[0], indices[1], indices[2]
-            b0, b1, b2 = bump_means[0], bump_means[1], bump_means[2]
             act_slice = activity[:, start:end]
-
-            def between_min(na, nb):
-                diff = na - nb
-                if 0 <= diff < 50:
-                    return act_slice[nb+1:na].min() if nb+1 < na else 0.0
-                elif diff >= 50:
-                    part = np.concatenate([act_slice[:nb], act_slice[na:]])
-                    return part.min() if part.size > 0 else 0.0
-                else:
-                    return act_slice[n0+1:nb].min() if n0+1 < nb else 0.0 
-                
-            if b0 > 0 and b1 > 0:
-                if between_min(n0, n1) >= 0:
-                    npositive -= 1
-
-            if b1 > 0 and b2 > 0:
-                if between_min(n1, n2) >= 0:
+            concat = False
+            sorted_indices = sorted(indices)
+            print(f"sorted indices: {sorted_indices}")
+            for index in range(len(sorted_indices)-1):
+                if sorted_indices[index] > 0 and sorted_indices[index+1] > 0:
+                    diff = sorted_indices[index+1]-sorted_indices[index]
+                    if diff > 50:
+                        print(f"index start: {sorted_indices[index]}, index end: {sorted_indices[index+1]}, diff: {diff}")
+                        concat = True
+                    else: 
+                        betw_min = np.min(act_slice[sorted_indices[index]:sorted_indices[index+1]])
+                        print(f"index start: {sorted_indices[index]}, index end: {sorted_indices[index+1]}, diff: {diff}, betw_min: {betw_min}")
+                        if betw_min >= 0:
+                            npositive -= 1
+            if concat: 
+                part = np.concatenate([act_slice[:sorted_indices[0]], act_slice[sorted_indices[-1]:]])
+                print(f"concat, index start: {sorted_indices[0]}, index end: {sorted_indices[-1]}, betw: {np.min(part)}")
+                if np.min(part) >= 0:
                     npositive -= 1
         
         counters[npositive] += 1
         start += item
+        print(f"npositive end: {npositive}")
         
     proportions = counters / sum(counters)
-    print(f"proportions: {proportions}")
-    print(xPos.size)
     phase = int(np.argmax(proportions))
     if proportions[2] > 0.1 and phase == 1 and total_time == 5001:
         phase = 2
+    print(f"phase: {phase}")
     return phase
 
 def get_bifurcation_angle(xPos, yPos, targetx, targety, targ_angle):
