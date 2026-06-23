@@ -4,6 +4,7 @@ import numpy as np
 from python_scripts.simulation_metrics import get_destination_metrics
 from python_scripts.simulation_metrics import get_success_rate
 from python_scripts.simulation_metrics import get_bump_type
+from python_scripts.simulation_metrics import get_bifurcation_angle
 
 class DestinationMetricTests(unittest.TestCase):
     '''
@@ -213,7 +214,6 @@ class BumpTypeTests(unittest.TestCase):
         Include testing bumps at left and right but not center, should classify as two bumps, 
         Also test for when they are distinct bumps
         '''
-        print("spanning bump")
         activity = np.zeros((100,50))
         activity[0:51,:] = 1
         activity[51:,:] = -1
@@ -239,15 +239,15 @@ class BumpTypeTests(unittest.TestCase):
         activity_three[28:35,:] = -1
         activity_three[36:40,:] = 1
         activity_three[40:,:] = -1
-        print("big bump:")
+        #print("big bump:")
         phase_bigbump = get_bump_type(activity)
-        print("lc:")
+        #print("lc:")
         phase_lc = get_bump_type(activity_lc)
-        print("rc:")
+        #print("rc:")
         phase_rc = get_bump_type(activity_rc)
-        print("spread:")
+        #print("spread:")
         phase_spread = get_bump_type(activity_spread)
-        print("three:")
+        #print("three:")
         phase_three = get_bump_type(activity_three)
 
         self.assertEqual(1,phase_bigbump)
@@ -260,7 +260,6 @@ class BumpTypeTests(unittest.TestCase):
         '''
         Testing for when the absolute values between the indices of bumps is large, and they need to wrap around the ring
         '''
-        print("wrappingbump")
         activity_2t_1b = np.zeros((100,50))
         activity_2t_1b[0:14,:] = 1
         activity_2t_1b[14:73,:] = -1
@@ -289,15 +288,15 @@ class BumpTypeTests(unittest.TestCase):
         activity_3t_3b[86:90,:] = 1
         activity_3t_3b[90:,:] = -1
 
-        print("2 targets 1 bump")
+        #print("2 targets 1 bump")
         phase_2t_1b = get_bump_type(activity_2t_1b)
-        print("2 targets 2 bumps")
+        #print("2 targets 2 bumps")
         phase_2t_2b = get_bump_type(activity_2t_2b)
-        print("3 targets 1 bump")
+        #print("3 targets 1 bump")
         phase_3t_1b = get_bump_type(activity_3t_1b)
-        print("3 bumps 2 targets")
+        #print("3 bumps 2 targets")
         phase_3t_2b = get_bump_type(activity_3t_2b)
-        print("3 targets 3 bumps")
+        #print("3 targets 3 bumps")
         phase_3t_3b = get_bump_type(activity_3t_3b)
 
         self.assertEqual(1,phase_2t_1b)
@@ -336,21 +335,21 @@ class BumpTypeTests(unittest.TestCase):
         activity_many = np.zeros((100,50))
         activity_many[[10,33,35,38,50,67,68,69,90],:] = 1
 
-        print("all 0")
+        #print("all 0")
         phase_all0 = get_bump_type(activity_all0)
-        print("one 1 else -1s")
+        #print("one 1 else -1s")
         phase_1 = get_bump_type(activity_1)
-        print("one 1 else 0")
+        #print("one 1 else 0")
         phase_1_0 = get_bump_type(activity_1_zeros)
-        print("two ones else -1")
+        #print("two ones else -1")
         phase_2 = get_bump_type(activity_2)
-        print("two ones else 0")
+        #print("two ones else 0")
         phase_2_0 = get_bump_type(activity_2_zeros)
-        print("three ones else -1")
+        #print("three ones else -1")
         phase_3 = get_bump_type(activity_3)
-        print("three ones else zero")
+        #print("three ones else zero")
         phase_3_zeros = get_bump_type(activity_3_zeros)
-        print("seven bumps else 0")
+        #print("seven bumps else 0")
         phase_many = get_bump_type(activity_many)
 
         self.assertEqual(0,phase_all0)
@@ -362,13 +361,12 @@ class BumpTypeTests(unittest.TestCase):
         self.assertEqual(3,phase_3_zeros)
         self.assertEqual(4,phase_many)
     
-    def test_zaaproportionsties(self):
+    def test_proportionsties(self):
         '''
         Testing the transition from proportions into phases
         test all edge cases for the special classification 
         test when two or more proportions are equal
         '''
-        print("proportionsties")
         activity_tie = np.zeros((100,4))
         activity_threetie = np.zeros((100,6))
         activity_equal = np.zeros((100,10))
@@ -390,11 +388,10 @@ class BumpTypeTests(unittest.TestCase):
         self.assertEqual(1,equal)
         
     
-    def test_zproportionsconversion(self):
+    def test_proportionsconversion(self):
         '''
         Testing the conversion to phase 2
         '''
-        print("conevrsions")
         activity_converted2 = np.zeros((100,100))
         activity_not2 = np.zeros((100,100))
         activity_border2 = np.zeros((100,100))
@@ -432,11 +429,10 @@ class BumpTypeTests(unittest.TestCase):
         self.assertEqual(2,tie_34)
 
     
-    def test_zzzzmaxtime(self):
+    def test_maxtime(self):
         '''
         Testing the maxtime parameter
         '''
-        print("maxtime")
         activity = np.zeros((100,100))
         activity[0,0:30] = 1
         activity_limit2 = np.zeros((100,100))
@@ -456,7 +452,6 @@ class BumpTypeTests(unittest.TestCase):
         '''
         Testing a few 'normal' cases
         '''
-        print("expectedcases")
         activity0_path = Path('tests') / 'test_inputs' / 'bump_type' / 'activity_0bumps.csv'
         activity1_path = Path('tests') / 'test_inputs' / 'bump_type' / 'activity_1bump.csv'
         activity2_path = Path('tests') / 'test_inputs' / 'bump_type' / 'activity_2bumps.csv'
@@ -483,46 +478,93 @@ class BifurcationAngleTests(unittest.TestCase):
     '''
     get_bifurcation_angle tests
     '''
-    def test_dimensions():
+    def test_dimensions(self):
         '''
         Testing to ensure the dimensions of xPos and yPos line up
         '''
-    
-    def test_targets():
-        '''
-        Testing to ensure that the targets are valid inputs and that either both are -1 or both are positive integers
-        '''
+        xPos = np.array([50]*10)
+        yPos = np.array([50]*8)
+        yPos_correct = np.array([50]*10)
+        targetx = -1
+        targety = -1
+        targangle =2*np.pi/3
+        with self.assertRaises(ValueError):
+            bif_angle = get_bifurcation_angle(xPos,yPos,targetx,targety,targangle)
+        correct_dim = get_bifurcation_angle(xPos,yPos_correct,targetx,targety,targangle)
+        self.assertEqual(0,correct_dim)
 
-    def test_targangle():
+    def test_targets(self):
+        '''
+        Testing to ensure that when the targets are both numerical a bifurcation angle is calculated, and if one of them is a string then 0 is returned
+        '''
+        targetx_fail = 'n'
+        targety_fail = 'n'
+        targetx_valid = 50-(15*np.sqrt(3))
+        targety_valid = 65
+        xPos = np.array([50,50,50,50-5,targetx_valid-0.1,targetx_valid-0.1])
+        yPos = np.array([50,50,50,64,targety_valid-0.1,targety_valid-0.1])
+        xPos_2 = np.array([50,50,50,50-7.5,targetx_valid-0.1,targetx_valid-0.1])
+        yPos_2 = np.array([50,50,50,64,targety_valid-0.1,targety_valid-0.1])
+        xPos_3 = np.array([50,50,50,50-10,targetx_valid-0.1,targetx_valid-0.1])
+        yPos_3 = np.array([50,50,50,64,targety_valid-0.1,targety_valid-0.1])
+        xPos_4 = np.array([50,50,50,50-12.5,targetx_valid-0.1,targetx_valid-0.1])
+        yPos_4 = np.array([50,50,50,64,targety_valid-0.1,targety_valid-0.1])
+        xPos_5 = np.array([50,50,50,50-15,targetx_valid-0.1,targetx_valid-0.1])
+        yPos_5 = np.array([50,50,50,64,targety_valid-0.1,targety_valid-0.1])
+        targangle = np.pi/3
+        bif_angle_fail = get_bifurcation_angle(xPos,yPos,targetx_fail,targety_fail,targangle)
+        bif_angle_xfail = get_bifurcation_angle(xPos,yPos,targetx_fail,targety_valid,targangle)
+        bif_angle_yfail = get_bifurcation_angle(xPos,yPos,targetx_valid,targety_fail,targangle)
+        print("success 1")
+        bif_angle_success = get_bifurcation_angle(xPos,yPos,targetx_valid,targety_valid,targangle)
+        print("success2")
+        bif_angle_success2 = get_bifurcation_angle(xPos_2,yPos_2,targetx_valid,targety_valid,targangle)
+        print("success3")
+        bif_angle_success3 = get_bifurcation_angle(xPos_3,yPos_3,targetx_valid,targety_valid,targangle)
+        print("success4")
+        bif_angle_success4 = get_bifurcation_angle(xPos_4,yPos_4,targetx_valid,targety_valid,targangle)
+        print("success5")
+        bif_angle_success5 = get_bifurcation_angle(xPos_5,yPos_5,targetx_valid,targety_valid,targangle)
+
+        self.assertEqual(0,bif_angle_fail)
+        self.assertEqual(0,bif_angle_xfail)
+        self.assertEqual(0,bif_angle_yfail)
+        self.assertAlmostEqual(1,bif_angle_success)
+        self.assertAlmostEqual(1,bif_angle_success2)
+        self.assertAlmostEqual(1,bif_angle_success3)
+        self.assertAlmostEqual(1,bif_angle_success4)
+        self.assertAlmostEqual(1,bif_angle_success5)
+
+    #def test_targangle():
         '''
         Testing to ensure that the angle between the targets is a valid input in radians
         '''
     
-    def test_anglepeaks():
+    #def test_anglepeaks():
         '''
         Testing edge cases for the angles between the targets, 
         many maxima/minima, no maxima/minima, 
         '''
     
-    def test_unexpectedmovement():
+    #def test_unexpectedmovement():
         '''
         Testing movement that is unexpected: 
         elliptical movement and then a decision, going past the targets and then choosing one, reaching a target by making jagged decisions (ie: sinusoidal towards a target but with sharp bends)
         '''
     
-    def test_validpeak():
+    #def test_validpeak():
         '''
         Testing the valid peak check, first peak is less than equal to and more than 2 degrees from start,
         one or more invalid peak and no valid peaks, one or more invalid peak and several valid peaks
         '''
     
-    def test_ratio():
+    #def test_ratio():
         '''
         Testing the calculation of the ratio
         test equal max and min, test ratio outside of expected bounds that still works (0.5 to 1), test ratio that doesn't make sense as a bifurcation point (>1), test ratio that is infeasible (greater than 2pi/angle)
         '''
     
-    def test_expectedcases():
+    #def test_expectedcases():
         '''
         Testing 'normal' cases
         '''

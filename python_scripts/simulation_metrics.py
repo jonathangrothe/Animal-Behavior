@@ -108,12 +108,12 @@ def get_bump_type(activity,maxtime=5000):
         counters[nbumps] += 1
         
     proportions = counters / sum(counters)
-    print(f"proportions: {proportions}")
+    #print(f"proportions: {proportions}")
     phase = np.argmax(proportions)
     max_indices = np.where(proportions == proportions.max())[0]
-    print(f"max indices: {max_indices}")
+    #print(f"max indices: {max_indices}")
     if len(max_indices) > 1:
-        print("tie deteceted")
+        #print("tie deteceted")
         if total_time == maxtime+1:
             if proportions[2] >= 0.04:
                 phase = 2
@@ -133,7 +133,7 @@ def get_bump_type(activity,maxtime=5000):
 
     if proportions[2] >= 0.04 and phase == 1 and total_time == maxtime+1:
         phase = 2
-    print(f"phase: {phase}")
+    #print(f"phase: {phase}")
     return phase
 
 def get_bifurcation_angle(xPos, yPos, targetx, targety, targ_angle):
@@ -153,18 +153,26 @@ def get_bifurcation_angle(xPos, yPos, targetx, targety, targ_angle):
                     Calculated by taking both the local max and local mins of the angle, finding the first one where the agent has moved more than 1 total unit, 
                     then seeing if the difference between the most direct path and the first local max or first local min is bigger.
     '''
-    if targetx < 0 or targety < 0:
+    if np.shape(xPos)[0] == 1:
+        xPos = xPos.ravel()
+        yPos = yPos.ravel()
+    if xPos.size != yPos.size:
+        raise ValueError("arrays for x position and y position are different sizes")
+    if isinstance(targetx,str) or isinstance(targety,str):
         return 0
-    xPos = np.asarray(xPos)
-    yPos = np.asarray(yPos)
-    angles_to_target = np.atan2(np.abs(targety-yPos),np.abs(targetx-xPos))
+    angles_to_target = np.atan2((targety-yPos),(targetx-xPos)) 
+    angles_to_target = np.array([angle + 2*np.pi if angle < 0 else angle for angle in angles_to_target])
+    print(f"x diff: {targetx-xPos}")
+    print(f"y diff: {targety-yPos}")
+    print(f"angles: {angles_to_target}")
     initial_angle = angles_to_target[0]
     peaks_t, _ = find_peaks(angles_to_target)
     negative_peaks_t, _ = find_peaks(-angles_to_target)
     x0, y0 = xPos[0], yPos[0]
     best_positive = 0
     best_negative = 0
-
+    print(f"peaks_t: {peaks_t}")
+    print(f"negative_peaks: {negative_peaks_t}")
     def first_valid_ratio(peak_indices):
         if len(peak_indices) == 0:
             return 0
@@ -181,6 +189,10 @@ def get_bifurcation_angle(xPos, yPos, targetx, targety, targ_angle):
             return 0
 
         first = peak_indices[valid[0]]
+        print(f"angle to target: {angles_to_target[first]}")
+        print(f"initial angle: {initial_angle}")
+        print(f"targ_angle: {targ_angle}")
+        print(f"returned: {np.abs(angles_to_target[first] - initial_angle) / targ_angle}")
         return np.abs(angles_to_target[first] - initial_angle) / targ_angle
 
     best_positive = first_valid_ratio(peaks_t)

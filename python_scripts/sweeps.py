@@ -87,11 +87,11 @@ base = {'N':N,
 include_pos = True
 include_neurons = True
 sample_size = 5
-sigma_start = 0.4
-sigma_finish = 0.45
+sigma_start = 0.05
+sigma_finish = 0.75
 base_sigma = np.linspace(sigma_start,sigma_finish,num=5)
-h0_start = 0.22
-h0_finish = 0.245
+h0_start = 0.15
+h0_finish = 0.35
 n_h0 = 5
 h0_range= np.linspace(h0_start,h0_finish,num=n_h0)
 h0_list = []
@@ -121,10 +121,10 @@ for sigma_index in range(len(base_sigma)):
         curr_activity = activity_list[i]
         curr_xpos = x_list[i:(i+1)][0]
         curr_ypos = y_list[i:(i+1)][0]
-        phase = sim_met.get_bump_type(initialxt,initialyt,curr_xpos,curr_ypos,curr_activity)
+        phase = sim_met.get_bump_type(curr_activity)
         phases.append(phase)
-        xt = -1
-        yt = -1
+        xt = 'n'
+        yt = 'n'
         if target_list[i] >=0:
             xt = initialxt[target_list[i]]
             yt = initialyt[target_list[i]]
