@@ -211,6 +211,7 @@ class BumpTypeTests(unittest.TestCase):
         Testing the dimensions of the inputs: initialxt, initialyt, xPos, yPos, and activity
         checking for mismatches: initialxt and initialyt, xPos and yPos, activity and xPos (after testing to ensure xPos and yPos are the same dimension)
         '''
+        print("dimensions")
         initialxt_wrong = [40,60]
         initialxt = [30,50,70]
         initialyt = [65,75,65]
@@ -237,7 +238,7 @@ class BumpTypeTests(unittest.TestCase):
         test for when they are adjacent (and both positive, both negative, one positive one negative)
         '''
         # idk if the csvs I saved for this one really work with this iteration of the function but we'll see
-
+        print("bumpneurons")
         xdiff_1neuron = np.sin((2*np.pi)/100)*80
         ydiff_1neuron = np.cos((2*np.pi)/100)*80
         initialxt = [50-xdiff_1neuron,50,50+xdiff_1neuron]
@@ -256,10 +257,11 @@ class BumpTypeTests(unittest.TestCase):
         targetpos = np.loadtxt(targ_path, delimiter=',')
         xy_1na = np.loadtxt(xy_path, delimiter =',')
         activity_1na = np.loadtxt(activity_path, delimiter=',')
+        
         phase_simple = get_bump_type(initialxt,initialyt,xPos,yPos,activity)
-        self.assertEqual(1,phase_simple)
-
         phase = get_bump_type(targetpos[0,:],targetpos[1,:],xy_1na[0,:],xy_1na[1,:],activity_1na)
+        
+        self.assertEqual(1,phase_simple)
         self.assertEqual(0,phase)
 
 
@@ -271,6 +273,7 @@ class BumpTypeTests(unittest.TestCase):
         Include testing bumps at left and right but not center, should classify as two bumps, 
         Also test for when they are distinct bumps
         '''
+        print("spanning bump")
         initialxt = [50+(50/np.sqrt(2)),50,50-(50/np.sqrt(2))]
         initialyt = [50+(50/np.sqrt(2)),100,50+(50/np.sqrt(2))]
         xPos = np.array([50]*50)
@@ -321,38 +324,59 @@ class BumpTypeTests(unittest.TestCase):
         '''
         Testing for when the absolute values between the indices of bumps is large, and they need to wrap around the ring
         '''
+        print("wrappingbump")
         initialxt_two = [50+(50/np.sqrt(2)),50]
         initialyt_two = [50+(50/np.sqrt(2)),0]
-        initialxt_three = [50,50-(50/np.sqrt(2)),50]
-        initialyt_three = [50,50-(50/np.sqrt(2)),0]
+        initialxt_three = [50,50+(50/np.sqrt(2)),100]
+        initialyt_three = [100,50-(50/np.sqrt(2)),50]
         xPos = np.array([50]*50)
         yPos = np.array([50]*50)
         activity_2t_1b = np.zeros((100,50))
         activity_2t_1b[0:14,:] = 1
-        activity_2t_1b[14:73] = -1
-        activity_2t_1b[73:] = 1
+        activity_2t_1b[14:73,:] = -1
+        activity_2t_1b[73:,:] = 1
         activity_2t_2b = np.zeros((100,50))
-        activity_2t_2b[0:11] = -1
-        activity_2t_2b[11:14] = 1
-        activity_2t_2b[14:73] = -1
-        activity_2t_2b[73:78] = 1
+        activity_2t_2b[0:11,:] = -1
+        activity_2t_2b[11:14,:] = 1
+        activity_2t_2b[14:73,:] = -1
+        activity_2t_2b[73:78,:] = 1
         activity_2t_2b[78:,:] = -1
         activity_3t_1b = np.zeros((100,50))
         activity_3t_2b = np.zeros((100,50))
         activity_3t_3b = np.zeros((100,50))
+        activity_3t_1b[0:28,:] = 1
+        activity_3t_1b[28:86,:] = -1
+        activity_3t_1b[86:,:] = 1
+        activity_3t_2b[0:3,:] = 1
+        activity_3t_2b[3:23,:] = -1
+        activity_3t_2b[23:28,:] = 1
+        activity_3t_2b[28:85,:] = -1 
+        activity_3t_2b[85:,:] = 1
+        activity_3t_3b[0:3,:] = 1
+        activity_3t_3b[3:23,:] = -1
+        activity_3t_3b[23:28,:] = 1
+        activity_3t_3b[28:86,:] = -1
+        activity_3t_3b[86:90,:] = 1
+        activity_3t_3b[90:,:] = -1
 
         print("2 targets 1 bump")
         phase_2t_1b = get_bump_type(initialxt_two,initialyt_two,xPos,yPos,activity_2t_1b)
         print("2 targets 2 bumps")
         phase_2t_2b = get_bump_type(initialxt_two,initialyt_two,xPos,yPos,activity_2t_2b)
+        print("3 targets 1 bump")
+        phase_3t_1b = get_bump_type(initialxt_three,initialyt_three,xPos,yPos,activity_3t_1b)
+        print("3 bumps 2 targets")
+        phase_3t_2b = get_bump_type(initialxt_three,initialyt_three,xPos,yPos,activity_3t_2b)
+        print("3 targets 3 bumps")
+        phase_3t_3b = get_bump_type(initialxt_three,initialyt_three,xPos,yPos,activity_3t_3b)
 
         self.assertEqual(1,phase_2t_1b)
         self.assertEqual(2,phase_2t_2b)
+        self.assertEqual(1,phase_3t_1b)
+        self.assertEqual(2,phase_3t_2b)
+        self.assertEqual(3,phase_3t_3b)
 
-
-
-
-    #def test_bumpedgecases():
+    def test_zsmallbumps(self):
         '''
         Testing edge cases where a bump is small
         Include one neuron bumps, target neurons with activity of 0, probably good to include target neuron with activity 0 adjacent with some activity ? 
@@ -360,6 +384,19 @@ class BumpTypeTests(unittest.TestCase):
         Test for all 0 expect small bumps
         Test for all positive except one 0 neuron between    
         '''
+        print("smallbumps")
+        initialxt = [50,50+(50/np.sqrt(2)),100]
+        initialyt = [100,50-(50/np.sqrt(2)),50]
+        xPos = np.array([50]*50)
+        yPos = np.array([50]*50)
+        activity_all0 = np.zeros((100,50))
+        activity_1off = np.zeros((100,50))
+        
+
+        print("all 0")
+        phase_all0 = get_bump_type(initialxt,initialyt,xPos,yPos,activity_all0)
+
+        self.assertEqual(0,phase_all0)
     
     #def test_proportions():
         '''
@@ -372,6 +409,7 @@ class BumpTypeTests(unittest.TestCase):
         '''
         Testing a few 'normal' cases
         '''
+        print("expectedcases")
         targ_path = Path('tests') / 'test_inputs' / 'bump_type' / 'targetpositions_pt1.csv'
         xy0_path = Path('tests') / 'test_inputs' / 'bump_type' / 'xypositions_0bumps.csv'
         xy1_path= Path('tests') / 'test_inputs' / 'bump_type' / 'xypositions_1bump.csv'

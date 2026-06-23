@@ -99,57 +99,28 @@ def get_bump_type(initialxt,initialyt,xPos,yPos,activity):
         raise ValueError("target x positions and target y positions are different sizes")
     if xPos.size != activity.shape[1]:
         raise ValueError("position arrays and activity arrays are different sizes")
-    
-    total_time = activity.shape[1]
-    rng = np.random.default_rng()
-    intervals = []
-    sum_intervals = 0
-    while sum_intervals < total_time:
-        rand_int = rng.integers(5, 16)
-        intervals.append(rand_int)
-        sum_intervals += rand_int
 
-    counters = np.zeros(4, dtype=np.int32)
-    start = 0
-    for item in intervals:
-        end = min(start+item,total_time)
-        x0 = xPos[start]
-        y0 = yPos[start]
-        angles = np.atan2(initialyt - y0, initialxt - x0)
-        indices = np.round(100 * (angles / (2 * np.pi))).astype(int) % 100
-        act_int = activity[indices, start:end]
-        bump_means = act_int.mean(axis=1) 
-        npositive = int(np.sum(bump_means > 0))
-        print(f"npositive start: {npositive}, indices: {indices}, bump means: {bump_means}")
-        if npositive > 1:
-            act_slice = activity[:, start:end]
-            concat = False
-            sorted_indices = sorted(indices)
-            print(f"sorted indices: {sorted_indices}")
-            for index in range(len(sorted_indices)-1):
-                if sorted_indices[index] > 0 and sorted_indices[index+1] > 0:
-                    diff = sorted_indices[index+1]-sorted_indices[index]
-                    if diff > 50:
-                        print(f"index start: {sorted_indices[index]}, index end: {sorted_indices[index+1]}, diff: {diff}")
-                        concat = True
-                    else: 
-                        betw_min = np.min(act_slice[sorted_indices[index]:sorted_indices[index+1]])
-                        print(f"index start: {sorted_indices[index]}, index end: {sorted_indices[index+1]}, diff: {diff}, betw_min: {betw_min}")
-                        if betw_min >= 0:
-                            npositive -= 1
-            if concat: 
-                part = np.concatenate([act_slice[:sorted_indices[0]], act_slice[sorted_indices[-1]:]])
-                print(f"concat, index start: {sorted_indices[0]}, index end: {sorted_indices[-1]}, betw: {np.min(part)}")
-                if np.min(part) >= 0:
-                    npositive -= 1
-        
-        counters[npositive] += 1
-        start += item
-        print(f"npositive end: {npositive}")
+    total_time = activity.shape[1]
+    counters = np.zeros(5, dtype=np.int32)
+    for i in range(total_time):
+        full_activity = activity[:,i]
+        full_indices = [i for i, x in enumerate(full_activity) if x > 0]
+        nbumps = 0
+        if len(full_indices) > 0:
+            nbumps += 1
+            for index in range(len(full_indices)-1):
+                if full_indices[index+1]-full_indices[index] > 1:
+                    nbumps += 1
+            if full_indices[0] == 0 and full_indices[-1] == 99:
+                nbumps -= 1
+            if nbumps >= 4:
+                nbumps = 4
+        counters[nbumps] += 1
         
     proportions = counters / sum(counters)
+    print(f"proportions: {proportions}")
     phase = int(np.argmax(proportions))
-    if proportions[2] > 0.1 and phase == 1 and total_time == 5001:
+    if proportions[2] > 0.04 and phase == 1 and total_time == 5001:
         phase = 2
     print(f"phase: {phase}")
     return phase
