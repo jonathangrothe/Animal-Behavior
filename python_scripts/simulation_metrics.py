@@ -73,7 +73,7 @@ def get_success_rate(target_list, sample_size, ntargets):
     return target_probs, target_ses
 
 
-def get_bump_type(initialxt,initialyt,xPos,yPos,activity):
+def get_bump_type(activity,maxtime=5000):
     # UPDATED FROM WHAT WE USED FOR HIGH RESOLUTION SWEEPS - NEEDS TESTING 
     '''
     A function that analyses the neural activity of a simulation in small intervals 
@@ -81,26 +81,16 @@ def get_bump_type(initialxt,initialyt,xPos,yPos,activity):
     Designed to handle three targets only right now.
 
     Paramters:
-        initialxt: a list of initial x positions of the targets
-        initialyt: a list of initial y positions of the targets
-        xPos: a list of x positions over the simulation
-        yPos: a list of y positions over the simulation
         activity: a dataframe of neuron activity over the simulation
-        interval: how small of an interval to consider at a time. 
                 Intervals are considered as a static point, so they should be small enough that in most cases the bump doesn't shift majorly over one interval
 
     Returns: 
         phase: a number to classify the number of bumps that best describes the simulation, possible outputs are 0, 1, 2, 3, or 4 (4 is undesireable).
                Usually the phase corresponds to the most common number of bumps present across all the intervals, but occasionally that is not the case.
     '''
-    if xPos.size != yPos.size:
-        raise ValueError("arrays for x position and y position are different sizes")
-    if len(initialxt) != len(initialyt):
-        raise ValueError("target x positions and target y positions are different sizes")
-    if xPos.size != activity.shape[1]:
-        raise ValueError("position arrays and activity arrays are different sizes")
-
     total_time = activity.shape[1]
+    if maxtime < total_time:
+        total_time = maxtime + 1
     counters = np.zeros(5, dtype=np.int32)
     for i in range(total_time):
         full_activity = activity[:,i]
@@ -119,8 +109,29 @@ def get_bump_type(initialxt,initialyt,xPos,yPos,activity):
         
     proportions = counters / sum(counters)
     print(f"proportions: {proportions}")
-    phase = int(np.argmax(proportions))
-    if proportions[2] > 0.04 and phase == 1 and total_time == 5001:
+    phase = np.argmax(proportions)
+    max_indices = np.where(proportions == proportions.max())[0]
+    print(f"max indices: {max_indices}")
+    if len(max_indices) > 1:
+        print("tie deteceted")
+        if total_time == maxtime+1:
+            if proportions[2] >= 0.04:
+                phase = 2
+            elif 1 in max_indices:
+                phase = 1
+            elif 3 in max_indices:
+                phase = 3
+            else: 
+                phase = 0
+        else:
+            if 1 in max_indices:
+                phase = 1
+            elif 3 in max_indices:
+                phase = 3
+            else:
+                phase = 0
+
+    if proportions[2] >= 0.04 and phase == 1 and total_time == maxtime+1:
         phase = 2
     print(f"phase: {phase}")
     return phase
