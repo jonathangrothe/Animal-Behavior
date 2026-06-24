@@ -154,6 +154,12 @@ def get_bifurcation_angle(xPos, yPos, targetx, targety, targ_angle):
                     Calculated by taking both the local max and local mins of the angle, finding the first one where the agent has moved more than 1 total unit, 
                     then seeing if the difference between the most direct path and the first local max or first local min is bigger.
     '''
+    # CURRENT DILEMMA: we can find the bifurcation points well enough, but there is a longer than expected time of shifting direction
+    # Currently the code is trying to find the last point before committing to the path, but that doesn't seem to work that well
+    # I was trying the actual peaks but that seemed like it was too early. 
+    # Next to try: going forwards and backwards to find the point where it starts to turn and look into that as an alternative?? 
+    # I think once we look into that we should be able to characterize why this is being challenging and get a better solution ? 
+    # backup plan could always be to use heading (which is undesirable because it means lugging around a lot more data)
     if np.shape(xPos)[0] == 1:
         xPos = xPos.ravel()
         yPos = yPos.ravel()
@@ -162,61 +168,19 @@ def get_bifurcation_angle(xPos, yPos, targetx, targety, targ_angle):
     if isinstance(targetx,str) or isinstance(targety,str):
         return 0
     x0, y0 = xPos[0], yPos[0]
-    #dist_targ = np.sqrt((targetx-x0)**2+(targety-y0)**2)
-    #print(f"x0: {x0}, y0: {y0}, dist targ: {dist_targ}")
-    #dxstart = xPos - x0
-    #dystart = yPos - y0
-    #dxend = targetx - xPos
-    #dyend = targety - yPos
     smooth_by = len(xPos)//20
     kernel = np.ones(smooth_by) / smooth_by 
     xdiff = np.diff(xPos)
-    #plt.figure(1)
-    #plt.plot(xdiff)
-    #plt.title("x diff pre convolution")
     ydiff = np.diff(yPos)
-    #plt.figure(2)
-    #plt.plot(ydiff)
-    #plt.title("y diff pre convolution")
-    #xdiff = np.convolve(xdiff,kernel, mode='same')
-    #plt.figure(3)
-    #plt.plot(xdiff)
-    #plt.title("x diff post convolution")
-    #ydiff = np.convolve(ydiff,kernel, mode='same')
-    #plt.figure(4)
-    #plt.plot(ydiff)
-    #plt.title("y diff post convolution")
     direction = np.atan2(ydiff,xdiff)
-    direction_abs = np.abs(direction)
+    direction_unwrapped = np.unwrap(direction)
     print(f"len direction pre conv: {len(direction)}")
     plt.figure(1)
-    plt.plot(direction_abs)
+    plt.plot(direction_unwrapped)
     plt.title("direction pre convolution")
-    direction_smooth = np.convolve(direction, kernel, mode='valid')
+    direction_smooth = np.convolve(direction_unwrapped, kernel, mode='valid')
     print(f"len direction post conv: {len(direction_smooth)}")
     d_direction = np.abs(np.diff(direction_smooth))
-    #print(f"mean: {np.mean(d_direction)}, boundary: {2*np.std(d_direction)}")
-    #threshold = np.mean(d_direction) + 0.5* np.std(d_direction) # 2 stds above
-    #above = d_direction > threshold
-    #print(f"d direction: {d_direction}")
-    #true_indices = [i for i, val in enumerate(above) if val]
-    #print(f"indices of interest: {true_indices}")
-    #direction = np.array([angle + 2*np.pi if angle < 0 else angle for angle in direction])
-    #dist_start = np.sqrt(dxstart**2 + dystart**2)
-    #print(f"dist start: {dist_start}")
-    #dist_end = np.sqrt(dxend**2 + dyend**2)
-    #print(f"dist end: {dist_end}")
-    #cos_angle = (dist_start**2+dist_end**2-dist_targ**2)/(2*dist_start*dist_end)
-    #print(f"cos angle: {cos_angle}")
-    #bif_angles = np.arccos(cos_angle)
-    #bif_angles = np.nan_to_num(bif_angles)
-    #angles_to_target = np.atan2((targety-yPos),(targetx-xPos)) 
-    #angles_to_target = np.array([angle + 2*np.pi if angle < 0 else angle for angle in angles_to_target])
-    #print(f"bifurcation angles: {bif_angles}")
-    #print(f"x diff: {targetx-xPos}")
-    #print(f"y diff: {targety-yPos}")
-    #print(f"angles: {angles_to_target}")
-    #initial_angle = np.atan2(targety-y0,targetx-x0)
     plt.figure(2)
     plt.plot(direction_smooth)
     plt.title("direction post convolution")
@@ -229,15 +193,9 @@ def get_bifurcation_angle(xPos, yPos, targetx, targety, targ_angle):
     pos_prom_mask = pos_prom >= max_prom * 0.2
 
     filtered_pos_peaks = peaks_t[pos_prom_mask]
-
-    #best_positive = 0
-    #best_negative = 0
-    #print(f"initial direction: {direction[0]}, x0: {x0}, y0: {y0}, x1:{xPos[1]}, y1: {yPos[1]}, first diff: {xdiff[0], ydiff[0]}")
     print(f"positive peaks: {filtered_pos_peaks}")
     print(f"positive x position: {xPos[filtered_pos_peaks]}, positive y positions: {yPos[filtered_pos_peaks]}")
-    #print(f"negative peaks: {filtered_neg_peaks}")
-    #print(f"negative prominences: {filtered_neg_prominences}")
-    #print(f"direction at peaks: {direction[peaks_t]}, directions at negative peaks: {direction[negative_peaks_t]}")
+    print(f"peaks directions: {direction[filtered_pos_peaks]}")
     def first_valid_ratio(peak_indices):
         if len(peak_indices) == 0:
             return [0]
@@ -274,7 +232,6 @@ def get_bifurcation_angle(xPos, yPos, targetx, targety, targ_angle):
     print(f"bif indices: {bifurcation_indices}")
     print(f"bif x position: {xPos[bifurcation_indices]}, bif y position: {yPos[bifurcation_indices]}")
     print(f"bifurcation directions: {bifurcation_directions}")
-    print(f"returned angle: {bifurcation_directions}")
     return bifurcation_directions
 
 def find_bumps(activity): # function not currently use, will keep it for now

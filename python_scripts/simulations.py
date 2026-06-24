@@ -82,7 +82,7 @@ base = {'N':N,
 
 plot_neurons = True
 plot_trajs = True
-sample_size = 1
+sample_size = 10
 h0_list = [[0.225,0.225,0.225],[0.225,0.225,0.225],[0.33,0.33,0.33]]
 sigma_list = [0.4,0.2,0.33]
 change = {'sigma':sigma_list, 'h0':h0_list}
@@ -101,7 +101,7 @@ for i in range(len(target_list)):
         targx = initialxt[target]
         targy = initialyt[target]
     bif_start = time.perf_counter()
-    bifurcation_angle = sim_met.get_bifurcation_angle(curr_xpos,curr_ypos,targx,targy,(np.pi)/3)
+    bifurcation_angles = sim_met.get_bifurcation_angle(curr_xpos,curr_ypos,targx,targy,(np.pi)/3)
     bif_end = time.perf_counter()
     bif_time = bif_end - bif_start
     print(f"bif time: {bif_time:.6f} seconds")
@@ -110,7 +110,7 @@ for i in range(len(target_list)):
     end_time = time.perf_counter()
     bump_time = end_time-start_time
     print(f"time to get bump type: {bump_time:.6f} seconds")
-    angles.append(bifurcation_angle)
+    angles.append(np.abs((np.pi/2)-bifurcation_angles[0]))
     phases.append(phase)
 
 n_plots = len(h0_list)
