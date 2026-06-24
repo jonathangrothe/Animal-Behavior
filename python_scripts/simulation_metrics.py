@@ -160,44 +160,68 @@ def get_bifurcation_angle(xPos, yPos, targetx, targety, targ_angle):
         raise ValueError("arrays for x position and y position are different sizes")
     if isinstance(targetx,str) or isinstance(targety,str):
         return 0
-    angles_to_target = np.atan2((targety-yPos),(targetx-xPos)) 
-    angles_to_target = np.array([angle + 2*np.pi if angle < 0 else angle for angle in angles_to_target])
-    print(f"x diff: {targetx-xPos}")
-    print(f"y diff: {targety-yPos}")
-    print(f"angles: {angles_to_target}")
-    initial_angle = angles_to_target[0]
-    peaks_t, _ = find_peaks(angles_to_target)
-    negative_peaks_t, _ = find_peaks(-angles_to_target)
     x0, y0 = xPos[0], yPos[0]
-    best_positive = 0
-    best_negative = 0
+    #dist_targ = np.sqrt((targetx-x0)**2+(targety-y0)**2)
+    #print(f"x0: {x0}, y0: {y0}, dist targ: {dist_targ}")
+    #dxstart = xPos - x0
+    #dystart = yPos - y0
+    #dxend = targetx - xPos
+    #dyend = targety - yPos
+    xdiff = np.diff(xPos)
+    ydiff = np.diff(yPos)
+    direction = np.atan2(ydiff,xdiff)
+    #dist_start = np.sqrt(dxstart**2 + dystart**2)
+    #print(f"dist start: {dist_start}")
+    #dist_end = np.sqrt(dxend**2 + dyend**2)
+    #print(f"dist end: {dist_end}")
+    #cos_angle = (dist_start**2+dist_end**2-dist_targ**2)/(2*dist_start*dist_end)
+    #print(f"cos angle: {cos_angle}")
+    #bif_angles = np.arccos(cos_angle)
+    #bif_angles = np.nan_to_num(bif_angles)
+    #angles_to_target = np.atan2((targety-yPos),(targetx-xPos)) 
+    #angles_to_target = np.array([angle + 2*np.pi if angle < 0 else angle for angle in angles_to_target])
+    #print(f"bifurcation angles: {bif_angles}")
+    #print(f"x diff: {targetx-xPos}")
+    #print(f"y diff: {targety-yPos}")
+    #print(f"angles: {angles_to_target}")
+    #initial_angle = np.atan2(targety-y0,targetx-x0)
+    peaks_t, _ = find_peaks(direction)
+    negative_peaks_t, _ = find_peaks(-direction)
+    #best_positive = 0
+    #best_negative = 0
+    print(f"initial direction: {direction[0]}, x0: {x0}, y0: {y0}, x1:{xPos[1]}, y1: {yPos[1]}, first diff: {xdiff[0], ydiff[0]}")
     print(f"peaks_t: {peaks_t}")
     print(f"negative_peaks: {negative_peaks_t}")
-    def first_valid_ratio(peak_indices):
+    print(f"direction at peaks: {direction[peaks_t]}, directions at negative peaks: {direction[negative_peaks_t]}")
+    def first_valid_ratio(peak_indices): # if we want to do direction based, we need to redo this to reject small changes in direction
         if len(peak_indices) == 0:
             return 0
-        dx_start = xPos[peak_indices] - x0
-        dy_start = yPos[peak_indices] - y0
-        dx_end   = xPos[peak_indices] - targetx
-        dy_end   = yPos[peak_indices] - targety
-
-        start_dist_sq = dx_start**2 + dy_start**2
-        end_dist_sq   = dx_end**2   + dy_end**2
-
-        valid = np.where((start_dist_sq > 1) & (end_dist_sq > 1))[0]
+        valid = []
+        for index in range(len(peak_indices)):
+            comparison = direction[0]
+            if index > 0:
+                comparison = direction[peak_indices[index-1]]
+            direction_diff = np.abs(direction[peak_indices[index]]-comparison)
+            if direction_diff > (6*np.pi/360):
+                valid.append(peak_indices[index])
         if len(valid) == 0:
             return 0
 
-        first = peak_indices[valid[0]]
-        print(f"angle to target: {angles_to_target[first]}")
-        print(f"initial angle: {initial_angle}")
-        print(f"targ_angle: {targ_angle}")
-        print(f"returned: {np.abs(angles_to_target[first] - initial_angle) / targ_angle}")
-        return np.abs(angles_to_target[first] - initial_angle) / targ_angle
+        #first = peak_indices[valid[0]]
+        #print(f"angle to target: {angles_to_target[first]}")
+        #print(f"initial angle: {initial_angle}")
+        #print(f"targ_angle: {targ_angle}")
+        #print(f"returned: {np.abs(angles_to_target[first] - initial_angle) / targ_angle}")
+        return valid
 
     best_positive = first_valid_ratio(peaks_t)
     best_negative = first_valid_ratio(negative_peaks_t)
-    best_overall = max(best_negative,best_positive)
+    print(f"valid positive: {best_positive}")
+    print(f"valid positive directions: {direction[best_positive]}")
+    print(f"valid negative: {best_negative}")
+    print(f"valid negative directions: {direction[best_negative]}")
+    best_overall = max(best_negative[0],best_positive[0])
+    print(f"returned angle: {best_overall}")
     return best_overall
 
 def find_bumps(activity): # function not currently use, will keep it for now

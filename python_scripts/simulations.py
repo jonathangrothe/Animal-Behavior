@@ -83,8 +83,8 @@ base = {'N':N,
 plot_neurons = True
 plot_trajs = True
 sample_size = 1
-h0_list = [[0.175,0.175,0.175],[0.3,0.3,0.3]]
-sigma_list = [0.4,0.175]
+h0_list = [[0.225,0.225,0.225],[0.225,0.225,0.225]]
+sigma_list = [0.4,0.2]
 change = {'sigma':sigma_list, 'h0':h0_list}
 target_list, time_list, activity_list, x_list, y_list, headings_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
 
@@ -100,9 +100,13 @@ for i in range(len(target_list)):
     if target != -1:
         targx = initialxt[target]
         targy = initialyt[target]
+    bif_start = time.perf_counter()
     bifurcation_angle = sim_met.get_bifurcation_angle(curr_xpos,curr_ypos,targx,targy,(np.pi)/3)
+    bif_end = time.perf_counter()
+    bif_time = bif_end - bif_start
+    print(f"bif time: {bif_time:.6f} seconds")
     start_time = time.perf_counter()
-    phase = sim_met.get_bump_type(initialxt,initialyt,curr_xpos,curr_ypos,curr_activity)
+    phase = sim_met.get_bump_type(curr_activity)
     end_time = time.perf_counter()
     bump_time = end_time-start_time
     print(f"time to get bump type: {bump_time:.6f} seconds")
