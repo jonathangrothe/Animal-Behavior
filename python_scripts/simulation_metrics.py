@@ -168,18 +168,39 @@ def get_bifurcation_angle(xPos, yPos, targetx, targety, targ_angle):
     #dystart = yPos - y0
     #dxend = targetx - xPos
     #dyend = targety - yPos
+    smooth_by = len(xPos)//20
+    kernel = np.ones(smooth_by) / smooth_by 
     xdiff = np.diff(xPos)
+    #plt.figure(1)
+    #plt.plot(xdiff)
+    #plt.title("x diff pre convolution")
     ydiff = np.diff(yPos)
+    #plt.figure(2)
+    #plt.plot(ydiff)
+    #plt.title("y diff pre convolution")
+    #xdiff = np.convolve(xdiff,kernel, mode='same')
+    #plt.figure(3)
+    #plt.plot(xdiff)
+    #plt.title("x diff post convolution")
+    #ydiff = np.convolve(ydiff,kernel, mode='same')
+    #plt.figure(4)
+    #plt.plot(ydiff)
+    #plt.title("y diff post convolution")
     direction = np.atan2(ydiff,xdiff)
-    kernel = np.ones(5) / 5
-    direction = np.convolve(direction, kernel, mode='same')
-    d_direction = np.abs(np.diff(direction))
-    print(f"mean: {np.mean(d_direction)}, boundary: {2*np.std(d_direction)}")
-    threshold = np.mean(d_direction) + 0.5* np.std(d_direction) # 2 stds above
-    above = d_direction > threshold
-    print(f"d direction: {d_direction}")
-    true_indices = [i for i, val in enumerate(above) if val]
-    print(f"indices of interest: {true_indices}")
+    direction_abs = np.abs(direction)
+    print(f"len direction pre conv: {len(direction)}")
+    plt.figure(1)
+    plt.plot(direction_abs)
+    plt.title("direction pre convolution")
+    direction_smooth = np.convolve(direction, kernel, mode='valid')
+    print(f"len direction post conv: {len(direction_smooth)}")
+    d_direction = np.abs(np.diff(direction_smooth))
+    #print(f"mean: {np.mean(d_direction)}, boundary: {2*np.std(d_direction)}")
+    #threshold = np.mean(d_direction) + 0.5* np.std(d_direction) # 2 stds above
+    #above = d_direction > threshold
+    #print(f"d direction: {d_direction}")
+    #true_indices = [i for i, val in enumerate(above) if val]
+    #print(f"indices of interest: {true_indices}")
     #direction = np.array([angle + 2*np.pi if angle < 0 else angle for angle in direction])
     #dist_start = np.sqrt(dxstart**2 + dystart**2)
     #print(f"dist start: {dist_start}")
@@ -197,56 +218,64 @@ def get_bifurcation_angle(xPos, yPos, targetx, targety, targ_angle):
     #print(f"angles: {angles_to_target}")
     #initial_angle = np.atan2(targety-y0,targetx-x0)
     plt.figure(2)
-    plt.plot(direction)
-    peaks_t, _ = find_peaks(direction)
-    negative_peaks_t, _ = find_peaks(-direction)
+    plt.plot(direction_smooth)
+    plt.title("direction post convolution")
+    plt.figure(3)
+    plt.plot(d_direction)
+    plt.title("d direction")
+    peaks_t, pos_prop = find_peaks(d_direction,prominence=0)
+    pos_prom = pos_prop['prominences']
+    max_prom = np.max(pos_prom)
+    pos_prom_mask = pos_prom >= max_prom * 0.2
+
+    filtered_pos_peaks = peaks_t[pos_prom_mask]
+
     #best_positive = 0
     #best_negative = 0
-    print(f"initial direction: {direction[0]}, x0: {x0}, y0: {y0}, x1:{xPos[1]}, y1: {yPos[1]}, first diff: {xdiff[0], ydiff[0]}")
-    #print(f"peaks_t: {peaks_t}")
-    #print(f"negative_peaks: {negative_peaks_t}")
+    #print(f"initial direction: {direction[0]}, x0: {x0}, y0: {y0}, x1:{xPos[1]}, y1: {yPos[1]}, first diff: {xdiff[0], ydiff[0]}")
+    print(f"positive peaks: {filtered_pos_peaks}")
+    print(f"positive x position: {xPos[filtered_pos_peaks]}, positive y positions: {yPos[filtered_pos_peaks]}")
+    #print(f"negative peaks: {filtered_neg_peaks}")
+    #print(f"negative prominences: {filtered_neg_prominences}")
     #print(f"direction at peaks: {direction[peaks_t]}, directions at negative peaks: {direction[negative_peaks_t]}")
-    def first_valid_ratio(peak_indices): # if we want to do direction based, we need to redo this to reject small changes in direction
+    def first_valid_ratio(peak_indices):
         if len(peak_indices) == 0:
             return [0]
-        valid = []
+        valid_peaks = []
         for index in range(len(peak_indices)):
-            comparison = direction[0]
-            xdiff_atind = xdiff[peak_indices[index]]
-            ydiff_atind = ydiff[peak_indices[index]]
-            comp_x = x0
-            comp_y = y0
-            if index > 0:
-                comparison = direction[peak_indices[index-1]]
-                comp_x = xPos[peak_indices[index-1]+1]
-                comp_y = yPos[peak_indices[index-1]+1]
-            direction_diff = np.abs(direction[peak_indices[index]]-comparison)
-            deltax = np.abs(xPos[peak_indices[index]+1]-comp_x)
-            deltay = np.abs(yPos[peak_indices[index]+1]-comp_y)
-            print(f"index: {peak_indices[index]}, direction diff: {direction_diff}, deltax: {deltax}, deltay: {deltay}")
-            if direction_diff > (6*np.pi/360):
-                if deltax > 2 or deltay > 2: 
-                    print(f"x: {xPos[peak_indices[index]]}, y: {yPos[peak_indices[index]]}")
-                    valid.append(peak_indices[index])
-        if len(valid) == 0:
+            deltax = np.abs(xPos[peak_indices[index]+1]-x0)
+            deltay = np.abs(yPos[peak_indices[index]+1]-y0)
+            if deltax > 2 or deltay > 2: 
+                valid_peaks.append(peak_indices[index]+2)
+        if len(valid_peaks) == 0:
             return [0]
-
-        #first = peak_indices[valid[0]]
-        #print(f"angle to target: {angles_to_target[first]}")
-        #print(f"initial angle: {initial_angle}")
-        #print(f"targ_angle: {targ_angle}")
-        #print(f"returned: {np.abs(angles_to_target[first] - initial_angle) / targ_angle}")
-        return valid
-
-    best_positive = first_valid_ratio(peaks_t)
-    best_negative = first_valid_ratio(negative_peaks_t)
-    print(f"valid positive: {best_positive}")
-    print(f"valid positive directions: {direction[best_positive]}")
-    print(f"valid negative: {best_negative}")
-    print(f"valid negative directions: {direction[best_negative]}")
-    best_overall = max(best_negative[0],best_positive[0])
-    print(f"returned angle: {best_overall}")
-    return best_overall
+        bif_indices = []
+        for item in valid_peaks: # get close to the end of changing direction
+            found = False
+            curr_index = item
+            peak_ddirection = d_direction[curr_index]
+            curr_ddirection = peak_ddirection
+            while not found: 
+                diff = curr_ddirection - 0
+                if diff < 0.05 * peak_ddirection:
+                    bif_indices.append(curr_index)
+                    found = True
+                else:
+                    curr_index += 1
+                    curr_ddirection = d_direction[curr_index]
+                    if curr_index >= item + 300:
+                        found = True
+        return bif_indices
+    
+    bifurcation_indices = first_valid_ratio(filtered_pos_peaks)
+    bifurcation_directions = direction[bifurcation_indices]
+    if bifurcation_indices[0] == 0:
+        bifurcation_directions[0] = np.atan2(targety-y0,targetx-x0)
+    print(f"bif indices: {bifurcation_indices}")
+    print(f"bif x position: {xPos[bifurcation_indices]}, bif y position: {yPos[bifurcation_indices]}")
+    print(f"bifurcation directions: {bifurcation_directions}")
+    print(f"returned angle: {bifurcation_directions}")
+    return bifurcation_directions
 
 def find_bumps(activity): # function not currently use, will keep it for now
     '''

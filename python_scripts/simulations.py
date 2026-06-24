@@ -83,8 +83,8 @@ base = {'N':N,
 plot_neurons = True
 plot_trajs = True
 sample_size = 1
-h0_list = [[0.225,0.225,0.225],[0.225,0.225,0.225]]
-sigma_list = [0.4,0.2]
+h0_list = [[0.225,0.225,0.225],[0.225,0.225,0.225],[0.33,0.33,0.33]]
+sigma_list = [0.4,0.2,0.33]
 change = {'sigma':sigma_list, 'h0':h0_list}
 target_list, time_list, activity_list, x_list, y_list, headings_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
 
@@ -95,8 +95,8 @@ for i in range(len(target_list)):
     curr_xpos = x_list[i:(i+1)][0]
     curr_ypos = y_list[i:(i+1)][0]
     target = target_list[i]
-    targx = -1
-    targy = -1
+    targx = 'n'
+    targy = 'n'
     if target != -1:
         targx = initialxt[target]
         targy = initialyt[target]
@@ -114,9 +114,9 @@ for i in range(len(target_list)):
     phases.append(phase)
 
 n_plots = len(h0_list)
-ncols = 2
+ncols = 3
 nrows = 1
-fig = plt.figure(layout='constrained',figsize=(7,6))
+fig = plt.figure(layout='constrained',figsize=(10,6))
 subfigs = fig.subfigures(2,1, wspace=0.1)
 axs0 = subfigs[0].subplots(nrows,ncols)
 axs0 = axs0.flatten()
