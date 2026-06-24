@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.signal import find_peaks
+import matplotlib.pyplot as plt
 
 # -------- Getting metrics --------
 
@@ -170,6 +171,16 @@ def get_bifurcation_angle(xPos, yPos, targetx, targety, targ_angle):
     xdiff = np.diff(xPos)
     ydiff = np.diff(yPos)
     direction = np.atan2(ydiff,xdiff)
+    kernel = np.ones(5) / 5
+    direction = np.convolve(direction, kernel, mode='same')
+    d_direction = np.abs(np.diff(direction))
+    print(f"mean: {np.mean(d_direction)}, boundary: {2*np.std(d_direction)}")
+    threshold = np.mean(d_direction) + 0.5* np.std(d_direction) # 2 stds above
+    above = d_direction > threshold
+    print(f"d direction: {d_direction}")
+    true_indices = [i for i, val in enumerate(above) if val]
+    print(f"indices of interest: {true_indices}")
+    #direction = np.array([angle + 2*np.pi if angle < 0 else angle for angle in direction])
     #dist_start = np.sqrt(dxstart**2 + dystart**2)
     #print(f"dist start: {dist_start}")
     #dist_end = np.sqrt(dxend**2 + dyend**2)
@@ -185,27 +196,40 @@ def get_bifurcation_angle(xPos, yPos, targetx, targety, targ_angle):
     #print(f"y diff: {targety-yPos}")
     #print(f"angles: {angles_to_target}")
     #initial_angle = np.atan2(targety-y0,targetx-x0)
+    plt.figure(2)
+    plt.plot(direction)
     peaks_t, _ = find_peaks(direction)
     negative_peaks_t, _ = find_peaks(-direction)
     #best_positive = 0
     #best_negative = 0
     print(f"initial direction: {direction[0]}, x0: {x0}, y0: {y0}, x1:{xPos[1]}, y1: {yPos[1]}, first diff: {xdiff[0], ydiff[0]}")
-    print(f"peaks_t: {peaks_t}")
-    print(f"negative_peaks: {negative_peaks_t}")
-    print(f"direction at peaks: {direction[peaks_t]}, directions at negative peaks: {direction[negative_peaks_t]}")
+    #print(f"peaks_t: {peaks_t}")
+    #print(f"negative_peaks: {negative_peaks_t}")
+    #print(f"direction at peaks: {direction[peaks_t]}, directions at negative peaks: {direction[negative_peaks_t]}")
     def first_valid_ratio(peak_indices): # if we want to do direction based, we need to redo this to reject small changes in direction
         if len(peak_indices) == 0:
-            return 0
+            return [0]
         valid = []
         for index in range(len(peak_indices)):
             comparison = direction[0]
+            xdiff_atind = xdiff[peak_indices[index]]
+            ydiff_atind = ydiff[peak_indices[index]]
+            comp_x = x0
+            comp_y = y0
             if index > 0:
                 comparison = direction[peak_indices[index-1]]
+                comp_x = xPos[peak_indices[index-1]+1]
+                comp_y = yPos[peak_indices[index-1]+1]
             direction_diff = np.abs(direction[peak_indices[index]]-comparison)
+            deltax = np.abs(xPos[peak_indices[index]+1]-comp_x)
+            deltay = np.abs(yPos[peak_indices[index]+1]-comp_y)
+            print(f"index: {peak_indices[index]}, direction diff: {direction_diff}, deltax: {deltax}, deltay: {deltay}")
             if direction_diff > (6*np.pi/360):
-                valid.append(peak_indices[index])
+                if deltax > 2 or deltay > 2: 
+                    print(f"x: {xPos[peak_indices[index]]}, y: {yPos[peak_indices[index]]}")
+                    valid.append(peak_indices[index])
         if len(valid) == 0:
-            return 0
+            return [0]
 
         #first = peak_indices[valid[0]]
         #print(f"angle to target: {angles_to_target[first]}")
