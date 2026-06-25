@@ -13,9 +13,9 @@ initialx = np.zeros(nagents)
 initialy = np.zeros(nagents)
 for a in range(nagents):
     initialx[a] = 50
-    initialy[a] = 0
-initialxt = [50-(15*np.sqrt(3)),50,50+(15*np.sqrt(3)),]
-initialyt = [65,80,65]
+    initialy[a] = 50
+initialxt = [20,50,80]
+initialyt = [50,80,50]
 
 T = 5000
 periodicflag = 0
@@ -83,13 +83,16 @@ base = {'N':N,
 plot_neurons = True
 plot_trajs = True
 sample_size = 10
-h0_list = [[0.225,0.225,0.225],[0.225,0.225,0.225],[0.33,0.33,0.33]]
-sigma_list = [0.4,0.2,0.33]
+h0_list = [[0.25,0.25,0.25],[0.26,0.26,0.26],[0.27,0.27,0.27],[0.28,0.28,0.28]]
+sigma_list = [0.235,0.28,0.31,0.35]
 change = {'sigma':sigma_list, 'h0':h0_list}
 target_list, time_list, activity_list, x_list, y_list, headings_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
 
 phases = []
 angles = []
+bif_indices = []
+peak_indices = []
+return_indices = []
 for i in range(len(target_list)):
     curr_activity = activity_list[i]
     curr_xpos = x_list[i:(i+1)][0]
@@ -101,7 +104,7 @@ for i in range(len(target_list)):
         targx = initialxt[target]
         targy = initialyt[target]
     bif_start = time.perf_counter()
-    bifurcation_angles = sim_met.get_bifurcation_angle(curr_xpos,curr_ypos,targx,targy,(np.pi)/3)
+    indices, peak, zero, bifurcation_angles, peak_angles, return_angles = sim_met.get_bifurcation_angle(curr_xpos,curr_ypos,targx,targy,(np.pi)/2)
     bif_end = time.perf_counter()
     bif_time = bif_end - bif_start
     print(f"bif time: {bif_time:.6f} seconds")
@@ -110,28 +113,35 @@ for i in range(len(target_list)):
     end_time = time.perf_counter()
     bump_time = end_time-start_time
     print(f"time to get bump type: {bump_time:.6f} seconds")
-    angles.append(np.abs((np.pi/2)-bifurcation_angles[0]))
+    angles.append(bifurcation_angles)
+    bif_indices.append(indices)
+    peak_indices.append(peak)
+    return_indices.append(zero)
     phases.append(phase)
 
 n_plots = len(h0_list)
-ncols = 3
+ncols = 4
 nrows = 1
-fig = plt.figure(layout='constrained',figsize=(10,6))
-subfigs = fig.subfigures(2,1, wspace=0.1)
+fig = plt.figure(layout='constrained',figsize=(22,7))
+subfigs = fig.subfigures(3,1, wspace=0.1)
 axs0 = subfigs[0].subplots(nrows,ncols)
 axs0 = axs0.flatten()
 axs1 = subfigs[1].subplots(nrows,ncols)
 axs1 = axs1.flatten()
+axs2 = subfigs[2].subplots(nrows,ncols)
+axs2 = axs2.flatten()
 grey_to_blue = ["#D3D3D3", "#A9A9A9", "#708090", "#4682B4", "#000080"]
 cmap = mcolors.LinearSegmentedColormap.from_list("GreyBlue", grey_to_blue)
 
 for s in range(n_plots):
-    sim_met.plot_traj(x_list[s*sample_size:(s+1)*sample_size],y_list[s*sample_size:(s+1)*sample_size],initialxt,initialyt,sample_size,[0],axs0[s],False,0,0)
+    sim_met.plot_traj(x_list[s*sample_size:(s+1)*sample_size],y_list[s*sample_size:(s+1)*sample_size],initialxt,initialyt,sample_size,axs0[s],True,peak_indices[s*sample_size:(s+1)*sample_size],0,0)
+    sim_met.plot_traj(x_list[s*sample_size:(s+1)*sample_size],y_list[s*sample_size:(s+1)*sample_size],initialxt,initialyt,sample_size,axs1[s],True,bif_indices[s*sample_size:(s+1)*sample_size],0,0)
+    sim_met.plot_traj(x_list[s*sample_size:(s+1)*sample_size],y_list[s*sample_size:(s+1)*sample_size],initialxt,initialyt,sample_size,axs2[s],True,return_indices[s*sample_size:(s+1)*sample_size],0,0)
     axs0[s].set_title(f"sigma: {round(sigma_list[s],4)}, h0: {round(h0_list[s][0],4)}, beta: {beta}")
     sim_activity = activity_list[s*sample_size]
     col_min = np.min(sim_activity[:,40:])
     col_max = np.max(sim_activity[:,40:])
-    axs1[s].imshow(sim_activity,cmap=cmap,aspect='auto',vmin=col_min,vmax=col_max)
+    #axs1[s].imshow(sim_activity,cmap=cmap,aspect='auto',vmin=col_min,vmax=col_max)
     sim_phases = phases[s*sample_size:(s+1)*sample_size]
     sim_angles = angles[s*sample_size:(s+1)*sample_size]
     n0 = sim_phases.count(0)
