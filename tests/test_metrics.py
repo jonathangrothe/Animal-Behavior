@@ -489,9 +489,9 @@ class BifurcationAngleTests(unittest.TestCase):
         targety = -1
         targangle =2*np.pi/3
         with self.assertRaises(ValueError):
-            bif_angle = get_bifurcation_angle(xPos,yPos,targetx,targety,targangle)
-        correct_ind, correct_angle = get_bifurcation_angle(xPos,yPos_correct,targetx,targety,targangle)
-        self.assertEqual([0],correct_ind)
+            bif_angle = get_bifurcation_angle(xPos,yPos,targetx,targety)
+        correct_ind, correct_angle = get_bifurcation_angle(xPos,yPos_correct,targetx,targety)
+        self.assertEqual([0,9],correct_ind)
         self.assertEqual([0],correct_angle)
 
     def test_targets(self):
@@ -502,53 +502,21 @@ class BifurcationAngleTests(unittest.TestCase):
         targety_fail = 'n'
         targetx_valid = 50-(15*np.sqrt(3))
         targety_valid = 65
-        xPos = np.array([50,47.5,45,42.902,targetx_valid])
-        yPos = np.array([50,57,64,64.1,targety_valid])
-        xPos_2 = np.array([50,46.25,42.5,40.652,targetx_valid])
-        yPos_2 = np.array([50,57,64,64.1,targety_valid])
-        xPos_3 = np.array([50,45,40,38.402,targetx_valid])
-        yPos_3 = np.array([50,57,64,64.1,targety_valid])
-        xPos_4 = np.array([50,43.25,37.5,36.152,targetx_valid])
-        yPos_4 = np.array([50,57,64,64.1,targety_valid])
-        xPos_5 = np.array([50,42.5,35,33.902,targetx_valid])
-        yPos_5 = np.array([50,57,64,64.1,targety_valid])
-        targangle = np.pi/3
-        bif_ind_fail, bif_angle_fail = get_bifurcation_angle(xPos,yPos,targetx_fail,targety_fail,targangle)
-        bif_ind_xfail, bif_angle_xfail = get_bifurcation_angle(xPos,yPos,targetx_fail,targety_valid,targangle)
-        bif_ind_yfail, bif_angle_yfail = get_bifurcation_angle(xPos,yPos,targetx_valid,targety_fail,targangle)
-        print("success 1")
-        bif_ind_success, bif_angle_success = get_bifurcation_angle(xPos,yPos,targetx_valid,targety_valid,targangle)
-        print("success2")
-        bif_ind_success2, bif_angle_success2 = get_bifurcation_angle(xPos_2,yPos_2,targetx_valid,targety_valid,targangle)
-        print("success3")
-        bif_ind_success3, bif_angle_success3 = get_bifurcation_angle(xPos_3,yPos_3,targetx_valid,targety_valid,targangle)
-        print("success4")
-        bif_ind_success4, bif_angle_success4 = get_bifurcation_angle(xPos_4,yPos_4,targetx_valid,targety_valid,targangle)
-        print("success5")
-        bif_ind_success5, bif_angle_success5 = get_bifurcation_angle(xPos_5,yPos_5,targetx_valid,targety_valid,targangle)
-        # still need to correect these angles from the original, but I think we're good
+        xPos = np.array([50,50,50])
+        yPos = np.array([50,50,50])
+
+        bif_ind_fail, bif_angle_fail = get_bifurcation_angle(xPos,yPos,targetx_fail,targety_fail)
+        bif_ind_xfail, bif_angle_xfail = get_bifurcation_angle(xPos,yPos,targetx_fail,targety_valid)
+        bif_ind_yfail, bif_angle_yfail = get_bifurcation_angle(xPos,yPos,targetx_valid,targety_fail)
+       
         self.assertEqual([0],bif_ind_fail)
         self.assertEqual([0],bif_angle_fail)
         self.assertEqual([0],bif_ind_xfail)
         self.assertEqual([0],bif_angle_xfail)
         self.assertEqual([0],bif_ind_yfail)
         self.assertEqual([0],bif_angle_yfail)
-        self.assertEqual([0,2,4],bif_ind_success)
-        self.assertAlmostEqual([1],bif_angle_success)
-        self.assertEqual([0,2,4],bif_ind_success2)
-        self.assertAlmostEqual([1],bif_angle_success2)
-        self.assertEqual([0,2,4],bif_ind_success3)
-        self.assertAlmostEqual([1],bif_angle_success3)
-        self.assertEqual([0,2,4],bif_ind_success4)
-        self.assertAlmostEqual([1],bif_angle_success4)
-        self.assertEqual([0,2,4],bif_ind_success5)
-        self.assertAlmostEqual([1],bif_angle_success5)
+        
 
-    #def test_targangle():
-        '''
-        Testing to ensure that the angle between the targets is a valid input in radians
-        '''
-    
     #def test_anglepeaks():
         '''
         Testing edge cases for the angles between the targets, 
@@ -573,8 +541,117 @@ class BifurcationAngleTests(unittest.TestCase):
         test equal max and min, test ratio outside of expected bounds that still works (0.5 to 1), test ratio that doesn't make sense as a bifurcation point (>1), test ratio that is infeasible (greater than 2pi/angle)
         '''
     
-    #def test_expectedcases():
+    def test_expected60(self):
         '''
-        Testing 'normal' cases
+        Testing 'normal' 60 degrees between targets cases
         '''
+        targetx_valid = 50-(15*np.sqrt(3))
+        targetx_reflected = 50+(15*np.sqrt(3))
+        targety_valid = 65
+        xPos = np.array([50,47.5,45,42.902,targetx_valid])
+        xPos_ref = np.array([50,52.5,55,57.098,targetx_reflected])
+        yPos = np.array([50,57,64,64.1,targety_valid])
+        d1_sq_1 = (xPos[2]-xPos[0])**2+(yPos[2]-yPos[0])**2
+        d2_sq_1 = (xPos[4]-xPos[2])**2+(yPos[4]-yPos[2])**2
+        hyp_sq_1 = (xPos[4]-xPos[0])**2+(yPos[4]-yPos[0])**2
+        d1_1 = np.sqrt(d1_sq_1)
+        d2_1 = np.sqrt(d2_sq_1)
+        val_1 = (d1_sq_1+d2_sq_1-hyp_sq_1)/(2*d1_1*d2_1)
+        angle_1 = np.arccos(val_1)
+
+        xPos_2 = np.array([50,46.25,42.5,40.652,targetx_valid])
+        xPos_2_ref = np.array([50,53.75,57.5,59.348,targetx_reflected]) 
+        yPos_2 = np.array([50,57,64,64.1,targety_valid])
+        d1_sq_2 = (xPos_2[2]-xPos_2[0])**2+(yPos_2[2]-yPos_2[0])**2
+        d2_sq_2 = (xPos_2[4]-xPos_2[2])**2+(yPos_2[4]-yPos_2[2])**2
+        hyp_sq_2 = (xPos_2[4]-xPos_2[0])**2+(yPos_2[4]-yPos_2[0])**2
+        d1_2 = np.sqrt(d1_sq_2)
+        d2_2 = np.sqrt(d2_sq_2)
+        val_2 = (d1_sq_2+d2_sq_2-hyp_sq_2)/(2*d1_2*d2_2)
+        angle_2 = np.arccos(val_2)
+
+        xPos_3 = np.array([50,45,40,38.402,targetx_valid])
+        xPos_3_ref = np.array([50,55,60,61.598,targetx_reflected])
+        yPos_3 = np.array([50,57,64,64.1,targety_valid])
+        d1_sq_3 = (xPos_3[2]-xPos_3[0])**2+(yPos_3[2]-yPos_3[0])**2
+        d2_sq_3 = (xPos_3[4]-xPos_3[2])**2+(yPos_3[4]-yPos_3[2])**2
+        hyp_sq_3 = (xPos_3[4]-xPos_3[0])**2+(yPos_3[4]-yPos_3[0])**2
+        d1_3 = np.sqrt(d1_sq_3)
+        d2_3 = np.sqrt(d2_sq_3)
+        val_3 = (d1_sq_3+d2_sq_3-hyp_sq_3)/(2*d1_3*d2_3)
+        angle_3 = np.arccos(val_3)
+
+        xPos_4 = np.array([50,43.25,37.5,36.152,targetx_valid])
+        xPos_4_ref = np.array([50,56.75,62.5,63.848,targetx_reflected])
+        yPos_4 = np.array([50,57,64,64.1,targety_valid])
+        d1_sq_4 = (xPos_4[2]-xPos_4[0])**2+(yPos_4[2]-yPos_4[0])**2
+        d2_sq_4 = (xPos_4[4]-xPos_4[2])**2+(yPos_4[4]-yPos_4[2])**2
+        hyp_sq_4 = (xPos_4[4]-xPos_4[0])**2+(yPos_4[4]-yPos_4[0])**2
+        d1_4 = np.sqrt(d1_sq_4)
+        d2_4 = np.sqrt(d2_sq_4)
+        val_4 = (d1_sq_4+d2_sq_4-hyp_sq_4)/(2*d1_4*d2_4)
+        angle_4 = np.arccos(val_4)
+
+        xPos_5 = np.array([50,42.5,35,33.902,targetx_valid])
+        xPos_5_ref = np.array([50,57.5,65,66.098,targetx_reflected])
+        yPos_5 = np.array([50,57,64,64.1,targety_valid])
+        d1_sq_5 = (xPos_5[2]-xPos_5[0])**2+(yPos_5[2]-yPos_5[0])**2
+        d2_sq_5 = (xPos_5[4]-xPos_5[2])**2+(yPos_5[4]-yPos_5[2])**2
+        hyp_sq_5 = (xPos_5[4]-xPos_5[0])**2+(yPos_5[4]-yPos_5[0])**2
+        d1_5 = np.sqrt(d1_sq_5)
+        d2_5 = np.sqrt(d2_sq_5)
+        val_5 = (d1_sq_5+d2_sq_5-hyp_sq_5)/(2*d1_5*d2_5)
+        angle_5 = np.arccos(val_5)
+
+        print("success 1")
+        bif_ind_success, bif_angle_success = get_bifurcation_angle(xPos,yPos,targetx_valid,targety_valid)
+        bif_ind_success_ref, bif_angle_success_ref = get_bifurcation_angle(xPos_ref,yPos,targetx_reflected,targety_valid)
+        print("success2")
+        bif_ind_success2, bif_angle_success2 = get_bifurcation_angle(xPos_2,yPos_2,targetx_valid,targety_valid)
+        bif_ind_success2_ref, bif_angle_success2_ref = get_bifurcation_angle(xPos_2_ref,yPos,targetx_reflected,targety_valid)
+        print("success3")
+        bif_ind_success3, bif_angle_success3 = get_bifurcation_angle(xPos_3,yPos_3,targetx_valid,targety_valid)
+        bif_ind_success3_ref, bif_angle_success3_ref = get_bifurcation_angle(xPos_3_ref,yPos,targetx_reflected,targety_valid)
+        print("success4")
+        bif_ind_success4, bif_angle_success4 = get_bifurcation_angle(xPos_4,yPos_4,targetx_valid,targety_valid)
+        bif_ind_success4_ref, bif_angle_success4_ref = get_bifurcation_angle(xPos_4_ref,yPos,targetx_reflected,targety_valid)
+        print("success5")
+        bif_ind_success5, bif_angle_success5 = get_bifurcation_angle(xPos_5,yPos_5,targetx_valid,targety_valid)
+        bif_ind_success5_ref, bif_angle_success5_ref = get_bifurcation_angle(xPos_5_ref,yPos,targetx_reflected,targety_valid)
+
+        self.assertEqual([0,2,4],bif_ind_success)
+        self.assertAlmostEqual(angle_1,bif_angle_success[0])
+        self.assertEqual([0,2,4],bif_ind_success_ref)
+        self.assertAlmostEqual(angle_1,bif_angle_success_ref[0])
+
+        self.assertEqual([0,2,4],bif_ind_success2)
+        self.assertAlmostEqual(angle_2,bif_angle_success2[0])
+        self.assertEqual([0,2,4],bif_ind_success2_ref)
+        self.assertAlmostEqual(angle_2,bif_angle_success2_ref[0])
+
+        self.assertEqual([0,2,4],bif_ind_success3)
+        self.assertAlmostEqual(angle_3,bif_angle_success3[0])
+        self.assertEqual([0,2,4],bif_ind_success3_ref)
+        self.assertAlmostEqual(angle_3,bif_angle_success3_ref[0])
+
+        self.assertEqual([0,2,4],bif_ind_success4)
+        self.assertAlmostEqual(angle_4,bif_angle_success4[0])
+        self.assertEqual([0,2,4],bif_ind_success4_ref)
+        self.assertAlmostEqual(angle_4,bif_angle_success4_ref[0])
+
+        self.assertEqual([0,2,4],bif_ind_success5)
+        self.assertAlmostEqual(angle_5,bif_angle_success5[0])
+        self.assertEqual([0,2,4],bif_ind_success5_ref)
+        self.assertAlmostEqual(angle_5,bif_angle_success5_ref[0])
+    
+    #def test_expected90():
+        '''
+        Testing 'normal' 90 degrees between targets cases
+        '''
+    
+    #def test_expected120():
+        '''
+        Testing 'nomral' 120 degrees between targets cases
+        '''
+
     

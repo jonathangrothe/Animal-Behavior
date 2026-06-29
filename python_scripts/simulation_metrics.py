@@ -137,7 +137,7 @@ def get_bump_type(activity,maxtime=5000):
     #print(f"phase: {phase}")
     return phase
 
-def get_bifurcation_angle(xPos, yPos, targetx, targety, axis_angle):
+def get_bifurcation_angle(xPos, yPos, targetx, targety):
     '''
     A function that calculates the local extrema of the angle between the agent and the target, and uses them to 
     find the ratio of the difference between the angle of the agent at the bifurcation and the most direct path to the target
@@ -147,7 +147,6 @@ def get_bifurcation_angle(xPos, yPos, targetx, targety, axis_angle):
         yPos: a list of y positions from a simulation
         targetx: the x position of the target that the agent reached, -1 is expected if no target was reached
         targety: the y position of the target that the agent reached, -1 is expected if no target was reached
-        axis_angle: the angle to the center target (the angle we expect the behavior to be reflected over) (assumed bilateral symmetry)
 
     Returns: 
         best_overall: a ratio representing the difference between the angle of the agent at the bifurcation and the most direct path. 
@@ -163,6 +162,13 @@ def get_bifurcation_angle(xPos, yPos, targetx, targety, axis_angle):
         raise ValueError("arrays for x position and y position are different sizes")
     if isinstance(targetx,str) or isinstance(targety,str):
         return [[0]]*2
+    '''
+    if np.issubdtype(type(axis_angle),np.number):
+        if axis_angle < 0 or axis_angle >= 2*np.pi:
+            raise ValueError(f"axis angle {axis_angle} is outside of range of valid angles (0 to 2pi)")
+    else:
+        raise TypeError(f"axis angle {axis_angle} is not a number")
+    '''
     total_time = len(xPos)
     x0, y0 = xPos[0], yPos[0]
     xdiff = np.diff(xPos)
@@ -173,27 +179,14 @@ def get_bifurcation_angle(xPos, yPos, targetx, targety, axis_angle):
     if smooth_by > 0:
         kernel = np.ones(smooth_by) / smooth_by 
         inflated_ending = np.array([direction[-1]]*(smooth_by-1))
-        #print(f"last direction: {direction[-1]}, n at end: {smooth_by-1}")
-        #print(f"add to end: {inflated_ending}")
         direction_inflated = np.concat([direction,inflated_ending])
         direction_unwrapped = np.unwrap(direction_inflated)
-        #print(f"len direction pre conv: {len(direction)}")
-        #plt.figure(1)
-        #plt.plot(direction_unwrapped)
-        #plt.title("direction pre convolution")
         direction_smooth = np.convolve(direction_unwrapped, kernel, mode='valid')
-        #print(f"len direction post conv: {len(direction_smooth)}")
         d_direction = np.abs(np.diff(direction_smooth))
     else: 
         print(f"direction: {direction}")
         direction_unwrapped = np.unwrap(direction)
         d_direction = np.abs(np.diff(direction_unwrapped))
-    #plt.figure(2)
-    #plt.plot(direction_smooth)
-    #plt.title("direction post convolution")
-    #plt.figure(3)
-    #plt.plot(d_direction)
-    #plt.title("d direction")
     peaks_t, pos_prop = find_peaks(d_direction,prominence=0)
     pos_prom = pos_prop['prominences']
     max_prom = 0.000001
@@ -201,14 +194,11 @@ def get_bifurcation_angle(xPos, yPos, targetx, targety, axis_angle):
         max_prom = np.max(pos_prom)
     pos_prom_mask = pos_prom >= max_prom * 0.2
     filtered_pos_peaks = peaks_t[pos_prom_mask]
-    #print(f"positive peaks: {filtered_pos_peaks}")
-    #print(f"positive x position: {xPos[filtered_pos_peaks]}, positive y positions: {yPos[filtered_pos_peaks]}")
-    #print(f"peaks directions: {direction[filtered_pos_peaks]}")
     print(f"d direction: {d_direction}")
     print(f"peaks (filtered): {filtered_pos_peaks}")
     def first_valid_ratio(peak_indices):
         if len(peak_indices) == 0:
-            return [[0]]*3
+            return [[0,total_time-1]]*3
         valid_peaks = []
         for index in range(len(peak_indices)):
             deltax = np.abs(xPos[peak_indices[index]]-x0)
@@ -216,7 +206,7 @@ def get_bifurcation_angle(xPos, yPos, targetx, targety, axis_angle):
             if deltax > 2 or deltay > 2: 
                 valid_peaks.append(peak_indices[index])
         if len(valid_peaks) == 0:
-            return [[0]]*3
+            return [[0,total_time-1]]*3
         bif_indices = [0]
         peak_indices = [0]
         return_indices = [0]
@@ -243,7 +233,7 @@ def get_bifurcation_angle(xPos, yPos, targetx, targety, axis_angle):
         return bif_indices, peak_indices, return_indices
 
     def get_angles(indices):
-        if len(indices) < 2:
+        if len(indices) <= 2:
             return [0]
         angles = np.zeros(len(indices)-2)
         for a in range(1,len(indices)-1):
@@ -260,8 +250,7 @@ def get_bifurcation_angle(xPos, yPos, targetx, targety, axis_angle):
             d2 = np.sqrt(d2_sq)
             val = (d1_sq+d2_sq-d3_sq)/(2*d1*d2)
             angle = np.arccos(val)
-            angle_diff = np.abs(axis_angle-angle)
-            angles[a-1] = angle_diff
+            angles[a-1] = angle
         return angles
     
     bifurcation_indices, peak_indices, return_indices = first_valid_ratio(filtered_pos_peaks)
@@ -269,17 +258,8 @@ def get_bifurcation_angle(xPos, yPos, targetx, targety, axis_angle):
     peak_angles = get_angles(peak_indices)
     return_angles = get_angles(return_indices)
     
-    #print(f"bif indices: {bifurcation_indices}")
-    #print(f"start x: {x0}, start y: {y0}")
-    #print(f"bif x position: {xPos[bifurcation_indices]}, bif y position: {yPos[bifurcation_indices]}")
-    #print(f"targetx: {targetx}, targety: {targety}")
-    #print(f"peak angles: {peak_angles}")
     print(f"bifurcation indices: {bifurcation_indices}")
     print(f"bifurcation angles: {bif_angles}")
-    #print(f"return angles: {return_angles}")
-    #print(f"peak/bif diff: {bif_angles-peak_angles}")
-    #print(f"return/bif diff: {return_angles-bif_angles}")
-    #print(f"peak/return diff: {return_angles-peak_angles}")
     return bifurcation_indices, bif_angles
 
 def find_bumps(activity): # function not currently use, will keep it for now
