@@ -14,8 +14,8 @@ initialy = np.zeros(nagents)
 for a in range(nagents):
     initialx[a] = 50
     initialy[a] = 50
-initialxt = [20,50,80]
-initialyt = [50,80,50]
+initialxt = [50-15*np.sqrt(3),50,50+15*np.sqrt(3)]
+initialyt = [65,80,65]
 
 T = 5000
 periodicflag = 0
@@ -82,9 +82,9 @@ base = {'N':N,
 
 plot_neurons = True
 plot_trajs = True
-sample_size = 10
-h0_list = [[0.25,0.25,0.25],[0.26,0.26,0.26],[0.27,0.27,0.27],[0.28,0.28,0.28]]
-sigma_list = [0.235,0.28,0.31,0.35]
+sample_size = 5
+h0_list = [[0.25,0.25,0.25],[0.275,0.275,0.275]]
+sigma_list = [0.5,0.7]
 change = {'sigma':sigma_list, 'h0':h0_list}
 target_list, time_list, activity_list, x_list, y_list, headings_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
 
@@ -102,7 +102,7 @@ for i in range(len(target_list)):
         targx = initialxt[target]
         targy = initialyt[target]
     bif_start = time.perf_counter()
-    indices, bifurcation_angles = sim_met.get_bifurcation_angle(curr_xpos,curr_ypos,targx,targy,(np.pi)/2)
+    indices, bifurcation_angles = sim_met.get_bifurcation_angle(curr_xpos,curr_ypos,targx,targy)
     bif_end = time.perf_counter()
     bif_time = bif_end - bif_start
     print(f"bif time: {bif_time:.6f} seconds")
@@ -116,9 +116,9 @@ for i in range(len(target_list)):
     phases.append(phase)
 
 n_plots = len(h0_list)
-ncols = 4
+ncols = 3
 nrows = 1
-fig = plt.figure(layout='constrained',figsize=(22,7))
+fig = plt.figure(layout='constrained',figsize=(11,8))
 subfigs = fig.subfigures(2,1, wspace=0.1)
 axs0 = subfigs[0].subplots(nrows,ncols)
 axs0 = axs0.flatten()
@@ -132,6 +132,7 @@ cmap = mcolors.LinearSegmentedColormap.from_list("GreyBlue", grey_to_blue)
 for s in range(n_plots):
     sim_met.plot_traj(x_list[s*sample_size:(s+1)*sample_size],y_list[s*sample_size:(s+1)*sample_size],initialxt,initialyt,sample_size,axs0[s],True,bif_indices[s*sample_size:(s+1)*sample_size],0,0)
     axs0[s].set_title(f"sigma: {round(sigma_list[s],4)}, h0: {round(h0_list[s][0],4)}, beta: {beta}")
+    axs0[s].set_aspect('equal', adjustable='box')
     sim_activity = activity_list[s*sample_size]
     col_min = np.min(sim_activity[:,40:])
     col_max = np.max(sim_activity[:,40:])
@@ -148,16 +149,6 @@ for s in range(n_plots):
     print(f"overall: {np.argmax([n0,n1,n2,n3,n4])}")
     print(f"target list: {target_list[s*sample_size:(s+1)*sample_size]}")
     print(f"angles: {sim_angles}")
-
-positions_1neuron = np.array([x_list[0],y_list[0]])
-activity_1neuron = activity_list[0]
-targets = np.array([initialxt,initialyt])
-
-#np.savetxt("xypositions_1neuronaway.csv", positions_1neuron, delimiter = ",")
-#np.savetxt("activity_1neuronaway.csv", activity_1neuron, delimiter = ",")
-#np.savetxt("xypositions_1bump.csv", positions_1bump, delimiter = ",")
-#np.savetxt("activity_1bump.csv", activity_1bump, delimiter = ",")
-#np.savetxt("targetpositions_1neuronaway.csv", targets, delimiter = ",")
 
 
 plt.show()

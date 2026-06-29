@@ -75,7 +75,6 @@ def get_success_rate(target_list, sample_size, ntargets):
 
 
 def get_bump_type(activity,maxtime=5000):
-    # UPDATED FROM WHAT WE USED FOR HIGH RESOLUTION SWEEPS - NEEDS TESTING 
     '''
     A function that analyses the neural activity of a simulation in small intervals 
     and returns a number corresponding to the number of bumps that best describe the simulation.
@@ -109,12 +108,9 @@ def get_bump_type(activity,maxtime=5000):
         counters[nbumps] += 1
         
     proportions = counters / sum(counters)
-    #print(f"proportions: {proportions}")
     phase = np.argmax(proportions)
     max_indices = np.where(proportions == proportions.max())[0]
-    #print(f"max indices: {max_indices}")
     if len(max_indices) > 1:
-        #print("tie deteceted")
         if total_time == maxtime+1:
             if proportions[2] >= 0.04:
                 phase = 2
@@ -134,7 +130,6 @@ def get_bump_type(activity,maxtime=5000):
 
     if proportions[2] >= 0.04 and phase == 1 and total_time == maxtime+1:
         phase = 2
-    #print(f"phase: {phase}")
     return phase
 
 def get_bifurcation_angle(xPos, yPos, targetx, targety):
@@ -153,8 +148,6 @@ def get_bifurcation_angle(xPos, yPos, targetx, targety):
                     Calculated by taking both the local max and local mins of the angle, finding the first one where the agent has moved more than 1 total unit, 
                     then seeing if the difference between the most direct path and the first local max or first local min is bigger.
     '''
-    # to solve indexing problem: inflate both ends equally with start pos and end pos before convolving so that the original dimension is the same ? 
-    # how to do this: get: nearest odd integer to xPos/20. Then subtract one and add that many final directions to the end ? 
     if np.shape(xPos)[0] == 1:
         xPos = xPos.ravel()
         yPos = yPos.ravel()
@@ -162,13 +155,6 @@ def get_bifurcation_angle(xPos, yPos, targetx, targety):
         raise ValueError("arrays for x position and y position are different sizes")
     if isinstance(targetx,str) or isinstance(targety,str):
         return [[0]]*2
-    '''
-    if np.issubdtype(type(axis_angle),np.number):
-        if axis_angle < 0 or axis_angle >= 2*np.pi:
-            raise ValueError(f"axis angle {axis_angle} is outside of range of valid angles (0 to 2pi)")
-    else:
-        raise TypeError(f"axis angle {axis_angle} is not a number")
-    '''
     total_time = len(xPos)
     x0, y0 = xPos[0], yPos[0]
     xdiff = np.diff(xPos)
@@ -184,7 +170,6 @@ def get_bifurcation_angle(xPos, yPos, targetx, targety):
         direction_smooth = np.convolve(direction_unwrapped, kernel, mode='valid')
         d_direction = np.abs(np.diff(direction_smooth))
     else: 
-        print(f"direction: {direction}")
         direction_unwrapped = np.unwrap(direction)
         d_direction = np.abs(np.diff(direction_unwrapped))
     peaks_t, pos_prop = find_peaks(d_direction,prominence=0)
@@ -194,8 +179,10 @@ def get_bifurcation_angle(xPos, yPos, targetx, targety):
         max_prom = np.max(pos_prom)
     pos_prom_mask = pos_prom >= max_prom * 0.2
     filtered_pos_peaks = peaks_t[pos_prom_mask]
+    #print(f"direction: {direction}")
+    #print(f"direction smooth: {direction_smooth}")
     print(f"d direction: {d_direction}")
-    print(f"peaks (filtered): {filtered_pos_peaks}")
+    #print(f"filtered peaks: {filtered_pos_peaks}")
     def first_valid_ratio(peak_indices):
         if len(peak_indices) == 0:
             return [[0,total_time-1]]*3
@@ -210,20 +197,27 @@ def get_bifurcation_angle(xPos, yPos, targetx, targety):
         bif_indices = [0]
         peak_indices = [0]
         return_indices = [0]
-        for item in valid_peaks: # get close to the end of changing direction
+        for index in range(len(valid_peaks)): # get close to the end of changing direction
             found = False
+            item = valid_peaks[index]
             curr_index = item
             peak_ddirection = d_direction[curr_index]
             curr_ddirection = peak_ddirection
             while not found: 
                 if curr_ddirection < 0.05 * peak_ddirection:
-                    bif_indices.append(round((curr_index+item)/2))
-                    peak_indices.append(item)
-                    return_indices.append(curr_index-1)
-                    found = True
+                    print(f"found the end at: {curr_index}, returned: {round((curr_index+item)/2)}") # if we find the end AT ANOTHER PEAK, then delete the current peak ? 
+                    if index < len(valid_peaks)-1 and curr_index >= valid_peaks[index+1]:
+                        print("this should really be counted as the next valid peak ? ")
+                        found = True
+                    else:
+                        print("proper peak")
+                        bif_indices.append(round((curr_index+item)/2))
+                        peak_indices.append(item)
+                        return_indices.append(curr_index-1)
+                        found = True
                 else:
                     curr_index += 1
-                    if curr_index >= total_time or curr_index >= item +300:
+                    if curr_index >= total_time-2 or curr_index >= item +300: # -2 because of two derivatives
                         found = True
                     else:
                         curr_ddirection = d_direction[curr_index]

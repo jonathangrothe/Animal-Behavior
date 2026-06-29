@@ -516,12 +516,40 @@ class BifurcationAngleTests(unittest.TestCase):
         self.assertEqual([0],bif_ind_yfail)
         self.assertEqual([0],bif_angle_yfail)
         
+    def test_xsmoothing(self):
+        '''
+        Testing the smoothing of the trajectory data
+        '''
+        # goal is to push function to limit for how much noise it can take
+        targetx = 40
+        targety = 60
+        x_prebif = [50]*50
+        x_postbif = np.linspace(50,40,num=31)
+        y_prebif = np.linspace(0,49,num=50)
+        y_postbif = np.linspace(50,60,num=31)
+        xPos_nonoise = np.zeros(81)
+        yPos_nonoise = np.zeros(81)
+        xPos_nonoise[0:50] = x_prebif
+        xPos_nonoise[50:] = x_postbif
+        yPos_nonoise[0:50] = y_prebif
+        yPos_nonoise[50:] = y_postbif
 
-    #def test_anglepeaks():
-        '''
-        Testing edge cases for the angles between the targets, 
-        many maxima/minima, no maxima/minima, 
-        '''
+        xPos_spiral = np.zeros(94)
+        yPos_spiral = np.zeros(94)
+        xPos_spiral[0:50] = x_prebif
+        yPos_spiral[0:50] = y_prebif
+        xPos_spiral[50:63] = [50.14658,50.28042,50.39262,50.47733,50.53248,50.55847,50.55710,50.53088,50.48257,50.41489,50.33046,50.23171,50.12088]
+        yPos_spiral[50:63] = [50-0.02182,50-0.08456,50-0.18121,50-0.30277,50-0.44035,50-0.58633,50-0.73465,50-0.88067,50-1.0210,50-1.15303,50-1.27508,50-1.38590,50-1.48464]       
+        y_spiral_post_bif = np.linspace(48.4292,60,num=31)
+        xPos_spiral[63:] = x_postbif
+        yPos_spiral[63:] = y_spiral_post_bif
+
+        ind_no_noise, angle_no_noise = get_bifurcation_angle(xPos_nonoise,yPos_nonoise,targetx,targety)
+        ind_spiral, angle_spiral = get_bifurcation_angle(xPos_spiral,yPos_spiral,targetx,targety)
+        print(f"ind: {ind_spiral}, angles: {angle_spiral}")
+        self.assertEqual([0,50,80],ind_no_noise)
+        self.assertAlmostEqual(3*np.pi/4,angle_no_noise[0])
+
     
     #def test_unexpectedmovement():
         '''
@@ -535,22 +563,19 @@ class BifurcationAngleTests(unittest.TestCase):
         one or more invalid peak and no valid peaks, one or more invalid peak and several valid peaks
         '''
     
-    #def test_ratio():
-        '''
-        Testing the calculation of the ratio
-        test equal max and min, test ratio outside of expected bounds that still works (0.5 to 1), test ratio that doesn't make sense as a bifurcation point (>1), test ratio that is infeasible (greater than 2pi/angle)
-        '''
-    
     def test_expected60(self):
         '''
         Testing 'normal' 60 degrees between targets cases
         '''
-        targetx_valid = 50-(15*np.sqrt(3))
+        # add at least one or two actual sims worth of data
+        # add some double bifurcations
+
+        targetx = 50-(15*np.sqrt(3))
         targetx_reflected = 50+(15*np.sqrt(3))
-        targety_valid = 65
-        xPos = np.array([50,47.5,45,42.902,targetx_valid])
+        targety = 65
+        xPos = np.array([50,47.5,45,42.902,targetx])
         xPos_ref = np.array([50,52.5,55,57.098,targetx_reflected])
-        yPos = np.array([50,57,64,64.1,targety_valid])
+        yPos = np.array([50,57,64,64.1,targety])
         d1_sq_1 = (xPos[2]-xPos[0])**2+(yPos[2]-yPos[0])**2
         d2_sq_1 = (xPos[4]-xPos[2])**2+(yPos[4]-yPos[2])**2
         hyp_sq_1 = (xPos[4]-xPos[0])**2+(yPos[4]-yPos[0])**2
@@ -559,9 +584,9 @@ class BifurcationAngleTests(unittest.TestCase):
         val_1 = (d1_sq_1+d2_sq_1-hyp_sq_1)/(2*d1_1*d2_1)
         angle_1 = np.arccos(val_1)
 
-        xPos_2 = np.array([50,46.25,42.5,40.652,targetx_valid])
+        xPos_2 = np.array([50,46.25,42.5,40.652,targetx])
         xPos_2_ref = np.array([50,53.75,57.5,59.348,targetx_reflected]) 
-        yPos_2 = np.array([50,57,64,64.1,targety_valid])
+        yPos_2 = np.array([50,57,64,64.1,targety])
         d1_sq_2 = (xPos_2[2]-xPos_2[0])**2+(yPos_2[2]-yPos_2[0])**2
         d2_sq_2 = (xPos_2[4]-xPos_2[2])**2+(yPos_2[4]-yPos_2[2])**2
         hyp_sq_2 = (xPos_2[4]-xPos_2[0])**2+(yPos_2[4]-yPos_2[0])**2
@@ -570,9 +595,9 @@ class BifurcationAngleTests(unittest.TestCase):
         val_2 = (d1_sq_2+d2_sq_2-hyp_sq_2)/(2*d1_2*d2_2)
         angle_2 = np.arccos(val_2)
 
-        xPos_3 = np.array([50,45,40,38.402,targetx_valid])
+        xPos_3 = np.array([50,45,40,38.402,targetx])
         xPos_3_ref = np.array([50,55,60,61.598,targetx_reflected])
-        yPos_3 = np.array([50,57,64,64.1,targety_valid])
+        yPos_3 = np.array([50,57,64,64.1,targety])
         d1_sq_3 = (xPos_3[2]-xPos_3[0])**2+(yPos_3[2]-yPos_3[0])**2
         d2_sq_3 = (xPos_3[4]-xPos_3[2])**2+(yPos_3[4]-yPos_3[2])**2
         hyp_sq_3 = (xPos_3[4]-xPos_3[0])**2+(yPos_3[4]-yPos_3[0])**2
@@ -581,9 +606,9 @@ class BifurcationAngleTests(unittest.TestCase):
         val_3 = (d1_sq_3+d2_sq_3-hyp_sq_3)/(2*d1_3*d2_3)
         angle_3 = np.arccos(val_3)
 
-        xPos_4 = np.array([50,43.25,37.5,36.152,targetx_valid])
+        xPos_4 = np.array([50,43.25,37.5,36.152,targetx])
         xPos_4_ref = np.array([50,56.75,62.5,63.848,targetx_reflected])
-        yPos_4 = np.array([50,57,64,64.1,targety_valid])
+        yPos_4 = np.array([50,57,64,64.1,targety])
         d1_sq_4 = (xPos_4[2]-xPos_4[0])**2+(yPos_4[2]-yPos_4[0])**2
         d2_sq_4 = (xPos_4[4]-xPos_4[2])**2+(yPos_4[4]-yPos_4[2])**2
         hyp_sq_4 = (xPos_4[4]-xPos_4[0])**2+(yPos_4[4]-yPos_4[0])**2
@@ -592,9 +617,9 @@ class BifurcationAngleTests(unittest.TestCase):
         val_4 = (d1_sq_4+d2_sq_4-hyp_sq_4)/(2*d1_4*d2_4)
         angle_4 = np.arccos(val_4)
 
-        xPos_5 = np.array([50,42.5,35,33.902,targetx_valid])
+        xPos_5 = np.array([50,42.5,35,33.902,targetx])
         xPos_5_ref = np.array([50,57.5,65,66.098,targetx_reflected])
-        yPos_5 = np.array([50,57,64,64.1,targety_valid])
+        yPos_5 = np.array([50,57,64,64.1,targety])
         d1_sq_5 = (xPos_5[2]-xPos_5[0])**2+(yPos_5[2]-yPos_5[0])**2
         d2_sq_5 = (xPos_5[4]-xPos_5[2])**2+(yPos_5[4]-yPos_5[2])**2
         hyp_sq_5 = (xPos_5[4]-xPos_5[0])**2+(yPos_5[4]-yPos_5[0])**2
@@ -604,20 +629,20 @@ class BifurcationAngleTests(unittest.TestCase):
         angle_5 = np.arccos(val_5)
 
         print("success 1")
-        bif_ind_success, bif_angle_success = get_bifurcation_angle(xPos,yPos,targetx_valid,targety_valid)
-        bif_ind_success_ref, bif_angle_success_ref = get_bifurcation_angle(xPos_ref,yPos,targetx_reflected,targety_valid)
+        bif_ind_success, bif_angle_success = get_bifurcation_angle(xPos,yPos,targetx,targety)
+        bif_ind_success_ref, bif_angle_success_ref = get_bifurcation_angle(xPos_ref,yPos,targetx_reflected,targety)
         print("success2")
-        bif_ind_success2, bif_angle_success2 = get_bifurcation_angle(xPos_2,yPos_2,targetx_valid,targety_valid)
-        bif_ind_success2_ref, bif_angle_success2_ref = get_bifurcation_angle(xPos_2_ref,yPos,targetx_reflected,targety_valid)
+        bif_ind_success2, bif_angle_success2 = get_bifurcation_angle(xPos_2,yPos_2,targetx,targety)
+        bif_ind_success2_ref, bif_angle_success2_ref = get_bifurcation_angle(xPos_2_ref,yPos,targetx_reflected,targety)
         print("success3")
-        bif_ind_success3, bif_angle_success3 = get_bifurcation_angle(xPos_3,yPos_3,targetx_valid,targety_valid)
-        bif_ind_success3_ref, bif_angle_success3_ref = get_bifurcation_angle(xPos_3_ref,yPos,targetx_reflected,targety_valid)
+        bif_ind_success3, bif_angle_success3 = get_bifurcation_angle(xPos_3,yPos_3,targetx,targety)
+        bif_ind_success3_ref, bif_angle_success3_ref = get_bifurcation_angle(xPos_3_ref,yPos,targetx_reflected,targety)
         print("success4")
-        bif_ind_success4, bif_angle_success4 = get_bifurcation_angle(xPos_4,yPos_4,targetx_valid,targety_valid)
-        bif_ind_success4_ref, bif_angle_success4_ref = get_bifurcation_angle(xPos_4_ref,yPos,targetx_reflected,targety_valid)
+        bif_ind_success4, bif_angle_success4 = get_bifurcation_angle(xPos_4,yPos_4,targetx,targety)
+        bif_ind_success4_ref, bif_angle_success4_ref = get_bifurcation_angle(xPos_4_ref,yPos,targetx_reflected,targety)
         print("success5")
-        bif_ind_success5, bif_angle_success5 = get_bifurcation_angle(xPos_5,yPos_5,targetx_valid,targety_valid)
-        bif_ind_success5_ref, bif_angle_success5_ref = get_bifurcation_angle(xPos_5_ref,yPos,targetx_reflected,targety_valid)
+        bif_ind_success5, bif_angle_success5 = get_bifurcation_angle(xPos_5,yPos_5,targetx,targety)
+        bif_ind_success5_ref, bif_angle_success5_ref = get_bifurcation_angle(xPos_5_ref,yPos,targetx_reflected,targety)
 
         self.assertEqual([0,2,4],bif_ind_success)
         self.assertAlmostEqual(angle_1,bif_angle_success[0])
@@ -648,6 +673,7 @@ class BifurcationAngleTests(unittest.TestCase):
         '''
         Testing 'normal' 90 degrees between targets cases
         '''
+
     
     #def test_expected120():
         '''
