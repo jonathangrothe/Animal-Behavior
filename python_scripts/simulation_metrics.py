@@ -181,7 +181,7 @@ def get_bifurcation_angle(xPos, yPos, targetx, targety):
     filtered_pos_peaks = peaks_t[pos_prom_mask]
     #print(f"direction: {direction}")
     #print(f"direction smooth: {direction_smooth}")
-    print(f"d direction: {d_direction}")
+    #print(f"d direction: {d_direction}")
     #print(f"filtered peaks: {filtered_pos_peaks}")
     def first_valid_ratio(peak_indices):
         if len(peak_indices) == 0:
@@ -197,6 +197,24 @@ def get_bifurcation_angle(xPos, yPos, targetx, targety):
         bif_indices = [0]
         peak_indices = [0]
         return_indices = [0]
+
+        above = d_direction > (np.max(d_direction)*0.05)
+        min_gap = 15
+        jump_starts = [0]
+        in_jump = False
+        last_jump_end = -min_gap 
+        for i, val in enumerate(above):
+            if val and not in_jump: 
+                if i - last_jump_end >= min_gap:
+                    jump_starts.append(i + 1)  # +1 because dy[i] = y[i+1]-y[i]
+                in_jump = True
+            elif not val and in_jump:
+                last_jump_end = i
+                in_jump = False
+        jump_starts.append(total_time-1)
+        #print(jump_starts)
+        return jump_starts
+        ''''       
         for index in range(len(valid_peaks)): # get close to the end of changing direction
             found = False
             item = valid_peaks[index]
@@ -225,6 +243,7 @@ def get_bifurcation_angle(xPos, yPos, targetx, targety):
         peak_indices.append(total_time-1)
         return_indices.append(total_time-1)
         return bif_indices, peak_indices, return_indices
+        '''
 
     def get_angles(indices):
         if len(indices) <= 2:
@@ -245,12 +264,13 @@ def get_bifurcation_angle(xPos, yPos, targetx, targety):
             val = (d1_sq+d2_sq-d3_sq)/(2*d1*d2)
             angle = np.arccos(val)
             angles[a-1] = angle
+            print(f"p1: {(x1,y1)}, p2: {x2,y2}, p3: {x3,y3}, d1 squared: {d1_sq}, d2 squared: {d2_sq}, d3 squared: {d3_sq}, angle: {angle}")
         return angles
     
-    bifurcation_indices, peak_indices, return_indices = first_valid_ratio(filtered_pos_peaks)
+    bifurcation_indices = first_valid_ratio(filtered_pos_peaks)
     bif_angles = get_angles(bifurcation_indices)
-    peak_angles = get_angles(peak_indices)
-    return_angles = get_angles(return_indices)
+    #peak_angles = get_angles(peak_indices)
+    #return_angles = get_angles(return_indices)
     
     print(f"bifurcation indices: {bifurcation_indices}")
     print(f"bifurcation angles: {bif_angles}")

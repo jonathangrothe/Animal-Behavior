@@ -521,34 +521,52 @@ class BifurcationAngleTests(unittest.TestCase):
         Testing the smoothing of the trajectory data
         '''
         # goal is to push function to limit for how much noise it can take
+        print("TEST SMOOTHING")
+        rng = np.random.default_rng(seed=67)
+        
         targetx = 40
         targety = 60
-        x_prebif = [50]*50
+        x_prebif = [50]*51
         x_postbif = np.linspace(50,40,num=31)
-        y_prebif = np.linspace(0,49,num=50)
+        y_prebif = np.linspace(0,50,num=51)
         y_postbif = np.linspace(50,60,num=31)
-        xPos_nonoise = np.zeros(81)
-        yPos_nonoise = np.zeros(81)
-        xPos_nonoise[0:50] = x_prebif
-        xPos_nonoise[50:] = x_postbif
-        yPos_nonoise[0:50] = y_prebif
-        yPos_nonoise[50:] = y_postbif
+        xPos_nonoise = np.zeros(82)
+        yPos_nonoise = np.zeros(82)
+        xPos_nonoise[0:51] = x_prebif
+        xPos_nonoise[51:] = x_postbif
+        yPos_nonoise[0:51] = y_prebif
+        yPos_nonoise[51:] = y_postbif
 
-        xPos_spiral = np.zeros(94)
-        yPos_spiral = np.zeros(94)
-        xPos_spiral[0:50] = x_prebif
-        yPos_spiral[0:50] = y_prebif
-        xPos_spiral[50:63] = [50.14658,50.28042,50.39262,50.47733,50.53248,50.55847,50.55710,50.53088,50.48257,50.41489,50.33046,50.23171,50.12088]
-        yPos_spiral[50:63] = [50-0.02182,50-0.08456,50-0.18121,50-0.30277,50-0.44035,50-0.58633,50-0.73465,50-0.88067,50-1.0210,50-1.15303,50-1.27508,50-1.38590,50-1.48464]       
+        gaussian_noise_x = rng.normal(0,0.1,82)
+        gaussian_noise_y = rng.normal(0,0.1,82)
+        x_withnoise = xPos_nonoise + gaussian_noise_x
+        y_withnoise = yPos_nonoise + gaussian_noise_y
+
+        spiral_period = np.linspace(0,np.pi/2,num=13)
+        x_spiral = []
+        y_spiral = []
+        for item in spiral_period:
+            x_spiral.append(50 + item*np.cos(item))
+            y_spiral.append(50+ item*np.sin(item))
+
+        xPos_spiral = np.zeros(95)
+        yPos_spiral = np.zeros(95)
+        xPos_spiral[0:51] = x_prebif
+        yPos_spiral[0:51] = y_prebif
+        xPos_spiral[51:64] = x_spiral
+        yPos_spiral[51:64] = y_spiral     
         y_spiral_post_bif = np.linspace(48.4292,60,num=31)
-        xPos_spiral[63:] = x_postbif
-        yPos_spiral[63:] = y_spiral_post_bif
+        xPos_spiral[64:] = x_postbif
+        yPos_spiral[64:] = y_spiral_post_bif
 
         ind_no_noise, angle_no_noise = get_bifurcation_angle(xPos_nonoise,yPos_nonoise,targetx,targety)
         ind_spiral, angle_spiral = get_bifurcation_angle(xPos_spiral,yPos_spiral,targetx,targety)
+        ind_noise, angle_noise = get_bifurcation_angle(x_withnoise,y_withnoise,targetx,targety)
         print(f"ind: {ind_spiral}, angles: {angle_spiral}")
-        self.assertEqual([0,50,80],ind_no_noise)
+        self.assertEqual([0,50,81],ind_no_noise)
         self.assertAlmostEqual(3*np.pi/4,angle_no_noise[0])
+        self.assertEqual([0,50,81],ind_noise)
+        self.assertAlmostEqual(3*np.pi/4,angle_noise[0])
 
     
     #def test_unexpectedmovement():
