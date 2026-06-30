@@ -82,9 +82,9 @@ base = {'N':N,
 
 plot_neurons = True
 plot_trajs = True
-sample_size = 1
-h0_list = [[0.21,0.21,0.21],[0.225,0.225,0.225],[0.25,0.25,0.25]]
-sigma_list = [0.3,0.2,0.5]
+sample_size = 5
+h0_list = [[0.235,0.235,0.235],[0.225,0.225,0.225],[0.25,0.25,0.25]]
+sigma_list = [0.5,0.2,0.5]
 change = {'sigma':sigma_list, 'h0':h0_list}
 target_list, time_list, activity_list, x_list, y_list, headings_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
 
@@ -139,6 +139,7 @@ for s in range(n_plots):
     axs1[s].imshow(sim_activity,cmap=cmap,aspect='auto',vmin=col_min,vmax=col_max)
     sim_phases = phases[s*sample_size:(s+1)*sample_size]
     sim_angles = angles[s*sample_size:(s+1)*sample_size]
+    sim_indices = bif_indices[s*sample_size:(s+1)*sample_size]
     n0 = sim_phases.count(0)
     n1 = sim_phases.count(1)
     n2 = sim_phases.count(2)
@@ -149,6 +150,7 @@ for s in range(n_plots):
     print(f"overall: {np.argmax([n0,n1,n2,n3,n4])}")
     print(f"target list: {target_list[s*sample_size:(s+1)*sample_size]}")
     print(f"angles: {sim_angles}")
+    print(f"indices: {sim_indices}")
 
 
 plt.show()

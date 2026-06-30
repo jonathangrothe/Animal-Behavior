@@ -132,7 +132,7 @@ def get_bump_type(activity,maxtime=5000):
         phase = 2
     return phase
 
-def get_bifurcation_angle(xPos, yPos, targetx, targety):
+def get_bifurcation_angle(xPos, yPos, targetx, targety, thresh=0.25):
     '''
     A function that calculates the local extrema of the angle between the agent and the target, and uses them to 
     find the ratio of the difference between the angle of the agent at the bifurcation and the most direct path to the target
@@ -171,54 +171,69 @@ def get_bifurcation_angle(xPos, yPos, targetx, targety):
         if np.abs(search_upper - search_lower) <= 2:
             found_thresh = True
             thresh_ind = round((search_upper+search_lower)/2)
-        search_mean = round(search_lower+search_upper/2)
+        search_mean = round((search_lower+search_upper)/2)
         search_dist = np.sqrt((xPos[search_mean]-x0)**2+(yPos[search_mean]-y0)**2)
         mean_thresh_dist = search_dist - movement_thresh
+        #print(f"search lower: {search_lower}, search mean: {search_mean}, search upper: {search_upper}, mean thresh dist: {mean_thresh_dist}, movement lower: {movement_lower_thresh}, movement upper: {movement_upper_thresh}")
         if mean_thresh_dist > movement_upper_thresh:
             search_upper = search_mean
+            #print("entered")
         elif mean_thresh_dist < movement_lower_thresh:
             search_lower = search_mean
         else:
             found_thresh = True
             thresh_ind = search_mean
-    print(f"starting position: {thresh_ind}")
+    #print(f"starting position: {thresh_ind}")
+    
 
-
+    def detect_bif_points(ddirection):
+        above = ddirection[thresh_ind:] > (np.max(ddirection[thresh_ind:])*thresh) # current plan is to just completely ignore first part
+        #print(f"above: {above}")
+        min_gap = min(30,total_time//8) 
+        if min_gap == 0:
+            min_gap = 1
+        jump_ends = [0]
+        in_jump = False
+        last_jump_end = -min_gap
+        for i, val in enumerate(above):
+            if val and not in_jump: 
+                #if i - last_jump_end >= min_gap:
+                    #print(f"jump start detected at {i+thresh_ind}")
+                in_jump = True
+            elif not val and in_jump:
+                #print(f"end jump detected at {i+thresh_ind}")
+                if i - last_jump_end >= min_gap:
+                    print(f"index: {i}, lje: {last_jump_end}, min gap: {min_gap}")
+                    jump_ends.append(i + thresh_ind)
+                last_jump_end = i
+                in_jump = False
+        jump_ends.append(total_time-1)
+        return jump_ends
+    # once we have this we want to make sure each bif point is suitably different from each other one (ie: different angle, far away, different direction)
+    
     direction = np.atan2(ydiff,xdiff)
     direction_unwrapped = np.unwrap(direction)
     d_direction_unsmooth = np.abs(np.diff(direction_unwrapped))
-    
-    above = d_direction_unsmooth > (np.max(d_direction_unsmooth[25:])*0.25)
-    print(f"ARGMAX: {np.argmax(d_direction_unsmooth[25:])+25}")
-    min_gap = 15
-    jump_starts = [0]
-    in_jump = True
-    last_jump_end = 0
-    for i, val in enumerate(above):
-        if val: 
-            print(f"above at index: {i}, d direction: {d_direction_unsmooth[i]}, x: {xPos[i]}, y: {yPos[i]}")
-        if val and not in_jump: 
-            if i - last_jump_end >= min_gap:
-                jump_starts.append(i + 1)  # +1 because dy[i] = y[i+1]-y[i]
-            in_jump = True
-        elif not val and in_jump:
-            last_jump_end = i
-            in_jump = False
-    jump_starts.append(total_time-1)
-    print(jump_starts)
-    d_direction = np.zeros(len(direction)-1)
-    smooth_by = total_time//20
-    if smooth_by > 0:
-        kernel = np.ones(smooth_by) / smooth_by 
-        inflated_ending = np.array([direction[-1]]*(smooth_by-1))
-        direction_inflated = np.concat([direction,inflated_ending])
-        direction_unwrapped = np.unwrap(direction_inflated)
-        direction_smooth = np.convolve(direction_unwrapped, kernel, mode='valid')
-        d_direction = np.abs(np.diff(direction_smooth))
-    else: 
-        direction_unwrapped = np.unwrap(direction)
-        d_direction = np.abs(np.diff(direction_unwrapped))
-    peaks_t, pos_prop = find_peaks(d_direction,prominence=0)
+
+    '''
+    #if smoothing_factor >= total_time*0.2: # don't oversmooth ? 
+     #   smoothing_factor = int(total_time*0.2)
+    smooth_by = total_time//smoothing_factor
+    if smooth_by == 0:
+        smooth_by = 1
+    print(f"smoothing factor: {1/smooth_by}")
+    kernel = np.ones(smooth_by) / smooth_by 
+    inflated_ending = np.array([direction[-1]]*(smooth_by-1))
+    direction_inflated = np.concat([direction,inflated_ending])
+    direction_inflated_unwrapped = np.unwrap(direction_inflated)
+    direction_smooth = np.convolve(direction_inflated_unwrapped, kernel, mode='valid')
+    d_direction_smooth = np.abs(np.diff(direction_smooth))
+    '''
+    jump_starts_unsmooth = detect_bif_points(d_direction_unsmooth)
+    #jump_starts_smooth = detect_bif_points(d_direction_smooth)
+
+    '''
+    peaks_t, pos_prop = find_peaks(d_direction_smooth,prominence=0)
     pos_prom = pos_prop['prominences']
     max_prom = 0.000001
     if len(pos_prom) > 0:
@@ -228,9 +243,11 @@ def get_bifurcation_angle(xPos, yPos, targetx, targety):
     #print(f"direction: {direction}")
     #print(f"direction smooth: {direction_smooth}")
     #print(f"d direction: {d_direction}")
-    print(f"filtered peaks: {filtered_pos_peaks}")
-        
+    #print(f"filtered peaks: {filtered_pos_peaks}")
+    '''
+
     def get_angles(indices):
+        true_indices = []
         if len(indices) <= 2:
             return [0]
         angles = np.zeros(len(indices)-2)
@@ -246,19 +263,26 @@ def get_bifurcation_angle(xPos, yPos, targetx, targety):
             d3_sq = (x3-x1)**2+(y3-y1)**2
             d1 = np.sqrt(d1_sq)
             d2 = np.sqrt(d2_sq)
-            val = (d1_sq+d2_sq-d3_sq)/(2*d1*d2)
-            angle = np.arccos(val)
-            angles[a-1] = angle
+            if d1 > 0.001 and d2 > 0.001:
+                true_indices.append(indices[a])
+            # if 2*d1*d2 would be very small, (or 0), then this aint it (and we need to get rid of corresponding index)
+                val = (d1_sq+d2_sq-d3_sq)/(2*d1*d2)
+                angle = np.arccos(val)
+                angles[a-1] = angle
         return angles
     
     #bifurcation_indices = filter_peaks(filtered_pos_peaks)
-    bif_angles = get_angles(jump_starts)
+    bif_angles = get_angles(jump_starts_unsmooth)
+    #bif_angles_smooth = get_angles(jump_starts_smooth)
     #peak_angles = get_angles(peak_indices)
     #return_angles = get_angles(return_indices)
+
+    #print(f"unsmooth: indices: {jump_starts_unsmooth}, angles: {bif_angles}")
+    #print(f"smooth: indices: {jump_starts_smooth}, angles: {bif_angles_smooth}")
     
-    print(f"bifurcation indices: {jump_starts}")
-    print(f"bifurcation angles: {bif_angles}")
-    return jump_starts, bif_angles
+    #print(f"bifurcation indices: {jump_starts}")
+    #print(f"bifurcation angles: {bif_angles}")
+    return jump_starts_unsmooth, bif_angles
 
 def find_bumps(activity): # function not currently use, will keep it for now
     '''
