@@ -159,7 +159,53 @@ def get_bifurcation_angle(xPos, yPos, targetx, targety):
     x0, y0 = xPos[0], yPos[0]
     xdiff = np.diff(xPos)
     ydiff = np.diff(yPos)
+    dist_to_targ = np.sqrt((x0-targetx)**2+(y0-targety)**2)
+    movement_lower_thresh = dist_to_targ*0.04
+    movement_thresh = dist_to_targ*0.05
+    movement_upper_thresh = dist_to_targ*0.06
+    found_thresh = False
+    search_upper = total_time
+    search_lower = 0
+    thresh_ind = 0
+    while not found_thresh:
+        if np.abs(search_upper - search_lower) <= 2:
+            found_thresh = True
+            thresh_ind = round((search_upper+search_lower)/2)
+        search_mean = round(search_lower+search_upper/2)
+        search_dist = np.sqrt((xPos[search_mean]-x0)**2+(yPos[search_mean]-y0)**2)
+        mean_thresh_dist = search_dist - movement_thresh
+        if mean_thresh_dist > movement_upper_thresh:
+            search_upper = search_mean
+        elif mean_thresh_dist < movement_lower_thresh:
+            search_lower = search_mean
+        else:
+            found_thresh = True
+            thresh_ind = search_mean
+    print(f"starting position: {thresh_ind}")
+
+
     direction = np.atan2(ydiff,xdiff)
+    direction_unwrapped = np.unwrap(direction)
+    d_direction_unsmooth = np.abs(np.diff(direction_unwrapped))
+    
+    above = d_direction_unsmooth > (np.max(d_direction_unsmooth[25:])*0.25)
+    print(f"ARGMAX: {np.argmax(d_direction_unsmooth[25:])+25}")
+    min_gap = 15
+    jump_starts = [0]
+    in_jump = True
+    last_jump_end = 0
+    for i, val in enumerate(above):
+        if val: 
+            print(f"above at index: {i}, d direction: {d_direction_unsmooth[i]}, x: {xPos[i]}, y: {yPos[i]}")
+        if val and not in_jump: 
+            if i - last_jump_end >= min_gap:
+                jump_starts.append(i + 1)  # +1 because dy[i] = y[i+1]-y[i]
+            in_jump = True
+        elif not val and in_jump:
+            last_jump_end = i
+            in_jump = False
+    jump_starts.append(total_time-1)
+    print(jump_starts)
     d_direction = np.zeros(len(direction)-1)
     smooth_by = total_time//20
     if smooth_by > 0:
@@ -182,69 +228,8 @@ def get_bifurcation_angle(xPos, yPos, targetx, targety):
     #print(f"direction: {direction}")
     #print(f"direction smooth: {direction_smooth}")
     #print(f"d direction: {d_direction}")
-    #print(f"filtered peaks: {filtered_pos_peaks}")
-    def first_valid_ratio(peak_indices):
-        if len(peak_indices) == 0:
-            return [[0,total_time-1]]*3
-        valid_peaks = []
-        for index in range(len(peak_indices)):
-            deltax = np.abs(xPos[peak_indices[index]]-x0)
-            deltay = np.abs(yPos[peak_indices[index]]-y0)
-            if deltax > 2 or deltay > 2: 
-                valid_peaks.append(peak_indices[index])
-        if len(valid_peaks) == 0:
-            return [[0,total_time-1]]*3
-        bif_indices = [0]
-        peak_indices = [0]
-        return_indices = [0]
-
-        above = d_direction > (np.max(d_direction)*0.05)
-        min_gap = 15
-        jump_starts = [0]
-        in_jump = False
-        last_jump_end = -min_gap 
-        for i, val in enumerate(above):
-            if val and not in_jump: 
-                if i - last_jump_end >= min_gap:
-                    jump_starts.append(i + 1)  # +1 because dy[i] = y[i+1]-y[i]
-                in_jump = True
-            elif not val and in_jump:
-                last_jump_end = i
-                in_jump = False
-        jump_starts.append(total_time-1)
-        #print(jump_starts)
-        return jump_starts
-        ''''       
-        for index in range(len(valid_peaks)): # get close to the end of changing direction
-            found = False
-            item = valid_peaks[index]
-            curr_index = item
-            peak_ddirection = d_direction[curr_index]
-            curr_ddirection = peak_ddirection
-            while not found: 
-                if curr_ddirection < 0.05 * peak_ddirection:
-                    print(f"found the end at: {curr_index}, returned: {round((curr_index+item)/2)}") # if we find the end AT ANOTHER PEAK, then delete the current peak ? 
-                    if index < len(valid_peaks)-1 and curr_index >= valid_peaks[index+1]:
-                        print("this should really be counted as the next valid peak ? ")
-                        found = True
-                    else:
-                        print("proper peak")
-                        bif_indices.append(round((curr_index+item)/2))
-                        peak_indices.append(item)
-                        return_indices.append(curr_index-1)
-                        found = True
-                else:
-                    curr_index += 1
-                    if curr_index >= total_time-2 or curr_index >= item +300: # -2 because of two derivatives
-                        found = True
-                    else:
-                        curr_ddirection = d_direction[curr_index]
-        bif_indices.append(total_time-1)
-        peak_indices.append(total_time-1)
-        return_indices.append(total_time-1)
-        return bif_indices, peak_indices, return_indices
-        '''
-
+    print(f"filtered peaks: {filtered_pos_peaks}")
+        
     def get_angles(indices):
         if len(indices) <= 2:
             return [0]
@@ -264,17 +249,16 @@ def get_bifurcation_angle(xPos, yPos, targetx, targety):
             val = (d1_sq+d2_sq-d3_sq)/(2*d1*d2)
             angle = np.arccos(val)
             angles[a-1] = angle
-            print(f"p1: {(x1,y1)}, p2: {x2,y2}, p3: {x3,y3}, d1 squared: {d1_sq}, d2 squared: {d2_sq}, d3 squared: {d3_sq}, angle: {angle}")
         return angles
     
-    bifurcation_indices = first_valid_ratio(filtered_pos_peaks)
-    bif_angles = get_angles(bifurcation_indices)
+    #bifurcation_indices = filter_peaks(filtered_pos_peaks)
+    bif_angles = get_angles(jump_starts)
     #peak_angles = get_angles(peak_indices)
     #return_angles = get_angles(return_indices)
     
-    print(f"bifurcation indices: {bifurcation_indices}")
+    print(f"bifurcation indices: {jump_starts}")
     print(f"bifurcation angles: {bif_angles}")
-    return bifurcation_indices, bif_angles
+    return jump_starts, bif_angles
 
 def find_bumps(activity): # function not currently use, will keep it for now
     '''
@@ -373,7 +357,7 @@ def plot_traj(xPos,yPos,targetsx,targetsy,sample_size,figure,plot_dec_point=Fals
     '''
     if end_ind == 0:
         for sample in range(sample_size):
-            figure.plot(xPos[sample][start_ind:],yPos[sample][start_ind:],color='blue',alpha=1/sample_size)
+            figure.plot(xPos[sample][start_ind:],yPos[sample][start_ind:],color='blue',alpha=0.5/sample_size)
             if plot_dec_point:
                 dec_time = dec_points[sample]
                 figure.scatter(xPos[sample][dec_time],yPos[sample][dec_time], color="green",alpha = 0.8,s=1)

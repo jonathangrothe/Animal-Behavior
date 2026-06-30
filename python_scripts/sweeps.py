@@ -128,8 +128,8 @@ for sigma_index in range(len(base_sigma)):
         if target_list[i] >=0:
             xt = initialxt[target_list[i]]
             yt = initialyt[target_list[i]]
-        angle = sim_met.get_bifurcation_angle(curr_xpos, curr_ypos, xt, yt, (np.pi)/3)
-        angles.append(angle)
+        angle, indices = sim_met.get_bifurcation_angle(curr_xpos, curr_ypos, xt, yt)
+        angles.append(angle[0])
 
     grid_phases = []
     grid_targets = []

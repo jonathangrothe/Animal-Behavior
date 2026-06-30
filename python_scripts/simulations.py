@@ -82,9 +82,9 @@ base = {'N':N,
 
 plot_neurons = True
 plot_trajs = True
-sample_size = 5
-h0_list = [[0.25,0.25,0.25],[0.275,0.275,0.275]]
-sigma_list = [0.5,0.7]
+sample_size = 1
+h0_list = [[0.21,0.21,0.21],[0.225,0.225,0.225],[0.25,0.25,0.25]]
+sigma_list = [0.3,0.2,0.5]
 change = {'sigma':sigma_list, 'h0':h0_list}
 target_list, time_list, activity_list, x_list, y_list, headings_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
 
