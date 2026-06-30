@@ -662,10 +662,38 @@ class BifurcationAngleTests(unittest.TestCase):
         self.assertEqual(1,len(angles_timecrunch))
 
     
-    #def test_gap():
+    def test_gap(self):
         '''
         Testing the minimum gap part of the detecing bif 
+        cases: one above and one below for mingap of 30, mingap of 1, mingap of in between (15?)
         '''
+        xPos_mini_0gap = np.concat([np.array([50]*5),[52,61,65]]) # maybe should also do a consecutive one that take a straight shot to target at the end? 
+        yPos_mini_0gap = np.concat([np.linspace(50,60,num=5),[63,67,65]])
+        xPos_mini_1gap = np.concat([np.array([50]*5),[55,60,65]])
+        yPos_mini_1gap = np.concat([np.linspace(50,60,num=5),[63,67,65]])
+        '''
+        xPos_med_14gap = np.concat([])
+        yPos_med_14gap = np.concat([])
+        xPos_med_15gap = np.concat([])
+        yPos_med_15gap = np.concat([])
+
+        xPos_max_29gap = np.concat([])
+        yPos_max_29gap = np.concat([])
+        xPos_max_30gap = np.concat([])
+        yPos_max_30gap = np.concat([])
+        '''
+        ind_mini0, angles_mini0 = get_bifurcation_angle(xPos_mini_0gap,yPos_mini_0gap,0.25,5000,True)
+        ind_mini1, angles_mini1 = get_bifurcation_angle(xPos_mini_1gap,yPos_mini_1gap,0.25,5000,True)
+
+        print(f"ind 0: {ind_mini0}, angles 0: {angles_mini0}")
+        print(f"ind 1: {ind_mini1}, angles 1: {angles_mini1}")
+
+        self.assertEqual(2,len(ind_mini0))
+        self.assertEqual(1,len(angles_mini0))
+        self.assertEqual(0,angles_mini0[0])
+        self.assertEqual(3,len(ind_mini1))
+        self.assertEqual(4,ind_mini1[1])
+        self.assertEqual(1,len(angles_mini0))
 
     #def test_unexpectedmovement():
         '''
