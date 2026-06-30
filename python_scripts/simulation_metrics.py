@@ -132,7 +132,7 @@ def get_bump_type(activity,maxtime=5000):
         phase = 2
     return phase
 
-def get_bifurcation_angle(xPos, yPos, targetx, targety, thresh=0.25):
+def get_bifurcation_angle(xPos, yPos, thresh=0.25, maxtime=5000,test=False):
     '''
     A function that calculates the local extrema of the angle between the agent and the target, and uses them to 
     find the ratio of the difference between the angle of the agent at the bifurcation and the most direct path to the target
@@ -140,8 +140,6 @@ def get_bifurcation_angle(xPos, yPos, targetx, targety, thresh=0.25):
     Parameters:
         xPos: a list of x positions from a simulation
         yPos: a list of y positions from a simulation
-        targetx: the x position of the target that the agent reached, -1 is expected if no target was reached
-        targety: the y position of the target that the agent reached, -1 is expected if no target was reached
 
     Returns: 
         best_overall: a ratio representing the difference between the angle of the agent at the bifurcation and the most direct path. 
@@ -153,42 +151,50 @@ def get_bifurcation_angle(xPos, yPos, targetx, targety, thresh=0.25):
         yPos = yPos.ravel()
     if xPos.size != yPos.size:
         raise ValueError("arrays for x position and y position are different sizes")
-    if isinstance(targetx,str) or isinstance(targety,str):
-        return [[0]]*2
     total_time = len(xPos)
+    if maxtime <= total_time:
+        return [0],[0]
     x0, y0 = xPos[0], yPos[0]
+    targetx, targety = xPos[-1], yPos[-1]
     xdiff = np.diff(xPos)
     ydiff = np.diff(yPos)
     dist_to_targ = np.sqrt((x0-targetx)**2+(y0-targety)**2)
-    movement_lower_thresh = dist_to_targ*0.04
     movement_thresh = dist_to_targ*0.05
-    movement_upper_thresh = dist_to_targ*0.06
     found_thresh = False
-    search_upper = total_time
-    search_lower = 0
     thresh_ind = 0
+    increment_search = 20
+    if increment_search > total_time:
+        increment_search = total_time-1
     while not found_thresh:
-        if np.abs(search_upper - search_lower) <= 2:
+        #if thresh_ind >= total_time-1:
+            #return [0], [0]
+        ind_upper = min(thresh_ind + increment_search,total_time-1)
+        dist_from_start = np.sqrt((xPos[ind_upper]-x0)**2+(yPos[ind_upper]-y0)**2)
+        #print(f"dist from start: {dist_from_start}, movement thresh: {movement_thresh}")
+        if dist_from_start > movement_thresh:
+            dists_sq  = (xPos[thresh_ind:ind_upper]-x0)**2 + (yPos[thresh_ind:ind_upper]-y0)**2
+            mask = dists_sq > movement_thresh
+            #print(f"mask: {mask}")
+            for i in range(len(mask)):
+                if mask[i]:
+                    thresh_ind = i-1
+                    break
+            thresh_ind = i
             found_thresh = True
-            thresh_ind = round((search_upper+search_lower)/2)
-        search_mean = round((search_lower+search_upper)/2)
-        search_dist = np.sqrt((xPos[search_mean]-x0)**2+(yPos[search_mean]-y0)**2)
-        mean_thresh_dist = search_dist - movement_thresh
-        #print(f"search lower: {search_lower}, search mean: {search_mean}, search upper: {search_upper}, mean thresh dist: {mean_thresh_dist}, movement lower: {movement_lower_thresh}, movement upper: {movement_upper_thresh}")
-        if mean_thresh_dist > movement_upper_thresh:
-            search_upper = search_mean
-            #print("entered")
-        elif mean_thresh_dist < movement_lower_thresh:
-            search_lower = search_mean
         else:
-            found_thresh = True
-            thresh_ind = search_mean
-    #print(f"starting position: {thresh_ind}")
-    
-
+            thresh_ind = ind_upper
+    print(f"starting index: {thresh_ind}")
+            
     def detect_bif_points(ddirection):
-        above = ddirection[thresh_ind:] > (np.max(ddirection[thresh_ind:])*thresh) # current plan is to just completely ignore first part
-        #print(f"above: {above}")
+        max_activation = np.max(ddirection[thresh_ind:])
+        thresh_value = max_activation*thresh
+        if max_activation <= 0.0001: # if the max is very small (this is equivalent to about 1 degree of change over 18 time steps) then ensure no points are flagged
+            thresh_value = 10
+        above = ddirection[thresh_ind:] > thresh_value # current plan is to just completely ignore first part
+        if test:
+            print(f"direction: {direction}")
+            print(f"ddirection: {d_direction_unsmooth}")
+            print(f"above: {above}")
         min_gap = min(30,total_time//8) 
         if min_gap == 0:
             min_gap = 1
@@ -203,7 +209,7 @@ def get_bifurcation_angle(xPos, yPos, targetx, targety, thresh=0.25):
             elif not val and in_jump:
                 #print(f"end jump detected at {i+thresh_ind}")
                 if i - last_jump_end >= min_gap:
-                    print(f"index: {i}, lje: {last_jump_end}, min gap: {min_gap}")
+                    #print(f"index: {i}, lje: {last_jump_end}, min gap: {min_gap}")
                     jump_ends.append(i + thresh_ind)
                 last_jump_end = i
                 in_jump = False
@@ -211,7 +217,12 @@ def get_bifurcation_angle(xPos, yPos, targetx, targety, thresh=0.25):
         return jump_ends
     # once we have this we want to make sure each bif point is suitably different from each other one (ie: different angle, far away, different direction)
     
-    direction = np.atan2(ydiff,xdiff)
+    direction = np.atan2(ydiff,xdiff) # if the agent doesn't move at all, that doesn't count as a direction change
+    for index,item in enumerate(direction): 
+        if item <= 0.0000001:
+            if ydiff[index] <= 0.0000001 and xdiff[index] <= 0.0000001:
+                direction[index] = direction[index-1]
+                
     direction_unwrapped = np.unwrap(direction)
     d_direction_unsmooth = np.abs(np.diff(direction_unwrapped))
 
@@ -263,12 +274,18 @@ def get_bifurcation_angle(xPos, yPos, targetx, targety, thresh=0.25):
             d3_sq = (x3-x1)**2+(y3-y1)**2
             d1 = np.sqrt(d1_sq)
             d2 = np.sqrt(d2_sq)
-            if d1 > 0.001 and d2 > 0.001:
-                true_indices.append(indices[a])
             # if 2*d1*d2 would be very small, (or 0), then this aint it (and we need to get rid of corresponding index)
-                val = (d1_sq+d2_sq-d3_sq)/(2*d1*d2)
+            val = (d1_sq+d2_sq-d3_sq)/(2*d1*d2)
+            if -0.00001 < val + 1 < 0:
+                val = -1
+            if 0 < val - 1 < 0.00001:
+                val = 1
+            if -1 <= val <= 1:
+                true_indices.append(a)
                 angle = np.arccos(val)
                 angles[a-1] = angle
+            else:
+                print(f"ineligible at index: {indices[a]}, val: {val}")
         return angles
     
     #bifurcation_indices = filter_peaks(filtered_pos_peaks)
