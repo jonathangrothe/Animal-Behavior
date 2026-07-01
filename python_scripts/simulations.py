@@ -82,9 +82,9 @@ base = {'N':N,
 
 plot_neurons = True
 plot_trajs = True
-sample_size = 5
-h0_list = [[0.235,0.235,0.235],[0.225,0.225,0.225],[0.25,0.25,0.25]]
-sigma_list = [0.5,0.2,0.5]
+sample_size = 20
+h0_list = [[0.235,0.235,0.235],[0.225,0.225,0.225],[0.22,0.22,0.22]]
+sigma_list = [0.2,0.2,0.2]
 change = {'sigma':sigma_list, 'h0':h0_list}
 target_list, time_list, activity_list, x_list, y_list, headings_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
 
@@ -102,7 +102,7 @@ for i in range(len(target_list)):
         targx = initialxt[target]
         targy = initialyt[target]
     bif_start = time.perf_counter()
-    indices, bifurcation_angles = sim_met.get_bifurcation_angle(curr_xpos,curr_ypos,targx,targy)
+    indices, bifurcation_angles = sim_met.get_bifurcation_angle(curr_xpos,curr_ypos,0.25,5000,True)
     bif_end = time.perf_counter()
     bif_time = bif_end - bif_start
     print(f"bif time: {bif_time:.6f} seconds")

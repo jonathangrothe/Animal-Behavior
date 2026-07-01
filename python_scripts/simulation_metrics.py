@@ -156,44 +156,45 @@ def get_bifurcation_angle(xPos, yPos, thresh=0.25, maxtime=5000,test=False):
         return [0],[0]
     x0, y0 = xPos[0], yPos[0]
     targetx, targety = xPos[-1], yPos[-1]
-    xdiff = np.diff(xPos)
-    ydiff = np.diff(yPos)
     dist_to_targ = np.sqrt((x0-targetx)**2+(y0-targety)**2)
     movement_thresh = dist_to_targ*0.05
     found_thresh = False
     thresh_ind = 0
     increment_search = 20
     if increment_search > total_time:
-        increment_search = total_time-1
-    while not found_thresh:
+        increment_search = total_time
+    while not found_thresh: 
+        '''
+        returns the index that the movement starts ON THE POSITION SCALE (meaning direction is -1 and ddirection)
+        '''
         #if thresh_ind >= total_time-1:
             #return [0], [0]
-        ind_upper = min(thresh_ind + increment_search,total_time-1)
-        dist_from_start = np.sqrt((xPos[ind_upper]-x0)**2+(yPos[ind_upper]-y0)**2)
+        ind_upper = min(thresh_ind + increment_search, total_time)
+        dist_from_start = np.sqrt((xPos[ind_upper-1]-x0)**2+(yPos[ind_upper-1]-y0)**2)
         #print(f"dist from start: {dist_from_start}, movement thresh: {movement_thresh}")
         if dist_from_start > movement_thresh:
             dists_sq  = (xPos[thresh_ind:ind_upper]-x0)**2 + (yPos[thresh_ind:ind_upper]-y0)**2
             mask = dists_sq > movement_thresh
+            #print(f"len dists: {len(dists_sq)}, dists_sq: {dists_sq}")
             #print(f"mask: {mask}")
             for i in range(len(mask)):
                 if mask[i]:
-                    thresh_ind = i-1
+                    thresh_ind += i
+                    found_thresh = True
                     break
-            thresh_ind = i
-            found_thresh = True
         else:
             thresh_ind = ind_upper
     print(f"starting index: {thresh_ind}")
             
     def detect_bif_points(ddirection):
+        print(f"length of ddirection: {len(ddirection)}")
         max_activation = np.max(ddirection[thresh_ind:])
         thresh_value = max_activation*thresh
         if max_activation <= 0.0001: # if the max is very small (this is equivalent to about 1 degree of change over 18 time steps) then ensure no points are flagged
             thresh_value = 10
         above = ddirection[thresh_ind:] > thresh_value # current plan is to just completely ignore first part
         if test:
-            print(f"direction: {direction}")
-            print(f"ddirection: {d_direction_unsmooth}")
+            print(f"ddirection: {ddirection}")
             print(f"above: {above}")
         min_gap = min(30,total_time//8) 
         if min_gap == 0:
@@ -217,14 +218,19 @@ def get_bifurcation_angle(xPos, yPos, thresh=0.25, maxtime=5000,test=False):
         return jump_ends
     # once we have this we want to make sure each bif point is suitably different from each other one (ie: different angle, far away, different direction)
     
-    direction = np.atan2(ydiff,xdiff) # if the agent doesn't move at all, that doesn't count as a direction change
-    for index,item in enumerate(direction): 
+   
+    xdiff = np.diff(xPos)
+    ydiff = np.diff(yPos)
+    direction = np.atan2(ydiff,xdiff)
+    direction_unwrapped = np.unwrap(direction)
+    for index,item in enumerate(direction_unwrapped): 
         if item <= 0.0000001:
             if ydiff[index] <= 0.0000001 and xdiff[index] <= 0.0000001:
-                direction[index] = direction[index-1]
-                
-    direction_unwrapped = np.unwrap(direction)
-    d_direction_unsmooth = np.abs(np.diff(direction_unwrapped))
+                direction_unwrapped[index] = direction_unwrapped[index-1]
+    
+    d_direction_unsmooth = np.zeros(total_time)
+    d_direction_unsmooth[:-2] = np.abs(np.diff(direction_unwrapped))
+    d_direction_unsmooth[-2:] = 0
 
     '''
     #if smoothing_factor >= total_time*0.2: # don't oversmooth ? 
