@@ -164,9 +164,7 @@ def get_bifurcation_angle(xPos, yPos, thresh=0.25, maxtime=5000,test=False):
     if increment_search > total_time:
         increment_search = total_time
     while not found_thresh: 
-        '''
-        returns the index that the movement starts ON THE POSITION SCALE (meaning direction is -1 and ddirection)
-        '''
+
         #if thresh_ind >= total_time-1:
             #return [0], [0]
         ind_upper = min(thresh_ind + increment_search, total_time)
@@ -190,11 +188,14 @@ def get_bifurcation_angle(xPos, yPos, thresh=0.25, maxtime=5000,test=False):
         print(f"length of ddirection: {len(ddirection)}")
         max_activation = np.max(ddirection[thresh_ind:])
         thresh_value = max_activation*thresh
+        print(f"thresh: {thresh_value}")
+        #print(f"ddirection: {ddirection}")
         if max_activation <= 0.0001: # if the max is very small (this is equivalent to about 1 degree of change over 18 time steps) then ensure no points are flagged
             thresh_value = 10
         above = ddirection[thresh_ind:] > thresh_value # current plan is to just completely ignore first part
         if test:
-            print(f"ddirection: {ddirection}")
+            #print(f"direction: {direction}")
+            #print(f"ddirection: {ddirection}")
             print(f"above: {above}")
         min_gap = min(30,total_time//8) 
         if min_gap == 0:
@@ -203,9 +204,9 @@ def get_bifurcation_angle(xPos, yPos, thresh=0.25, maxtime=5000,test=False):
         in_jump = False
         last_jump_end = -min_gap
         for i, val in enumerate(above):
+            if val:
+                print(f"above thresh at: {i+thresh_ind}, val: {ddirection[i+thresh_ind]}")
             if val and not in_jump: 
-                #if i - last_jump_end >= min_gap:
-                    #print(f"jump start detected at {i+thresh_ind}")
                 in_jump = True
             elif not val and in_jump:
                 #print(f"end jump detected at {i+thresh_ind}")
@@ -218,50 +219,6 @@ def get_bifurcation_angle(xPos, yPos, thresh=0.25, maxtime=5000,test=False):
         return jump_ends
     # once we have this we want to make sure each bif point is suitably different from each other one (ie: different angle, far away, different direction)
     
-   # ok still need to control for the late movement case (we shouldn't only count it as a bifurcation if it happens 2 from the end but not 1 or 0....)
-    xdiff = np.diff(xPos)
-    ydiff = np.diff(yPos)
-    direction = np.atan2(ydiff,xdiff)
-    direction_unwrapped = np.unwrap(direction)
-    for index,item in enumerate(direction_unwrapped): 
-        if item <= 0.0000001:
-            if ydiff[index] <= 0.0000001 and xdiff[index] <= 0.0000001:
-                direction_unwrapped[index] = direction_unwrapped[index-1]
-    
-    d_direction_unsmooth = np.zeros(total_time)
-    d_direction_unsmooth[:-2] = np.abs(np.diff(direction_unwrapped))
-    d_direction_unsmooth[-2:] = 0
-
-    '''
-    #if smoothing_factor >= total_time*0.2: # don't oversmooth ? 
-     #   smoothing_factor = int(total_time*0.2)
-    smooth_by = total_time//smoothing_factor
-    if smooth_by == 0:
-        smooth_by = 1
-    print(f"smoothing factor: {1/smooth_by}")
-    kernel = np.ones(smooth_by) / smooth_by 
-    inflated_ending = np.array([direction[-1]]*(smooth_by-1))
-    direction_inflated = np.concat([direction,inflated_ending])
-    direction_inflated_unwrapped = np.unwrap(direction_inflated)
-    direction_smooth = np.convolve(direction_inflated_unwrapped, kernel, mode='valid')
-    d_direction_smooth = np.abs(np.diff(direction_smooth))
-    '''
-    jump_starts_unsmooth = detect_bif_points(d_direction_unsmooth)
-    #jump_starts_smooth = detect_bif_points(d_direction_smooth)
-
-    '''
-    peaks_t, pos_prop = find_peaks(d_direction_smooth,prominence=0)
-    pos_prom = pos_prop['prominences']
-    max_prom = 0.000001
-    if len(pos_prom) > 0:
-        max_prom = np.max(pos_prom)
-    pos_prom_mask = pos_prom >= max_prom * 0.2
-    filtered_pos_peaks = peaks_t[pos_prom_mask]
-    #print(f"direction: {direction}")
-    #print(f"direction smooth: {direction_smooth}")
-    #print(f"d direction: {d_direction}")
-    #print(f"filtered peaks: {filtered_pos_peaks}")
-    '''
 
     def get_angles(indices):
         true_indices = []
@@ -280,7 +237,6 @@ def get_bifurcation_angle(xPos, yPos, thresh=0.25, maxtime=5000,test=False):
             d3_sq = (x3-x1)**2+(y3-y1)**2
             d1 = np.sqrt(d1_sq)
             d2 = np.sqrt(d2_sq)
-            # if 2*d1*d2 would be very small, (or 0), then this aint it (and we need to get rid of corresponding index)
             val = (d1_sq+d2_sq-d3_sq)/(2*d1*d2)
             if -0.00001 < val + 1 < 0:
                 val = -1
@@ -294,17 +250,29 @@ def get_bifurcation_angle(xPos, yPos, thresh=0.25, maxtime=5000,test=False):
                 print(f"ineligible at index: {indices[a]}, val: {val}")
         return angles
     
-    #bifurcation_indices = filter_peaks(filtered_pos_peaks)
-    bif_angles = get_angles(jump_starts_unsmooth)
-    #bif_angles_smooth = get_angles(jump_starts_smooth)
-    #peak_angles = get_angles(peak_indices)
-    #return_angles = get_angles(return_indices)
-
-    #print(f"unsmooth: indices: {jump_starts_unsmooth}, angles: {bif_angles}")
-    #print(f"smooth: indices: {jump_starts_smooth}, angles: {bif_angles_smooth}")
+    # ok still need to control for the late movement case (we shouldn't only count it as a bifurcation if it happens 2 from the end but not 1 or 0....)
+    xdiff = np.diff(xPos)
+    ydiff = np.diff(yPos)
+    direction = np.atan2(ydiff,xdiff)
+    print(f'direction: {direction}')
+    direction_unwrapped = np.unwrap(direction)
+    print(f'direction unwrapped: {direction_unwrapped}')
+    for index,item in enumerate(direction_unwrapped): 
+        if item <= 0.0000001:
+            if np.abs(ydiff[index]) <= 0.0000001 and np.abs(xdiff[index] <= 0.0000001):
+                print(f'index: {index}, ydiff: {ydiff[index]} xdiff: {xdiff[index]}')
+                direction_unwrapped[index] = direction_unwrapped[index-1]
     
-    #print(f"bifurcation indices: {jump_starts}")
-    #print(f"bifurcation angles: {bif_angles}")
+    d_direction_unsmooth = np.zeros(total_time)
+    d_direction_unsmooth[:-2] = np.abs(np.diff(direction_unwrapped))
+    d_direction_unsmooth[-2:] = 0
+    #print(f"direction: {direction}")
+    print(f"direction unwrapped post editing: {direction_unwrapped}")
+    print(f"ddirection {d_direction_unsmooth}")
+
+    jump_starts_unsmooth = detect_bif_points(d_direction_unsmooth)
+
+    bif_angles = get_angles(jump_starts_unsmooth)
     return jump_starts_unsmooth, bif_angles
 
 def find_bumps(activity): # function not currently use, will keep it for now

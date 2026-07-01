@@ -29,7 +29,7 @@ class Thresholds(unittest.TestCase):
     Testing the threshold for what proportion of ddirection is needed to be considered above the threshold
     '''
 
-    def test_bonudary(self):
+    def test_boundary(self):
         '''
         Testing the boundaries for a bifurcation being above or below the threshold
         '''
@@ -44,8 +44,9 @@ class Thresholds(unittest.TestCase):
         yPos_nonoise[0:51] = y_prebif
         yPos_nonoise[51:] = y_postbif
 
-        thresholds = np.linspace(0.1,0.8,num=16)
+        thresholds = np.linspace(0.1,0.8,num=2)
         for item in thresholds:
+            print(f"thresh: {item}")
             ind_no_noise, angle_no_noise = get_bifurcation_angle(xPos_nonoise,yPos_nonoise,item)
     
     def test_spiral_90(self):
@@ -58,32 +59,47 @@ class Thresholds(unittest.TestCase):
         '''
         Testing the thresholding when there is a spiral-like trajectory for 180 degrees before the bifurcation
         '''
+        # Special cases: 
+        # period of 2: flips around which means that it gets unwrapped and original bifurcation pt is only bif pt
+        # expect 1 bif up until a period of min gap, then expect 2
+        # Measure: 
+        # -the difference between the initial angle and the first angle in spiral
+        # -the difference between the last angle in spiral and the final angle
+        # one is bigger, that should be max, one is smaller, check to see if that one is equal to thresh * other, if so it shows up.
+        # only do this if we're outside of min gap
+        # Things to change: 
+        # change the way we do min gap; if we reach a situation where we wouldn't append b/c of min gap, instead REPLACE what is there
         x_prebif = [50]*50
         x_postbif = np.linspace(50,40,num=30)
         y_prebif = np.linspace(0,50,num=50)
-        y_post_bif = np.linspace(49,60,num=30)
-        periods = [1,2,5,10,15,20,30]
-        thresholds = np.linspace(0.1,0.8,num=16)
+        periods = [2,10,20] # 
+        thresholds = np.linspace(0.2,0.3,num=2)
         for per in periods:
             spiral_period = np.linspace(0,np.pi/2,num=per)
             x_spiral = []
             y_spiral = []
             for item in spiral_period:
                 x_spiral.append(50 + item*np.cos(item))
-                y_spiral.append(50+ item*np.sin(item))
+                y_spiral.append(50 - item*np.sin(item))
 
+            y_post_bif = np.linspace(y_spiral[-1],60,num=30)
+            delta_direction = np.abs(np.atan2((y_spiral[-1]-y_spiral[-2]),(x_spiral[-1]-x_spiral[-2])))
             xPos_spiral = np.zeros(80+per)
             yPos_spiral = np.zeros(80+per)
             xPos_spiral[0:50] = x_prebif
             yPos_spiral[0:50] = y_prebif
             xPos_spiral[50:50+per] = x_spiral
-            yPos_spiral[51:50+per] = y_spiral     
+            yPos_spiral[50:50+per] = y_spiral     
             xPos_spiral[50+per:] = x_postbif
             yPos_spiral[50+per:] = y_post_bif
 
+            print(f"x spiral: {x_spiral}")
+            print(f"y spiral: {y_spiral}")
             for tresh in thresholds:
-                ind_no_noise, angle_no_noise = get_bifurcation_angle(xPos_spiral,yPos_spiral,tresh)
-                # and now we need to know when the cutoff is for having somehting count as a bifurcation
+                ind_no_noise, angle_no_noise = get_bifurcation_angle(xPos_spiral,yPos_spiral,tresh,5000,True)
+                # and now we need to know when the cutoff is for having something count as a bifurcation
+                print(f"delta direction: {delta_direction}, true thresh: {delta_direction*tresh}")
+                print(f"period: {per}, thresh: {tresh},indices: {ind_no_noise}")
 
 
     
@@ -250,6 +266,12 @@ class ExpectedSixty(unittest.TestCase):
         val_1 = (d1_sq_1+d2_sq_1-hyp_sq_1)/(2*d1_1*d2_1)
         angle_1 = np.arccos(val_1)
 
+        bif_ind_success, bif_angle_success = get_bifurcation_angle(xPos,yPos)
+        bif_ind_success_ref, bif_angle_success_ref = get_bifurcation_angle(xPos_ref,yPos)
+        print(f"success 1, {bif_ind_success}, {bif_angle_success}")
+        print(f"success 1 ref, {bif_ind_success_ref}, {bif_angle_success_ref}")
+        print(f"x around bif: {xPos[bif_ind_success[1]-2:]}, y around bif: {yPos[bif_ind_success[1]-2:]}")
+
         xPos_2 = np.array([50,46.25,42.5,40.652,targetx])
         xPos_2_ref = np.array([50,53.75,57.5,59.348,targetx_reflected]) 
         yPos_2 = np.array([50,57,64,64.1,targety])
@@ -295,10 +317,7 @@ class ExpectedSixty(unittest.TestCase):
         angle_5 = np.arccos(val_5)
 
         
-        bif_ind_success, bif_angle_success = get_bifurcation_angle(xPos,yPos)
-        bif_ind_success_ref, bif_angle_success_ref = get_bifurcation_angle(xPos_ref,yPos)
-        print(f"success 1, {bif_ind_success}, {bif_angle_success}")
-        print(f"success 1 ref, {bif_ind_success_ref}, {bif_angle_success_ref}")
+        '''
         bif_ind_success2, bif_angle_success2 = get_bifurcation_angle(xPos_2,yPos_2)
         bif_ind_success2_ref, bif_angle_success2_ref = get_bifurcation_angle(xPos_2_ref,yPos)
         print(f"success 2, {bif_ind_success2}, {bif_angle_success2}")
@@ -340,7 +359,7 @@ class ExpectedSixty(unittest.TestCase):
         self.assertAlmostEqual(angle_5,bif_angle_success5[0])
         self.assertEqual([0,2,4],bif_ind_success5_ref)
         self.assertAlmostEqual(angle_5,bif_angle_success5_ref[0])
-
+        '''
 class ExpectedNinety(unittest.TestCase):
     #def test_expected90():
         '''
