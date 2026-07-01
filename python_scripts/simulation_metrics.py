@@ -218,7 +218,7 @@ def get_bifurcation_angle(xPos, yPos, thresh=0.25, maxtime=5000,test=False):
         return jump_ends
     # once we have this we want to make sure each bif point is suitably different from each other one (ie: different angle, far away, different direction)
     
-   
+   # ok still need to control for the late movement case (we shouldn't only count it as a bifurcation if it happens 2 from the end but not 1 or 0....)
     xdiff = np.diff(xPos)
     ydiff = np.diff(yPos)
     direction = np.atan2(ydiff,xdiff)
