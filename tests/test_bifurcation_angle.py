@@ -59,6 +59,7 @@ class Thresholds(unittest.TestCase):
         '''
         Testing the thresholding when there is a spiral-like trajectory for 180 degrees before the bifurcation
         '''
+        # we are going to rework this to instead of focusing on the change of the angle of the agent in the spiral, focus on the total change of bifurcation angle throughout the spiral
         x_prebif = [50]*50
         y_prebif = np.linspace(0,50,num=50)
         periods = [2,3,4,5,10,15,25,40,100]
@@ -123,93 +124,84 @@ class Thresholds(unittest.TestCase):
                     ind_spiral_2, angle_spiral_2 = get_bifurcation_angle(xPos_2_spiral,yPos_spiral,tresh,5000,True)
                     print(f"true thresh 1: {max_diff_1*tresh}, start: {start_1}, end: {end_1}")
                     print(f"true thresh 2: {max_diff_2*tresh}, start: {start_2}, end: {end_2}")
-                    print(f"period: {per}, thresh: {tresh}, rotation: {rot}, indices: {ind_spiral_1}, indices 2: {ind_spiral_2}")
-                    if per >= min(30,(80+per)//8):
-                        if second_1 >= max_diff_1*tresh:
-                            self.assertEqual(4,len(ind_spiral_1))
-                            self.assertEqual(50, ind_spiral_1[1])
-                            self.assertEqual(50+per,ind_spiral_1[2])
-                            self.assertEqual(2,len(angle_spiral_1))
-                        elif start_1 == max_diff_1:
-                            self.assertEqual(3,len(ind_spiral_1))
-                            self.assertEqual(50, ind_spiral_1[1])
-                            self.assertEqual(1,len(angle_spiral_1))
-                        elif end_1 == max_diff_1:
-                            self.assertEqual(3,len(ind_spiral_1))
-                            self.assertEqual(50+per,ind_spiral_1[1])
-                            self.assertEqual(1,len(angle_spiral_1))
-                        else:
-                            print("uh oh")
-                            self.assertEqual(67,len(ind_spiral_1))
-                            self.assertEqual(0,len(angle_spiral_1))
-                    elif start_1 >= max_diff_1*tresh:
-                        self.assertEqual(3,len(ind_spiral_1))
-                        in_spiral = 50 <= ind_spiral_1[1] < 50+per
-                        #self.assertEqual(True, in_spiral)
-                        self.assertEqual(1,len(angle_spiral_1))
-                    else:
-                        self.assertEqual(3,len(ind_spiral_1))
-                        #self.assertEqual(50+per,ind_spiral_1[1])
-                        self.assertEqual(1,len(angle_spiral_1))
-
-
-                    if per >= min(30,(80+per)//8):
-                        if second_2 >= max_diff_2*tresh:
-                            self.assertEqual(4,len(ind_spiral_2))
-                            self.assertEqual(50, ind_spiral_2[1])
-                            self.assertEqual(50+per,ind_spiral_2[2])
-                            self.assertEqual(2,len(angle_spiral_2))
-                        elif start_2 == max_diff_2:
-                            self.assertEqual(3,len(ind_spiral_2))
-                            self.assertEqual(50, ind_spiral_2[1])
-                            self.assertEqual(1,len(angle_spiral_2))
-                        elif end_2 == max_diff_2:
-                            self.assertEqual(3,len(ind_spiral_2))
-                            self.assertEqual(50+per,ind_spiral_2[1])
-                            self.assertEqual(1,len(angle_spiral_2))
-                        else:
-                            print("uh oh")
-                            self.assertEqual(67,len(ind_spiral_2))
-                            self.assertEqual(0,len(angle_spiral_2))
-                    elif start_2 >= max_diff_2*tresh:
-                        self.assertEqual(3,len(ind_spiral_2))
-                        in_spiral_2 = 50 <= ind_spiral_2[1] < 50+per
-                        print(f"start: {start_2}, end: {end_2}, threshold: {max_diff_2*tresh}")
-                        #self.assertEqual(True, in_spiral_2)
-                        self.assertEqual(1,len(angle_spiral_2))
-                    else:
-                        self.assertEqual(3,len(ind_spiral_2))
-                        #self.assertEqual(50+per,ind_spiral_2[1])
-                        self.assertEqual(1,len(angle_spiral_2))
+                    print(f"period: {per}, thresh: {tresh}, rotation: {rot}, indices: {ind_spiral_1}, angles 1: {angle_spiral_1}, indices 2: {ind_spiral_2}, angle 2: {angle_spiral_2}")
+                    
+                    self.assertEqual(3,len(ind_spiral_1))
+                    self.assertEqual(3,len(ind_spiral_2))
+                    self.assertEqual(1,len(angle_spiral_1))
+                    self.assertEqual(1,len(angle_spiral_2))
+                    if end_1 >= max_diff_1*tresh and end_1 < max_diff_1*tresh:
+                        self.assertEqual(50+per)
                         
+                        
+    def test_spiral(self):
+        '''
+        New spiral testing, desgined to check the maximum angle difference that we could have and then see if anything in the spiral would qualify
+        '''
 
+        # how this should work: detect all bifurcation points using the threshold thing. 
+        # then if one is close to another reject it (as a function of threshold ? )
+        x_prebif = [50]*50
+        y_prebif = np.linspace(50,60,num=50)
+        x_spiral = []
+        y_spiral = []
+        spiral_period = np.linspace(0,np.pi/2,num=15)
+        for item in spiral_period:
+            x_spiral.append(50 + np.cos(item))
+            y_spiral.append(50 - np.sin(item))
+        x_postbif = np.linspace(x_spiral[-1],60,num=30)
+        y_postbif = np.linspace(y_spiral[-1],60,num=30)
+        xPos = np.concat([x_prebif,x_spiral,x_postbif])
+        yPos = np.concat([y_prebif,y_spiral,y_postbif])
+        # now pretty much no matter what, we just want the first
+        ind_spiral, angles_spiral = get_bifurcation_angle(xPos,yPos)
+        # ideally we will flag several possible bifurcation points, but then we will only choose the first one because the difference in angles between all of them is relatively small
+        # I think if we have a really steady change in angle (ie: a lot of points are flagged as potential bifurcation points, and the difference between each one is small but the total distance spanned is large),
+        # then we just want the average bifurcation angle ? and index ? (this assumes a strict continuity of delta angle)
+        # and for threshold tests we will still look at basically the same idea of detecting or not a small change
+    
 
-    
-    def test_spiral_270(self):
-        '''
-        Testing the thresholding when there is a spiral-like trajectory for 270 degrees before the bifurcation
-        '''
-    
-    def test_spiral_360(self):
-        '''
-        Testing the thresholding when there is a spiral-like trajectory for 360 degrees before the bifurcation
-        '''
 
 
 class MovementThresholds(unittest.TestCase):
     '''
     Testing the threshold for beginning movement
     '''
-    def test_late_movement(self): # ADD CASES (and correct)
+    def test_late_movement(self): 
         '''
-        Testing cases when the movement doesn't start until late
+        Testing cases when the movement doesn't start until late, if it starts at the end then it doesn't count as movement
         '''
         xPos_static = np.linspace(50,51,num=100)
         yPos_static = np.concat([[50]*99,[80]])
         ind_static, angles_static = get_bifurcation_angle(xPos_static,yPos_static,0.25,5000,True)
+
+        xPos_late = np.linspace(50,51,num=100)
+        yPos_late = np.concat([[50]*98,[80],[80]])
+        ind_late, angles_late = get_bifurcation_angle(xPos_late,yPos_late,0.25,5000,True)
+
+        xPos_intime = np.linspace(50,51,num=100)
+        yPos_intime = np.concat([[50]*97,[80]*3])
+        ind_intime, angles_intime = get_bifurcation_angle(xPos_intime,yPos_intime,0.25,5000,True)
+
+        xPos_4 = np.linspace(50,51,num=100)
+        yPos_4 = np.concat([[50]*96,[80]*4])
+        ind_4, angles_4 = get_bifurcation_angle(xPos_4,yPos_4,0.25,5000,True)
+
         self.assertEqual(2,len(ind_static))
         self.assertEqual(1,len(angles_static))
         self.assertEqual(0,angles_static[0])
+
+        self.assertEqual(2,len(ind_late))
+        self.assertEqual(1,len(angles_late))
+        self.assertEqual(0,angles_late[0])
+
+        self.assertEqual(2,len(ind_intime)) # because its near the end it gets rejected
+        self.assertEqual(0,len(angles_intime))
+
+        self.assertEqual(2,len(ind_4))
+        self.assertEqual(0,len(angles_4))
+
+
     
     def test_immediate_movement(self): # ADD CASES
         '''

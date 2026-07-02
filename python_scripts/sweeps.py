@@ -18,8 +18,8 @@ initialy = np.zeros(nagents)
 for a in range(nagents):
     initialx[a] = 50
     initialy[a] = 50
-initialxt = [20,50,80]
-initialyt = [50,80,50]
+initialxt = [50-15*np.sqrt(3),50,50+15*np.sqrt(3)]
+initialyt = [35,80,35]
 
 T = 5000
 periodicflag = 0
@@ -203,7 +203,7 @@ cbar3.set_label('Time to target')
 #cbar4 = plt.colorbar(im4)
 #cbar4.set_label('Ratio of 1st bifur. angle to direct path (0.5 is midpoint)')
 
-subfigs.suptitle(f"Heatmaps for π/2 between targets, average of {sample_size} samples")
+subfigs.suptitle(f"Heatmaps for π/3 between targets, average of {sample_size} samples")
 end_time = time.perf_counter()
 execution_time = end_time - start_time
 print(f"Execution time: {execution_time:.6f} seconds")

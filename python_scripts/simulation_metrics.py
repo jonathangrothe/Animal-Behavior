@@ -161,10 +161,10 @@ def get_bifurcation_angle(xPos, yPos, thresh=0.25, maxtime=5000,test=False):
     found_thresh = False
     thresh_ind = 0
     increment_search = 20
-    if increment_search > total_time:
-        increment_search = total_time
+    if increment_search > total_time-2:
+        increment_search = total_time-2
     while not found_thresh: 
-        ind_upper = min(thresh_ind + increment_search, total_time)
+        ind_upper = min(thresh_ind + increment_search, total_time-2)
         dist_from_start = np.sqrt((xPos[ind_upper-1]-x0)**2+(yPos[ind_upper-1]-y0)**2)
         if dist_from_start > movement_thresh:
             dists_sq  = (xPos[thresh_ind:ind_upper]-x0)**2 + (yPos[thresh_ind:ind_upper]-y0)**2
@@ -176,6 +176,10 @@ def get_bifurcation_angle(xPos, yPos, thresh=0.25, maxtime=5000,test=False):
                     break
         else:
             thresh_ind = ind_upper
+            if ind_upper == total_time-2:
+                print("moved 95 percent of the distance to the target in the last 2 time steps, no bifurcation recorded")
+                return [0,total_time-1], [0]
+    thresh_ind -= 1
     print(f"starting index: {thresh_ind}")
             
     def detect_bif_points(ddirection):
@@ -183,26 +187,20 @@ def get_bifurcation_angle(xPos, yPos, thresh=0.25, maxtime=5000,test=False):
         thresh_value = max_activation*thresh
         if max_activation <= 0.0001: # if the max is very small (this is equivalent to about 1 degree of change over 18 time steps) then ensure no points are flagged
             thresh_value = 10
-        above = ddirection[thresh_ind:] > thresh_value
+        above = ddirection[thresh_ind:] > thresh_value # this will still be our basis for
         if test:
             print(f"THRESH VALUE: {thresh_value}")
             print(f"direction: {direction}")
             print(f"direction unwrapped: {direction_unwrapped}")
             print(f"ddirection: {ddirection}")
             print(f"above: {above}")
-        min_gap = min(30,total_time//8) 
-        if min_gap == 0:
-            min_gap = 1
         jump_ends = [0]
         in_jump = False
-        last_jump_end = -min_gap
         for i, val in enumerate(above):
             if val and not in_jump: 
                 in_jump = True
             elif not val and in_jump:
-                if i - last_jump_end >= min_gap:
-                    jump_ends.append(i + thresh_ind)
-                last_jump_end = i
+                jump_ends.append(i + thresh_ind)
                 in_jump = False
         jump_ends.append(total_time-1)
         return jump_ends
@@ -210,17 +208,23 @@ def get_bifurcation_angle(xPos, yPos, thresh=0.25, maxtime=5000,test=False):
         # maybe
 
     def get_angles(indices):
-        true_indices = []
+        print(f"xpos indices: {xPos[indices]}")
+        print(f"ypos indices: {yPos[indices]}")
+        true_indices = [0]
         if len(indices) <= 2:
-            return [0]
+            return indices, [0]
         angles = np.zeros(len(indices)-2)
+        nback = 1
         for a in range(1,len(indices)-1):
-            x1 = xPos[indices[a-1]]
-            y1 = yPos[indices[a-1]]
-            x2 = xPos[indices[a]]
-            y2 = yPos[indices[a]]
-            x3 = xPos[indices[a+1]]
-            y3 = yPos[indices[a+1]]
+            prev_ind = indices[a-nback]
+            curr_ind = indices[a]
+            next_ind = indices[a+1]
+            x1 = xPos[prev_ind]
+            y1 = yPos[prev_ind]
+            x2 = xPos[curr_ind]
+            y2 = yPos[curr_ind]
+            x3 = xPos[next_ind]
+            y3 = yPos[next_ind]
             d1_sq = (x2-x1)**2+(y2-y1)**2
             d2_sq = (x3-x2)**2+(y3-y2)**2
             d3_sq = (x3-x1)**2+(y3-y1)**2
@@ -232,12 +236,25 @@ def get_bifurcation_angle(xPos, yPos, thresh=0.25, maxtime=5000,test=False):
             if 0 < val - 1 < 0.00001:
                 val = 1
             if -1 <= val <= 1:
-                true_indices.append(a)
                 angle = np.arccos(val)
-                angles[a-1] = angle
+                if next_ind - curr_ind > 10 and d2_sq > 16: 
+                    if a > 1:
+                        if np.abs(angles[a-2]-angle) > 0.05:
+                            print(f"angle prev: {angles[a-2]}, current angle: {angle}")
+                            true_indices.append(indices[a])
+                            angles[a-1] = angle
+                        else: 
+                            nback += 1
+                    else:
+                        angles[a-1] = angle
+                        true_indices.append(indices[a])
+                else:
+                    nback += 1
             else:
                 print(f"ineligible at index: {indices[a]}, val: {val}")
-        return angles
+        angles = angles[angles != 0]
+        true_indices.append(indices[-1])
+        return true_indices, angles
     
     # ok still need to control for the late movement case (we shouldn't only count it as a bifurcation if it happens 2 from the end but not 1 or 0....)
     # I think the way to handle this is just don't count it if it happens late
@@ -250,14 +267,12 @@ def get_bifurcation_angle(xPos, yPos, thresh=0.25, maxtime=5000,test=False):
                 direction[index] = direction[index-1]
     
     direction_unwrapped = np.unwrap(direction)
-    d_direction_unsmooth = np.zeros(total_time) # maybe instead of d_direction we should look at d_bif angle?
-    d_direction_unsmooth[:-2] = np.abs(np.diff(direction_unwrapped))
-    d_direction_unsmooth[-2:] = 0
+    d_direction_unsmooth = np.abs(np.diff(direction_unwrapped))
 
     jump_starts_unsmooth = detect_bif_points(d_direction_unsmooth)
-
-    bif_angles = get_angles(jump_starts_unsmooth)
-    return jump_starts_unsmooth, bif_angles
+    print(f"jump starts: {jump_starts_unsmooth}")
+    bif_indices, bif_angles = get_angles(jump_starts_unsmooth)
+    return bif_indices, bif_angles
 
 def find_bumps(activity): # function not currently use, will keep it for now
     '''
