@@ -18,8 +18,8 @@ initialy = np.zeros(nagents)
 for a in range(nagents):
     initialx[a] = 50
     initialy[a] = 50
-initialxt = [50-(15*np.sqrt(3)),50,50+(15*np.sqrt(3))]
-initialyt = [35,80,35]
+initialxt = [20,50,80]
+initialyt = [50,80,50]
 
 T = 5000
 periodicflag = 0
@@ -87,9 +87,9 @@ base = {'N':N,
 include_pos = True
 include_neurons = True
 sample_size = 5
-sigma_start = 0.15
+sigma_start = 0.14
 sigma_finish = 0.26
-base_sigma = np.linspace(sigma_start,sigma_finish,num=45)
+base_sigma = np.linspace(sigma_start,sigma_finish,num=49)
 h0_start = 0.19
 h0_finish = 0.24
 n_h0 = 101
@@ -146,10 +146,12 @@ for sigma_index in range(len(base_sigma)):
         n2 = sim_phases.count(2)
         n3 = sim_phases.count(3)
         nOther = sim_phases.count(4)
-        nreach = sim_targets.count(1)
-        reach = statistics.mode(sim_targets)
-        if -1 in sim_targets and ((0 in sim_targets) or (1 in sim_targets)):
+        nreach = sim_targets.count(1) + sim_targets.count(0)
+        reach = 1
+        if 0 < nreach < sample_size:
             reach = 0 
+        elif nreach == 0:
+            reach = -1
         grid_phases.append(np.argmax([n0,n1,n2,n3,nOther]))
         grid_targets.append(reach)
         grid_times.append(np.mean(sim_times))
@@ -185,7 +187,7 @@ boundaries_tar = np.arange(-1,3) - 0.5
 norm_tar = mcolors.BoundaryNorm(boundaries_tar,cmap1.N)
 boundaries_phase = np.arange(5) - 0.5
 norm_phase = mcolors.BoundaryNorm(boundaries_phase,cmap2.N)
-categories_tar = ['fails', 'both', 'center']
+categories_tar = ['fails', 'outer', 'center']
 categories_phase = ['0 bumps', '1 bump', '2 bumps','3 bumps']
 
 im1 = axs[0].imshow(target_df, cmap=cmap1,origin='lower',extent=[h0_range[0], h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
@@ -201,7 +203,7 @@ cbar3.set_label('Time to target')
 #cbar4 = plt.colorbar(im4)
 #cbar4.set_label('Ratio of 1st bifur. angle to direct path (0.5 is midpoint)')
 
-subfigs.suptitle(f"Heatmaps for 2π/3 between targets, average of {sample_size} samples")
+subfigs.suptitle(f"Heatmaps for π/2 between targets, average of {sample_size} samples")
 end_time = time.perf_counter()
 execution_time = end_time - start_time
 print(f"Execution time: {execution_time:.6f} seconds")

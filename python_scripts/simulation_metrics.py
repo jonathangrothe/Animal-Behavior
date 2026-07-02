@@ -164,17 +164,11 @@ def get_bifurcation_angle(xPos, yPos, thresh=0.25, maxtime=5000,test=False):
     if increment_search > total_time:
         increment_search = total_time
     while not found_thresh: 
-
-        #if thresh_ind >= total_time-1:
-            #return [0], [0]
         ind_upper = min(thresh_ind + increment_search, total_time)
         dist_from_start = np.sqrt((xPos[ind_upper-1]-x0)**2+(yPos[ind_upper-1]-y0)**2)
-        #print(f"dist from start: {dist_from_start}, movement thresh: {movement_thresh}")
         if dist_from_start > movement_thresh:
             dists_sq  = (xPos[thresh_ind:ind_upper]-x0)**2 + (yPos[thresh_ind:ind_upper]-y0)**2
             mask = dists_sq > movement_thresh
-            #print(f"len dists: {len(dists_sq)}, dists_sq: {dists_sq}")
-            #print(f"mask: {mask}")
             for i in range(len(mask)):
                 if mask[i]:
                     thresh_ind += i
@@ -185,17 +179,16 @@ def get_bifurcation_angle(xPos, yPos, thresh=0.25, maxtime=5000,test=False):
     print(f"starting index: {thresh_ind}")
             
     def detect_bif_points(ddirection):
-        print(f"length of ddirection: {len(ddirection)}")
         max_activation = np.max(ddirection[thresh_ind:])
         thresh_value = max_activation*thresh
-        print(f"thresh: {thresh_value}")
-        #print(f"ddirection: {ddirection}")
         if max_activation <= 0.0001: # if the max is very small (this is equivalent to about 1 degree of change over 18 time steps) then ensure no points are flagged
             thresh_value = 10
-        above = ddirection[thresh_ind:] > thresh_value # current plan is to just completely ignore first part
+        above = ddirection[thresh_ind:] > thresh_value
         if test:
-            #print(f"direction: {direction}")
-            #print(f"ddirection: {ddirection}")
+            print(f"THRESH VALUE: {thresh_value}")
+            print(f"direction: {direction}")
+            print(f"direction unwrapped: {direction_unwrapped}")
+            print(f"ddirection: {ddirection}")
             print(f"above: {above}")
         min_gap = min(30,total_time//8) 
         if min_gap == 0:
@@ -204,21 +197,17 @@ def get_bifurcation_angle(xPos, yPos, thresh=0.25, maxtime=5000,test=False):
         in_jump = False
         last_jump_end = -min_gap
         for i, val in enumerate(above):
-            if val:
-                print(f"above thresh at: {i+thresh_ind}, val: {ddirection[i+thresh_ind]}")
             if val and not in_jump: 
                 in_jump = True
             elif not val and in_jump:
-                #print(f"end jump detected at {i+thresh_ind}")
                 if i - last_jump_end >= min_gap:
-                    #print(f"index: {i}, lje: {last_jump_end}, min gap: {min_gap}")
                     jump_ends.append(i + thresh_ind)
                 last_jump_end = i
                 in_jump = False
         jump_ends.append(total_time-1)
         return jump_ends
-    # once we have this we want to make sure each bif point is suitably different from each other one (ie: different angle, far away, different direction)
-    
+        # once we have this we want to make sure each bif point is suitably different from each other one (ie: different angle, far away, different direction)
+        # maybe
 
     def get_angles(indices):
         true_indices = []
@@ -251,24 +240,19 @@ def get_bifurcation_angle(xPos, yPos, thresh=0.25, maxtime=5000,test=False):
         return angles
     
     # ok still need to control for the late movement case (we shouldn't only count it as a bifurcation if it happens 2 from the end but not 1 or 0....)
+    # I think the way to handle this is just don't count it if it happens late
     xdiff = np.diff(xPos)
     ydiff = np.diff(yPos)
     direction = np.atan2(ydiff,xdiff)
-    print(f'direction: {direction}')
-    direction_unwrapped = np.unwrap(direction)
-    print(f'direction unwrapped: {direction_unwrapped}')
-    for index,item in enumerate(direction_unwrapped): 
+    for index,item in enumerate(direction): 
         if item <= 0.0000001:
             if np.abs(ydiff[index]) <= 0.0000001 and np.abs(xdiff[index] <= 0.0000001):
-                print(f'index: {index}, ydiff: {ydiff[index]} xdiff: {xdiff[index]}')
-                direction_unwrapped[index] = direction_unwrapped[index-1]
+                direction[index] = direction[index-1]
     
-    d_direction_unsmooth = np.zeros(total_time)
+    direction_unwrapped = np.unwrap(direction)
+    d_direction_unsmooth = np.zeros(total_time) # maybe instead of d_direction we should look at d_bif angle?
     d_direction_unsmooth[:-2] = np.abs(np.diff(direction_unwrapped))
     d_direction_unsmooth[-2:] = 0
-    #print(f"direction: {direction}")
-    print(f"direction unwrapped post editing: {direction_unwrapped}")
-    print(f"ddirection {d_direction_unsmooth}")
 
     jump_starts_unsmooth = detect_bif_points(d_direction_unsmooth)
 

@@ -59,47 +59,129 @@ class Thresholds(unittest.TestCase):
         '''
         Testing the thresholding when there is a spiral-like trajectory for 180 degrees before the bifurcation
         '''
-        # Special cases: 
-        # period of 2: flips around which means that it gets unwrapped and original bifurcation pt is only bif pt
-        # expect 1 bif up until a period of min gap, then expect 2
-        # Measure: 
-        # -the difference between the initial angle and the first angle in spiral
-        # -the difference between the last angle in spiral and the final angle
-        # one is bigger, that should be max, one is smaller, check to see if that one is equal to thresh * other, if so it shows up.
-        # only do this if we're outside of min gap
-        # Things to change: 
-        # change the way we do min gap; if we reach a situation where we wouldn't append b/c of min gap, instead REPLACE what is there
         x_prebif = [50]*50
-        x_postbif = np.linspace(50,40,num=30)
         y_prebif = np.linspace(0,50,num=50)
-        periods = [2,10,20] # 
-        thresholds = np.linspace(0.2,0.3,num=2)
-        for per in periods:
-            spiral_period = np.linspace(0,np.pi/2,num=per)
-            x_spiral = []
-            y_spiral = []
-            for item in spiral_period:
-                x_spiral.append(50 + item*np.cos(item))
-                y_spiral.append(50 - item*np.sin(item))
+        periods = [2,3,4,5,10,15,25,40,100]
+        thresholds = np.linspace(0.1,0.6,num=2)
+        rotation = [np.pi/12,np.pi/4,np.pi/3,np.pi/2,2*np.pi/3,np.pi,3*np.pi/2,2*np.pi]
+        for rot in rotation:
+            for per in periods:
+                spiral_period = np.linspace(0,rot,num=per)
+                x_spiral_1 = []
+                x_spiral_2 = []
+                y_spiral = []
+                for item in spiral_period:
+                    x_spiral_1.append(50 + item*np.cos(item))
+                    x_spiral_2.append(50 -item*np.cos(item))
+                    y_spiral.append(50 - item*np.sin(item))
 
-            y_post_bif = np.linspace(y_spiral[-1],60,num=30)
-            delta_direction = np.abs(np.atan2((y_spiral[-1]-y_spiral[-2]),(x_spiral[-1]-x_spiral[-2])))
-            xPos_spiral = np.zeros(80+per)
-            yPos_spiral = np.zeros(80+per)
-            xPos_spiral[0:50] = x_prebif
-            yPos_spiral[0:50] = y_prebif
-            xPos_spiral[50:50+per] = x_spiral
-            yPos_spiral[50:50+per] = y_spiral     
-            xPos_spiral[50+per:] = x_postbif
-            yPos_spiral[50+per:] = y_post_bif
+                y_post_bif = np.linspace(y_spiral[-1],60,num=30)
+                x_postbif_1 = np.linspace(x_spiral_1[-1],40,num=30)
+                x_postbif_2 = np.linspace(x_spiral_2[-1],60,num=30)
 
-            print(f"x spiral: {x_spiral}")
-            print(f"y spiral: {y_spiral}")
-            for tresh in thresholds:
-                ind_no_noise, angle_no_noise = get_bifurcation_angle(xPos_spiral,yPos_spiral,tresh,5000,True)
-                # and now we need to know when the cutoff is for having something count as a bifurcation
-                print(f"delta direction: {delta_direction}, true thresh: {delta_direction*tresh}")
-                print(f"period: {per}, thresh: {tresh},indices: {ind_no_noise}")
+                final_angle_1 = np.atan2(60-y_spiral[-1],40-x_spiral_1[-1])
+                final_angle_2 = np.atan2(60-y_spiral[-1],60-x_spiral_2[-1])
+                print(f"final angle 1: {final_angle_1}, final angle 2: {final_angle_2}")
+
+                start1_angle = np.atan2(y_spiral[1]-y_spiral[0],x_spiral_1[1]-x_spiral_1[0])
+                end1_angle = np.atan2(y_spiral[-1]-y_spiral[-2],x_spiral_1[-1]-x_spiral_1[-2])
+                start2_angle = np.atan2(y_spiral[1]-y_spiral[0],x_spiral_2[1]-x_spiral_2[0])
+                end2_angle = np.atan2(y_spiral[-1]-y_spiral[-2],x_spiral_2[-1]-x_spiral_2[-2])
+                print(f"start1: {start1_angle}, end1: {end1_angle}, start2: {start2_angle}, end2: {end2_angle}")
+                if start1_angle < -np.pi/2:
+                    start1_angle += 2*np.pi
+                if end1_angle < -np.pi/2:
+                    end1_angle += 2*np.pi
+                if start2_angle < -np.pi/2:
+                    start2_angle += 2*np.pi
+                if end2_angle < -np.pi/2:
+                    end2_angle += 2*np.pi
+                print(f"start1: {start1_angle}, end1: {end1_angle}, start2: {start2_angle}, end2: {end2_angle}")
+                start_1 = np.pi/2 - start1_angle
+                end_1 = final_angle_1 - end1_angle
+                start_2 = start2_angle - np.pi/2
+                end_2 = end2_angle - final_angle_2
+                max_diff_1 = max(start_1,end_1)
+                second_1 = min(start_1,end_1)
+                max_diff_2 = max(start_2,end_2)
+                second_2 = min(start_2,end_2)
+                xPos_1_spiral = np.zeros(80+per)
+                xPos_2_spiral = np.zeros(80+per)
+                yPos_spiral = np.zeros(80+per)
+                xPos_1_spiral[0:50] = x_prebif
+                xPos_2_spiral[0:50] = x_prebif
+                yPos_spiral[0:50] = y_prebif
+                xPos_1_spiral[50:50+per] = x_spiral_1
+                xPos_2_spiral[50:50+per] = x_spiral_2
+                yPos_spiral[50:50+per] = y_spiral     
+                xPos_1_spiral[50+per:] = x_postbif_1
+                xPos_2_spiral[50+per:] = x_postbif_2
+                yPos_spiral[50+per:] = y_post_bif
+
+                for tresh in thresholds:
+                    ind_spiral_1, angle_spiral_1 = get_bifurcation_angle(xPos_1_spiral,yPos_spiral,tresh,5000,True)
+                    ind_spiral_2, angle_spiral_2 = get_bifurcation_angle(xPos_2_spiral,yPos_spiral,tresh,5000,True)
+                    print(f"true thresh 1: {max_diff_1*tresh}, start: {start_1}, end: {end_1}")
+                    print(f"true thresh 2: {max_diff_2*tresh}, start: {start_2}, end: {end_2}")
+                    print(f"period: {per}, thresh: {tresh}, rotation: {rot}, indices: {ind_spiral_1}, indices 2: {ind_spiral_2}")
+                    if per >= min(30,(80+per)//8):
+                        if second_1 >= max_diff_1*tresh:
+                            self.assertEqual(4,len(ind_spiral_1))
+                            self.assertEqual(50, ind_spiral_1[1])
+                            self.assertEqual(50+per,ind_spiral_1[2])
+                            self.assertEqual(2,len(angle_spiral_1))
+                        elif start_1 == max_diff_1:
+                            self.assertEqual(3,len(ind_spiral_1))
+                            self.assertEqual(50, ind_spiral_1[1])
+                            self.assertEqual(1,len(angle_spiral_1))
+                        elif end_1 == max_diff_1:
+                            self.assertEqual(3,len(ind_spiral_1))
+                            self.assertEqual(50+per,ind_spiral_1[1])
+                            self.assertEqual(1,len(angle_spiral_1))
+                        else:
+                            print("uh oh")
+                            self.assertEqual(67,len(ind_spiral_1))
+                            self.assertEqual(0,len(angle_spiral_1))
+                    elif start_1 >= max_diff_1*tresh:
+                        self.assertEqual(3,len(ind_spiral_1))
+                        in_spiral = 50 <= ind_spiral_1[1] < 50+per
+                        #self.assertEqual(True, in_spiral)
+                        self.assertEqual(1,len(angle_spiral_1))
+                    else:
+                        self.assertEqual(3,len(ind_spiral_1))
+                        #self.assertEqual(50+per,ind_spiral_1[1])
+                        self.assertEqual(1,len(angle_spiral_1))
+
+
+                    if per >= min(30,(80+per)//8):
+                        if second_2 >= max_diff_2*tresh:
+                            self.assertEqual(4,len(ind_spiral_2))
+                            self.assertEqual(50, ind_spiral_2[1])
+                            self.assertEqual(50+per,ind_spiral_2[2])
+                            self.assertEqual(2,len(angle_spiral_2))
+                        elif start_2 == max_diff_2:
+                            self.assertEqual(3,len(ind_spiral_2))
+                            self.assertEqual(50, ind_spiral_2[1])
+                            self.assertEqual(1,len(angle_spiral_2))
+                        elif end_2 == max_diff_2:
+                            self.assertEqual(3,len(ind_spiral_2))
+                            self.assertEqual(50+per,ind_spiral_2[1])
+                            self.assertEqual(1,len(angle_spiral_2))
+                        else:
+                            print("uh oh")
+                            self.assertEqual(67,len(ind_spiral_2))
+                            self.assertEqual(0,len(angle_spiral_2))
+                    elif start_2 >= max_diff_2*tresh:
+                        self.assertEqual(3,len(ind_spiral_2))
+                        in_spiral_2 = 50 <= ind_spiral_2[1] < 50+per
+                        print(f"start: {start_2}, end: {end_2}, threshold: {max_diff_2*tresh}")
+                        #self.assertEqual(True, in_spiral_2)
+                        self.assertEqual(1,len(angle_spiral_2))
+                    else:
+                        self.assertEqual(3,len(ind_spiral_2))
+                        #self.assertEqual(50+per,ind_spiral_2[1])
+                        self.assertEqual(1,len(angle_spiral_2))
+                        
 
 
     
