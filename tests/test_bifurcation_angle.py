@@ -62,22 +62,23 @@ class Thresholds(unittest.TestCase):
         x_immediate = np.concat([x_prebif,x_firstbif,x_secondbif])
         y_immediate = np.concat([y_prebif,y_firstbif,y_secondbif])
 
+        y_gradualpre = np.linspace(0,58,num=20)
         bif_range = np.linspace(np.pi/2,np.pi,num=12)
         x_gradualfirst = [50]
         y_gradualfirst = [58]
         for item in bif_range:
-            print(item)
-            print(x_gradualfirst)
-            print(2*np.cos(item))
-            x_gradualfirst.append(x_gradualfirst[-1]+2*np.cos(item))
-            y_gradualfirst.append(y_gradualfirst[-1]+2*np.sin(item))
-        bif_2_range = np.linspace(np.pi,5*np.pi/4,num=12)
-        y_gradualpre = np.linspace(0,58,num=20)
+            x_gradualfirst.append(x_gradualfirst[-1]+np.cos(item))
+            y_gradualfirst.append(y_gradualfirst[-1]+np.sin(item))
         print(x_gradualfirst)
         print(y_gradualfirst)
         x_gradual_post_first = np.linspace(x_gradualfirst[-1],47,num=20)
-        x_gradualsecond = -np.cos(bif_2_range)
-        y_gradualsecond = -np.sin(bif_2_range)
+        bif_2_range = np.linspace(np.pi,5*np.pi/4,num=12)
+        x_gradualsecond = [47]
+        y_gradualsecond = [60]
+        for r in bif_2_range:
+            x_gradualsecond.append(x_gradualsecond[-1]+2*np.cos(item))
+            y_gradualsecond.append(y_gradualsecond[-1]+2*np.sin(item))
+
         x_post_second = np.linspace(x_gradualsecond[-1],45,num=20)
         y_post_second = np.linspace(y_gradualsecond[-1],55,num=20)
 
