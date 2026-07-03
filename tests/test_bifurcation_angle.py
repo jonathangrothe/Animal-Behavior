@@ -29,140 +29,73 @@ class Thresholds(unittest.TestCase):
     Testing the threshold for what proportion of ddirection is needed to be considered above the threshold
     '''
 
-    def test_boundary(self):
+    def test_boundary_single(self):
         '''
-        Testing the boundaries for a bifurcation being above or below the threshold
+        Testing the boundaries for a bifurcation being above or below the threshold for a simple case of single bifurcation
         '''
         x_prebif = [50]*51
         x_postbif = np.linspace(50,40,num=31)
         y_prebif = np.linspace(0,50,num=51)
         y_postbif = np.linspace(50,60,num=31)
-        xPos_nonoise = np.zeros(82)
-        yPos_nonoise = np.zeros(82)
-        xPos_nonoise[0:51] = x_prebif
-        xPos_nonoise[51:] = x_postbif
-        yPos_nonoise[0:51] = y_prebif
-        yPos_nonoise[51:] = y_postbif
-
-        thresholds = np.linspace(0.1,0.8,num=2)
+        xPos = np.zeros(82)
+        yPos = np.zeros(82)
+        xPos[0:51] = x_prebif
+        xPos[51:] = x_postbif
+        yPos[0:51] = y_prebif
+        yPos[51:] = y_postbif
+        thresholds = np.linspace(0.01,1.1,num=12)
         for item in thresholds:
             print(f"thresh: {item}")
-            ind_no_noise, angle_no_noise = get_bifurcation_angle(xPos_nonoise,yPos_nonoise,item)
+            ind_simple, angle_simple = get_bifurcation_angle(xPos,yPos,item)
+
     
-    def test_spiral_90(self):
-        '''
-        Testing the thresholding when there is a spiral-like trajectory for 90 degrees before the bifurcation (a short period with small changes in the same direction)
-        '''
-        # to do this we will create a spiral using a certain number of points over a given period, then calculate how 'fast' its moving, and based on that what points are in the threshold ? 
+    def test_boundary_double(self):
+        # add two where there is another bifurcation that is less drastic in terms of angle, 
+        # one that is a direct turn and one that is a gradual turn
+        x_prebif = [50]*20
+        y_prebif = np.linspace(0,60,num=20)
+        x_firstbif = np.linspace(50,45,num=20)
+        y_firstbif = [60]*20
+        x_secondbif = np.linspace(45,40,num=20)
+        y_secondbif = np.linspace(60,55,num=20)
 
-    def test_spiral_180(self):
-        '''
-        Testing the thresholding when there is a spiral-like trajectory for 180 degrees before the bifurcation
-        '''
-        # we are going to rework this to instead of focusing on the change of the angle of the agent in the spiral, focus on the total change of bifurcation angle throughout the spiral
-        x_prebif = [50]*50
-        y_prebif = np.linspace(0,50,num=50)
-        periods = [2,3,4,5,10,15,25,40,100]
-        thresholds = np.linspace(0.1,0.6,num=2)
-        rotation = [np.pi/12,np.pi/4,np.pi/3,np.pi/2,2*np.pi/3,np.pi,3*np.pi/2,2*np.pi]
-        for rot in rotation:
-            for per in periods:
-                spiral_period = np.linspace(0,rot,num=per)
-                x_spiral_1 = []
-                x_spiral_2 = []
-                y_spiral = []
-                for item in spiral_period:
-                    x_spiral_1.append(50 + item*np.cos(item))
-                    x_spiral_2.append(50 -item*np.cos(item))
-                    y_spiral.append(50 - item*np.sin(item))
+        x_immediate = np.concat([x_prebif,x_firstbif,x_secondbif])
+        y_immediate = np.concat([y_prebif,y_firstbif,y_secondbif])
 
-                y_post_bif = np.linspace(y_spiral[-1],60,num=30)
-                x_postbif_1 = np.linspace(x_spiral_1[-1],40,num=30)
-                x_postbif_2 = np.linspace(x_spiral_2[-1],60,num=30)
+        bif_range = np.linspace(np.pi/2,np.pi,num=12)
+        x_gradualfirst = [50]
+        y_gradualfirst = [58]
+        for item in bif_range:
+            print(item)
+            print(x_gradualfirst)
+            print(2*np.cos(item))
+            x_gradualfirst.append(x_gradualfirst[-1]+2*np.cos(item))
+            y_gradualfirst.append(y_gradualfirst[-1]+2*np.sin(item))
+        bif_2_range = np.linspace(np.pi,5*np.pi/4,num=12)
+        y_gradualpre = np.linspace(0,58,num=20)
+        print(x_gradualfirst)
+        print(y_gradualfirst)
+        x_gradual_post_first = np.linspace(x_gradualfirst[-1],47,num=20)
+        x_gradualsecond = -np.cos(bif_2_range)
+        y_gradualsecond = -np.sin(bif_2_range)
+        x_post_second = np.linspace(x_gradualsecond[-1],45,num=20)
+        y_post_second = np.linspace(y_gradualsecond[-1],55,num=20)
 
-                final_angle_1 = np.atan2(60-y_spiral[-1],40-x_spiral_1[-1])
-                final_angle_2 = np.atan2(60-y_spiral[-1],60-x_spiral_2[-1])
-                print(f"final angle 1: {final_angle_1}, final angle 2: {final_angle_2}")
+        x_gradual = np.concat([x_prebif,x_gradualfirst,x_gradual_post_first,x_gradualsecond,x_post_second])
+        y_gradual = np.concat([y_gradualpre,y_gradualfirst,y_firstbif,y_gradualfirst,y_post_second])
 
-                start1_angle = np.atan2(y_spiral[1]-y_spiral[0],x_spiral_1[1]-x_spiral_1[0])
-                end1_angle = np.atan2(y_spiral[-1]-y_spiral[-2],x_spiral_1[-1]-x_spiral_1[-2])
-                start2_angle = np.atan2(y_spiral[1]-y_spiral[0],x_spiral_2[1]-x_spiral_2[0])
-                end2_angle = np.atan2(y_spiral[-1]-y_spiral[-2],x_spiral_2[-1]-x_spiral_2[-2])
-                print(f"start1: {start1_angle}, end1: {end1_angle}, start2: {start2_angle}, end2: {end2_angle}")
-                if start1_angle < -np.pi/2:
-                    start1_angle += 2*np.pi
-                if end1_angle < -np.pi/2:
-                    end1_angle += 2*np.pi
-                if start2_angle < -np.pi/2:
-                    start2_angle += 2*np.pi
-                if end2_angle < -np.pi/2:
-                    end2_angle += 2*np.pi
-                print(f"start1: {start1_angle}, end1: {end1_angle}, start2: {start2_angle}, end2: {end2_angle}")
-                start_1 = np.pi/2 - start1_angle
-                end_1 = final_angle_1 - end1_angle
-                start_2 = start2_angle - np.pi/2
-                end_2 = end2_angle - final_angle_2
-                max_diff_1 = max(start_1,end_1)
-                second_1 = min(start_1,end_1)
-                max_diff_2 = max(start_2,end_2)
-                second_2 = min(start_2,end_2)
-                xPos_1_spiral = np.zeros(80+per)
-                xPos_2_spiral = np.zeros(80+per)
-                yPos_spiral = np.zeros(80+per)
-                xPos_1_spiral[0:50] = x_prebif
-                xPos_2_spiral[0:50] = x_prebif
-                yPos_spiral[0:50] = y_prebif
-                xPos_1_spiral[50:50+per] = x_spiral_1
-                xPos_2_spiral[50:50+per] = x_spiral_2
-                yPos_spiral[50:50+per] = y_spiral     
-                xPos_1_spiral[50+per:] = x_postbif_1
-                xPos_2_spiral[50+per:] = x_postbif_2
-                yPos_spiral[50+per:] = y_post_bif
+        thresholds = [0.1,0.2,0.4,0.7]
+        for item in thresholds: 
+            ind_immediate, angles_immediate = get_bifurcation_angle(x_immediate,y_immediate,item,5000,True)
+            ind_gradual, angles_gradual = get_bifurcation_angle(x_gradual, y_gradual, item,5000,True)
+            print(f"threshold: {item}")
+            print(f"indices immediate: {ind_immediate}, angles immediate: {angles_immediate}")
+            print(f"indices gradual: {ind_gradual}, angles gradual: {angles_gradual}")
 
-                for tresh in thresholds:
-                    ind_spiral_1, angle_spiral_1 = get_bifurcation_angle(xPos_1_spiral,yPos_spiral,tresh,5000,True)
-                    ind_spiral_2, angle_spiral_2 = get_bifurcation_angle(xPos_2_spiral,yPos_spiral,tresh,5000,True)
-                    print(f"true thresh 1: {max_diff_1*tresh}, start: {start_1}, end: {end_1}")
-                    print(f"true thresh 2: {max_diff_2*tresh}, start: {start_2}, end: {end_2}")
-                    print(f"period: {per}, thresh: {tresh}, rotation: {rot}, indices: {ind_spiral_1}, angles 1: {angle_spiral_1}, indices 2: {ind_spiral_2}, angle 2: {angle_spiral_2}")
-                    
-                    self.assertEqual(3,len(ind_spiral_1))
-                    self.assertEqual(3,len(ind_spiral_2))
-                    self.assertEqual(1,len(angle_spiral_1))
-                    self.assertEqual(1,len(angle_spiral_2))
-                    if end_1 >= max_diff_1*tresh and end_1 < max_diff_1*tresh:
-                        self.assertEqual(50+per)
-                        
-                        
-    def test_spiral(self):
-        '''
-        New spiral testing, desgined to check the maximum angle difference that we could have and then see if anything in the spiral would qualify
-        '''
 
-        # how this should work: detect all bifurcation points using the threshold thing. 
-        # then if one is close to another reject it (as a function of threshold ? )
-        x_prebif = [50]*50
-        y_prebif = np.linspace(50,60,num=50)
-        x_spiral = []
-        y_spiral = []
-        spiral_period = np.linspace(0,np.pi/2,num=15)
-        for item in spiral_period:
-            x_spiral.append(50 + np.cos(item))
-            y_spiral.append(50 - np.sin(item))
-        x_postbif = np.linspace(x_spiral[-1],60,num=30)
-        y_postbif = np.linspace(y_spiral[-1],60,num=30)
-        xPos = np.concat([x_prebif,x_spiral,x_postbif])
-        yPos = np.concat([y_prebif,y_spiral,y_postbif])
-        # now pretty much no matter what, we just want the first
-        ind_spiral, angles_spiral = get_bifurcation_angle(xPos,yPos)
-        # ideally we will flag several possible bifurcation points, but then we will only choose the first one because the difference in angles between all of them is relatively small
-        # I think if we have a really steady change in angle (ie: a lot of points are flagged as potential bifurcation points, and the difference between each one is small but the total distance spanned is large),
-        # then we just want the average bifurcation angle ? and index ? (this assumes a strict continuity of delta angle)
-        # and for threshold tests we will still look at basically the same idea of detecting or not a small change
+
     
-
-
-
+    
 class MovementThresholds(unittest.TestCase):
     '''
     Testing the threshold for beginning movement
@@ -175,17 +108,20 @@ class MovementThresholds(unittest.TestCase):
         yPos_static = np.concat([[50]*99,[80]])
         ind_static, angles_static = get_bifurcation_angle(xPos_static,yPos_static,0.25,5000,True)
 
-        xPos_late = np.linspace(50,51,num=100)
         yPos_late = np.concat([[50]*98,[80],[80]])
-        ind_late, angles_late = get_bifurcation_angle(xPos_late,yPos_late,0.25,5000,True)
+        ind_late, angles_late = get_bifurcation_angle(xPos_static,yPos_late,0.25,5000,True)
 
-        xPos_intime = np.linspace(50,51,num=100)
         yPos_intime = np.concat([[50]*97,[80]*3])
-        ind_intime, angles_intime = get_bifurcation_angle(xPos_intime,yPos_intime,0.25,5000,True)
+        ind_intime, angles_intime = get_bifurcation_angle(xPos_static,yPos_intime,0.25,5000,True)
 
-        xPos_4 = np.linspace(50,51,num=100)
-        yPos_4 = np.concat([[50]*96,[80]*4])
-        ind_4, angles_4 = get_bifurcation_angle(xPos_4,yPos_4,0.25,5000,True)
+        yPos_10 = np.concat([[50]*89,[80]*11])
+        ind_10, angles_10 = get_bifurcation_angle(xPos_static,yPos_10,0.25,5000,True)
+
+        yPos_11 = np.concat([[50]*88,[80]*12])
+        ind_11, angles_11 = get_bifurcation_angle(xPos_static,yPos_11,0.25,5000,True)
+
+        yPos_11_ymove = np.concat([[50]*88,[80]*11,[85]])
+        ind_11_move, angles_11_move = get_bifurcation_angle(xPos_static,yPos_11_ymove,0.25,5000,True)
 
         self.assertEqual(2,len(ind_static))
         self.assertEqual(1,len(angles_static))
@@ -198,8 +134,17 @@ class MovementThresholds(unittest.TestCase):
         self.assertEqual(2,len(ind_intime)) # because its near the end it gets rejected
         self.assertEqual(0,len(angles_intime))
 
-        self.assertEqual(2,len(ind_4))
-        self.assertEqual(0,len(angles_4))
+        self.assertEqual(2,len(ind_10))
+        self.assertEqual(0,len(angles_10))
+
+        self.assertEqual(2,len(ind_11))
+        self.assertEqual(0,len(angles_11))
+
+        self.assertEqual(3,len(ind_11_move))
+        self.assertEqual(1,len(angles_11_move))
+        close_to_pi = np.pi - angles_11_move[0] < 0.01
+        self.assertEqual(True, close_to_pi)
+
 
 
     
@@ -312,11 +257,17 @@ class Gap(unittest.TestCase):
     
 
 class UnexpectedMovement(unittest.TestCase):
-    #def test_unexpectedmovement():
-        '''
+    '''
         Testing movement that is unexpected: 
         elliptical movement and then a decision, going past the targets and then choosing one, reaching a target by making jagged decisions (ie: sinusoidal towards a target but with sharp bends)
-        '''
+    '''
+    #def test_spiral(self):
+
+    #def test_past(self):
+
+    #def test_jagged(self):
+
+    #def test_smooth(self):
 
 class ExpectedSixty(unittest.TestCase):
     def test_expected60(self):
@@ -390,8 +341,6 @@ class ExpectedSixty(unittest.TestCase):
         val_5 = (d1_sq_5+d2_sq_5-hyp_sq_5)/(2*d1_5*d2_5)
         angle_5 = np.arccos(val_5)
 
-        
-        '''
         bif_ind_success2, bif_angle_success2 = get_bifurcation_angle(xPos_2,yPos_2)
         bif_ind_success2_ref, bif_angle_success2_ref = get_bifurcation_angle(xPos_2_ref,yPos)
         print(f"success 2, {bif_ind_success2}, {bif_angle_success2}")
@@ -433,7 +382,7 @@ class ExpectedSixty(unittest.TestCase):
         self.assertAlmostEqual(angle_5,bif_angle_success5[0])
         self.assertEqual([0,2,4],bif_ind_success5_ref)
         self.assertAlmostEqual(angle_5,bif_angle_success5_ref[0])
-        '''
+        
 class ExpectedNinety(unittest.TestCase):
     #def test_expected90():
         '''

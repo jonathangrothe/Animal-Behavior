@@ -180,7 +180,6 @@ def get_bifurcation_angle(xPos, yPos, thresh=0.25, maxtime=5000,test=False):
                 print("moved 95 percent of the distance to the target in the last 2 time steps, no bifurcation recorded")
                 return [0,total_time-1], [0]
     thresh_ind -= 1
-    print(f"starting index: {thresh_ind}")
             
     def detect_bif_points(ddirection):
         max_activation = np.max(ddirection[thresh_ind:])
@@ -208,8 +207,7 @@ def get_bifurcation_angle(xPos, yPos, thresh=0.25, maxtime=5000,test=False):
         # maybe
 
     def get_angles(indices):
-        print(f"xpos indices: {xPos[indices]}")
-        print(f"ypos indices: {yPos[indices]}")
+        gap = min(10,-(indices[-1]//-10))
         true_indices = [0]
         if len(indices) <= 2:
             return indices, [0]
@@ -237,10 +235,9 @@ def get_bifurcation_angle(xPos, yPos, thresh=0.25, maxtime=5000,test=False):
                 val = 1
             if -1 <= val <= 1:
                 angle = np.arccos(val)
-                if next_ind - curr_ind > 10 and d2_sq > 16: 
+                if next_ind - curr_ind > gap and d2_sq > 9: 
                     if a > 1:
                         if np.abs(angles[a-2]-angle) > 0.05:
-                            print(f"angle prev: {angles[a-2]}, current angle: {angle}")
                             true_indices.append(indices[a])
                             angles[a-1] = angle
                         else: 
@@ -270,7 +267,6 @@ def get_bifurcation_angle(xPos, yPos, thresh=0.25, maxtime=5000,test=False):
     d_direction_unsmooth = np.abs(np.diff(direction_unwrapped))
 
     jump_starts_unsmooth = detect_bif_points(d_direction_unsmooth)
-    print(f"jump starts: {jump_starts_unsmooth}")
     bif_indices, bif_angles = get_angles(jump_starts_unsmooth)
     return bif_indices, bif_angles
 

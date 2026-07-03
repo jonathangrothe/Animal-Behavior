@@ -82,7 +82,7 @@ base = {'N':N,
 
 plot_neurons = True
 plot_trajs = True
-sample_size = 20
+sample_size = 2
 h0_list = [[0.235,0.235,0.235],[0.225,0.225,0.225],[0.22,0.22,0.22]]
 sigma_list = [0.2,0.2,0.2]
 change = {'sigma':sigma_list, 'h0':h0_list}
