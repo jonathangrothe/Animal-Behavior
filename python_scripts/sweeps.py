@@ -89,10 +89,10 @@ include_neurons = True
 sample_size = 5
 sigma_start = 0.14
 sigma_finish = 0.26
-base_sigma = np.linspace(sigma_start,sigma_finish,num=49)
+base_sigma = np.linspace(sigma_start,sigma_finish,num=10)
 h0_start = 0.19
 h0_finish = 0.24
-n_h0 = 101
+n_h0 = 10
 h0_range= np.linspace(h0_start,h0_finish,num=n_h0)
 print(f"sigma diff: {base_sigma[1]-base_sigma[0]}, h0 diff: {h0_range[1]-h0_range[0]}")
 h0_list = []
@@ -103,6 +103,11 @@ target_grid = []
 phase_grid = []
 time_grid = []
 angle_grid = []
+angle_2_grid = []
+angle_3_grid = []
+angle_len_grid = []
+angle_2_len_grid = []
+angle_3_len_grid = []
 
 for sigma_index in range(len(base_sigma)):
     sigma_list = [base_sigma[sigma_index]]*n_h0
@@ -117,7 +122,12 @@ for sigma_index in range(len(base_sigma)):
     p_target, se_target = sim_met.get_success_rate(target_list, sample_size, ntargets)
     target_reached = [0 if (x == 0) or (x == 2) else x for x in target_list]
     phases = []
-    #angles = []
+    angles = []
+    angles_2 = []
+    angles_3 = []
+    angle_len = []
+    angle_2_len = []
+    angle_3_len = []
     for i in range(len(target_list)):
         curr_activity = activity_list[i]
         curr_xpos = x_list[i:(i+1)][0]
@@ -129,18 +139,60 @@ for sigma_index in range(len(base_sigma)):
         if target_list[i] >=0:
             xt = initialxt[target_list[i]]
             yt = initialyt[target_list[i]]
-        #angle, indices = sim_met.get_bifurcation_angle(curr_xpos, curr_ypos, xt, yt)
-        #angles.append(angle[0])
+        indices, angle = sim_met.get_bifurcation_angle(curr_xpos, curr_ypos, 0.15,25)
+        indices_dist9, angles_dist9 = sim_met.get_bifurcation_angle(curr_xpos,curr_ypos,0.25,25)
+        indices_dist25, angles_dist25 = sim_met.get_bifurcation_angle(curr_xpos,curr_ypos,0.35,25)
+        if len(angle) >0 :
+            angles.append(angle[0])
+            if angle[0] == np.pi and len(angle) == 1:
+                angle_len.append(0)
+            else:
+                angle_len.append(len(angle))
+        else: 
+            print("no bif detected")
+            angles.append(np.pi)
+            angle_len.append(0)
+        if len(angles_dist9) > 0:
+            angles_2.append(angles_dist9[0])
+            if angles_dist9[0] == np.pi and len(angles_dist9) == 1:
+                angle_2_len.append(0)
+            else:
+                angle_2_len.append(len(angles_dist9))
+        else:
+            angles_2.append(np.pi)
+            angle_2_len.append(0)
+            print("no bif detected")
+        if len(angles_dist25) > 0:
+            angles_3.append(angles_dist25[0])
+            if angles_dist25[0] == np.pi and len(angles_dist25) ==1:
+                angle_3_len.append(0)
+            else:
+                angle_3_len.append(len(angles_dist25))
+        else:
+            print("no bif detected")
+            angle_3_len.append(0)
+            angles_3.append(np.pi)
+        
 
     grid_phases = []
     grid_targets = []
     grid_times = []
-    #grid_angles = []
+    grid_angles = []
+    grid_angles_2 = []
+    grid_angles_3 = []
+    grid_angle_len = []
+    grid_angle2_len = []
+    grid_angle3_len = []
     for s in range(n_h0):
         sim_phases = phases[s*sample_size:(s+1)*sample_size]
         sim_targets = target_reached[s*sample_size:(s+1)*sample_size]
         sim_times = time_list[s*sample_size:(s+1)*sample_size]
-        #sim_angles = angles[s*sample_size:(s+1)*sample_size]
+        sim_angles = angles[s*sample_size:(s+1)*sample_size]
+        sim_angles2 = angles_2[s*sample_size:(s+1)*sample_size]
+        sim_angles3 = angles_3[s*sample_size:(s+1)*sample_size]
+        sim_anglelen = angle_len[s*sample_size:(s+1)*sample_size]
+        sim_angle2len = angle_2_len[s*sample_size:(s+1)*sample_size]
+        sim_angle3len = angle_3_len[s*sample_size:(s+1)*sample_size]
         n0 = sim_phases.count(0)
         n1 = sim_phases.count(1)
         n2 = sim_phases.count(2)
@@ -155,12 +207,22 @@ for sigma_index in range(len(base_sigma)):
         grid_phases.append(np.argmax([n0,n1,n2,n3,nOther]))
         grid_targets.append(reach)
         grid_times.append(np.mean(sim_times))
-        #grid_angles.append(np.mean(sim_angles))
+        grid_angles.append(np.mean(sim_angles))
+        grid_angles_2.append(np.mean(sim_angles2))
+        grid_angles_3.append(np.mean(sim_angles3))
+        grid_angle_len.append(np.mean(sim_anglelen))
+        grid_angle2_len.append(np.mean(sim_angle2len))
+        grid_angle3_len.append(np.mean(sim_angle3len))
 
     phase_grid.append(grid_phases)
     target_grid.append(grid_targets)
     time_grid.append(grid_times)
-    #angle_grid.append(grid_angles)
+    angle_grid.append(grid_angles)
+    angle_2_grid.append(grid_angles_2)
+    angle_3_grid.append(grid_angles_3)
+    angle_len_grid.append(grid_angle_len)
+    angle_2_len_grid.append(grid_angle2_len)
+    angle_3_len_grid.append(grid_angle3_len)
 
     end_analysis_time = time.perf_counter()
     analyzing_time = end_analysis_time - analysis_time
@@ -170,9 +232,15 @@ for sigma_index in range(len(base_sigma)):
 target_df = pd.DataFrame(target_grid,columns=h0_range,index=base_sigma)
 phase_df = pd.DataFrame(phase_grid,columns=h0_range,index=base_sigma)
 time_df = pd.DataFrame(time_grid,columns=h0_range,index=base_sigma)
-#angle_df = pd.DataFrame(angle_grid,columns=h0_range,index=base_sigma)
+angle_df = pd.DataFrame(angle_grid,columns=h0_range,index=base_sigma)
+angle_2_df = pd.DataFrame(angle_2_grid,columns=h0_range,index=base_sigma)
+angle_3_df = pd.DataFrame(angle_3_grid,columns=h0_range,index=base_sigma)
+angle_len_df = pd.DataFrame(angle_len_grid,columns=h0_range,index=base_sigma)
+angle2_len_df = pd.DataFrame(angle_2_len_grid,columns=h0_range,index=base_sigma)
+angle3_len_df = pd.DataFrame(angle_3_len_grid,columns=h0_range,index=base_sigma)
 
-subfigs, axs = plt.subplots(nrows=1,ncols=3, figsize = (22,5))
+
+subfigs, axs = plt.subplots(nrows=3,ncols=3, figsize = (16,14))
 axs = axs.flatten()
 
 bwr_r = plt.colormaps['bwr_r']
@@ -193,20 +261,44 @@ categories_phase = ['0 bumps', '1 bump', '2 bumps','3 bumps']
 im1 = axs[0].imshow(target_df, cmap=cmap1,origin='lower',extent=[h0_range[0], h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
 im2 = axs[1].imshow(phase_df,cmap=cmap2,origin='lower',extent=[h0_range[0], h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
 im3 = axs[2].imshow(time_df,cmap=cmap3,origin='lower',extent=[h0_range[0],h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
-#im4 = axs[3].imshow(angle_df,cmap=cmap4,origin='lower',extent=[h0_range[0],h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
+im4 = axs[3].imshow(angle_df,cmap=cmap4,origin='lower',extent=[h0_range[0],h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
+im5 = axs[4].imshow(angle_2_df,cmap=cmap4,origin='lower',extent=[h0_range[0],h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
+im6 = axs[5].imshow(angle_3_df,cmap=cmap4,origin='lower',extent=[h0_range[0],h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
+im7 = axs[6].imshow(angle_len_df,cmap=cmap3,origin='lower',extent=[h0_range[0],h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
+im8 = axs[7].imshow(angle2_len_df,cmap=cmap3,origin='lower',extent=[h0_range[0],h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
+im9 = axs[8].imshow(angle3_len_df,cmap=cmap3,origin='lower',extent=[h0_range[0],h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
 cbar1 = plt.colorbar(im1, ticks=np.arange(-1,2))
 cbar1.ax.set_yticklabels(categories_tar)
 cbar2 = plt.colorbar(im2, ticks=np.arange(4))
 cbar2.ax.set_yticklabels(categories_phase)
 cbar3 = plt.colorbar(im3)
 cbar3.set_label('Time to target')
-#cbar4 = plt.colorbar(im4)
-#cbar4.set_label('Ratio of 1st bifur. angle to direct path (0.5 is midpoint)')
+cbar4 = plt.colorbar(im4)
+cbar4.set_label('angle of first bifurcation (thresh 0.15)')
+cbar5 = plt.colorbar(im5)
+cbar5.set_label('angle of first bifurcation (thresh 0.25)')
+cbar6 = plt.colorbar(im6)
+cbar6.set_label('angle of first bifurcation (thresh: 0.25)')
+cbar7 = plt.colorbar(im7)
+cbar7.set_label('number of bifurcations')
+cbar8 = plt.colorbar(im8)
+cbar8.set_label('number of bifurcations')
+cbar9 = plt.colorbar(im9)
+cbar9.set_label('number of bifurcations')
 
-subfigs.suptitle(f"Heatmaps for π/3 between targets, average of {sample_size} samples")
+subfigs.suptitle(f"Heatmaps for 2π/3 between targets, average of {sample_size} samples (dist: 25)")
 end_time = time.perf_counter()
 execution_time = end_time - start_time
 print(f"Execution time: {execution_time:.6f} seconds")
+
+print(target_df)
+print(phase_df)
+print(time_df)
+print(angle_df)
+print(angle_2_df)
+print(angle_len_df)
+print(angle2_len_df)
+print(angle3_len_df)
 
 plt.tight_layout()
 plt.show()

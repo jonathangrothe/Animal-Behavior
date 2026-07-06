@@ -2,7 +2,6 @@ import unittest
 from pathlib import Path
 import numpy as np
 from python_scripts.simulation_metrics import get_bifurcation_angle
-import matplotlib.pyplot as plt
 
 
 class Dimensions(unittest.TestCase):
@@ -23,7 +22,7 @@ class Dimensions(unittest.TestCase):
         self.assertEqual(2,len(correct_ind))
         self.assertEqual(1,len(correct_angle))
         self.assertEqual(0,correct_ind[0])
-        self.assertEqual(0,correct_angle[0])
+        self.assertAlmostEqual(np.pi,correct_angle[0])
 
 class Thresholds(unittest.TestCase):
     '''
@@ -48,6 +47,7 @@ class Thresholds(unittest.TestCase):
         for item in thresholds:
             print(f"thresh: {item}")
             ind_simple, angle_simple = get_bifurcation_angle(xPos,yPos,item)
+            # add tests
 
     
     def test_boundary_double(self):
@@ -88,31 +88,19 @@ class Thresholds(unittest.TestCase):
 
         x_immediate = np.concat([x_prebif,x_firstbif,x_secondbif])
         y_immediate = np.concat([y_prebif,y_firstbif,y_secondbif])
-        plt.figure(1)
-        plt.scatter(x_immediate,y_immediate,s=3)
 
-
+        
         x_gradual = np.concat([x_prebif,x_gradualfirst,x_gradual_post_first,x_gradualsecond,x_post_second])
         y_gradual = np.concat([y_gradualpre,y_gradualfirst,y_firstbif,y_gradualsecond,y_post_second])
-        plt.figure(2)
-        plt.scatter(x_gradual,y_gradual,s=3)
-        plt.show()
-        print(f"x immediate: {x_immediate}")
-        print(f"x gradual: {x_gradual}")
-        print(f"y immediate: {y_immediate}")
-        print(f"y gradual: {y_gradual}")
-
-        thresholds = [0.1,0.2,0.4,0.7]
+        thresholds = np.linspace(0.05,0.7,num=15)
         for item in thresholds: 
-            ind_immediate, angles_immediate = get_bifurcation_angle(x_immediate,y_immediate,item,5000,True)
-            ind_gradual, angles_gradual = get_bifurcation_angle(x_gradual, y_gradual, item,5000,True)
+            ind_immediate, angles_immediate = get_bifurcation_angle(x_immediate,y_immediate,item,25,5000,True)
+            ind_gradual, angles_gradual = get_bifurcation_angle(x_gradual, y_gradual,item,25,5000,True)
             print(f"threshold: {item}")
             print(f"indices immediate: {ind_immediate}, angles immediate: {angles_immediate}")
             print(f"indices gradual: {ind_gradual}, angles gradual: {angles_gradual}")
+            # add tests
 
-
-
-    
     
 class MovementThresholds(unittest.TestCase):
     '''
@@ -124,30 +112,30 @@ class MovementThresholds(unittest.TestCase):
         '''
         xPos_static = np.linspace(50,51,num=100)
         yPos_static = np.concat([[50]*99,[80]])
-        ind_static, angles_static = get_bifurcation_angle(xPos_static,yPos_static,0.25,5000,True)
+        ind_static, angles_static = get_bifurcation_angle(xPos_static,yPos_static,0.25,25,5000,True)
 
         yPos_late = np.concat([[50]*98,[80],[80]])
-        ind_late, angles_late = get_bifurcation_angle(xPos_static,yPos_late,0.25,5000,True)
+        ind_late, angles_late = get_bifurcation_angle(xPos_static,yPos_late,0.25,25,5000,True)
 
         yPos_intime = np.concat([[50]*97,[80]*3])
-        ind_intime, angles_intime = get_bifurcation_angle(xPos_static,yPos_intime,0.25,5000,True)
+        ind_intime, angles_intime = get_bifurcation_angle(xPos_static,yPos_intime,0.25,25,5000,True)
 
         yPos_10 = np.concat([[50]*89,[80]*11])
-        ind_10, angles_10 = get_bifurcation_angle(xPos_static,yPos_10,0.25,5000,True)
+        ind_10, angles_10 = get_bifurcation_angle(xPos_static,yPos_10,0.25,25,5000,True)
 
         yPos_11 = np.concat([[50]*88,[80]*12])
-        ind_11, angles_11 = get_bifurcation_angle(xPos_static,yPos_11,0.25,5000,True)
+        ind_11, angles_11 = get_bifurcation_angle(xPos_static,yPos_11,0.25,25,5000,True)
 
         yPos_11_ymove = np.concat([[50]*88,[80]*11,[85]])
-        ind_11_move, angles_11_move = get_bifurcation_angle(xPos_static,yPos_11_ymove,0.25,5000,True)
+        ind_11_move, angles_11_move = get_bifurcation_angle(xPos_static,yPos_11_ymove,0.25,25,5000,True)
 
         self.assertEqual(2,len(ind_static))
         self.assertEqual(1,len(angles_static))
-        self.assertEqual(0,angles_static[0])
+        self.assertAlmostEqual(np.pi,angles_static[0])
 
         self.assertEqual(2,len(ind_late))
         self.assertEqual(1,len(angles_late))
-        self.assertEqual(0,angles_late[0])
+        self.assertAlmostEqual(np.pi,angles_late[0])
 
         self.assertEqual(2,len(ind_intime)) # because its near the end it gets rejected
         self.assertEqual(0,len(angles_intime))
@@ -173,7 +161,7 @@ class MovementThresholds(unittest.TestCase):
         ind_frantic, angles_frantic = get_bifurcation_angle(xPos_frantic, yPos_frantic)
         self.assertEqual(2,len(ind_frantic))
         self.assertEqual(1,len(angles_frantic))
-        self.assertEqual(0,angles_frantic[0])
+        self.assertAlmostEqual(np.pi,angles_frantic[0])
 
     def test_movement_boundaries(self):
         '''
@@ -192,7 +180,7 @@ class MovementThresholds(unittest.TestCase):
 
         self.assertEqual(2,len(ind_before))
         self.assertEqual(1,len(angles_before))
-        self.assertEqual(0,angles_before[0])
+        self.assertAlmostEqual(np.pi,angles_before[0])
         self.assertEqual(3,len(ind_lowerbound))
         self.assertEqual(10,ind_lowerbound[1])
         self.assertEqual(1,len(angles_lowerbound))
@@ -224,7 +212,7 @@ class MaxTime(unittest.TestCase):
         self.assertEqual(1,len(angles_max))
         self.assertEqual(2,len(ind_reaches))
         self.assertEqual(1,len(angles_reaches))
-        self.assertEqual(0,angles_reaches[0])
+        self.assertAlmostEqual(np.pi,angles_reaches[0])
         self.assertEqual(1,len(ind_timecrunch))
         self.assertEqual(1,len(angles_timecrunch))
 
@@ -240,36 +228,36 @@ class Gap(unittest.TestCase):
         xPos_mini_1gap = np.concat([np.array([50]*5),[55,60,65]])
         yPos_mini_1gap = np.concat([np.linspace(50,60,num=5),[63,67,65]])
 
-        ind_mini0, angles_mini0 = get_bifurcation_angle(xPos_mini_0gap,yPos_mini_0gap,0.25,5000,True)
-        ind_mini0_2, angles_mini0_2 = get_bifurcation_angle(xPos_mini_0gap_2, yPos_mini_0gap_2,0.25,5000,True)
-        ind_mini1, angles_mini1 = get_bifurcation_angle(xPos_mini_1gap,yPos_mini_1gap,0.25,5000,True)
+        ind_mini0, angles_mini0 = get_bifurcation_angle(xPos_mini_0gap,yPos_mini_0gap,0.25,25,5000,True)
+        ind_mini0_2, angles_mini0_2 = get_bifurcation_angle(xPos_mini_0gap_2, yPos_mini_0gap_2,0.25,4,5000,True)
+        ind_mini1, angles_mini1 = get_bifurcation_angle(xPos_mini_1gap,yPos_mini_1gap,0.25,25,5000,True)
 
         self.assertEqual(2,len(ind_mini0))
         self.assertEqual(1,len(angles_mini0))
-        self.assertEqual(0,angles_mini0[0])
+        self.assertAlmostEqual(np.pi,angles_mini0[0])
         self.assertEqual(3,len(ind_mini0_2))
-        self.assertEqual(4,ind_mini0_2)
+        self.assertEqual(6,ind_mini0_2[1])
         self.assertEqual(1,len(angles_mini0_2))
         self.assertEqual(3,len(ind_mini1))
         self.assertEqual(4,ind_mini1[1])
 
-    def test_med_gap(self):
+    #def test_med_gap(self):
         '''
         Testing for when the min_gap is somewhere in between 1 and 30 (max)
         '''
-        xPos_med_14gap = np.concat([])
-        yPos_med_14gap = np.concat([])
-        xPos_med_15gap = np.concat([])
-        yPos_med_15gap = np.concat([])
+        #xPos_med_14gap = np.concat([])
+        #yPos_med_14gap = np.concat([])
+        #xPos_med_15gap = np.concat([])
+        #yPos_med_15gap = np.concat([])
 
-    def test_large_gap(self):
+    #def test_large_gap(self):
         '''
         Testing for when the min_gap is 30
         '''
-        xPos_max_29gap = np.concat([])
-        yPos_max_29gap = np.concat([])
-        xPos_max_30gap = np.concat([])
-        yPos_max_30gap = np.concat([])
+        #xPos_max_29gap = np.concat([])
+        #yPos_max_29gap = np.concat([])
+        #xPos_max_30gap = np.concat([])
+        #yPos_max_30gap = np.concat([])
     
 
 class UnexpectedMovement(unittest.TestCase):

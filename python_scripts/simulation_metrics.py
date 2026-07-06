@@ -132,7 +132,7 @@ def get_bump_type(activity,maxtime=5000):
         phase = 2
     return phase
 
-def get_bifurcation_angle(xPos, yPos, thresh=0.25, maxtime=5000,test=False):
+def get_bifurcation_angle(xPos, yPos, thresh=0.25, dist_thresh = 1, maxtime=5000,test=False):
     '''
     A function that calculates the local extrema of the angle between the agent and the target, and uses them to 
     find the ratio of the difference between the angle of the agent at the bifurcation and the most direct path to the target
@@ -153,7 +153,7 @@ def get_bifurcation_angle(xPos, yPos, thresh=0.25, maxtime=5000,test=False):
         raise ValueError("arrays for x position and y position are different sizes")
     total_time = len(xPos)
     if maxtime <= total_time:
-        return [0],[0]
+        return [0],[np.pi]
     x0, y0 = xPos[0], yPos[0]
     targetx, targety = xPos[-1], yPos[-1]
     dist_to_targ = np.sqrt((x0-targetx)**2+(y0-targety)**2)
@@ -178,7 +178,7 @@ def get_bifurcation_angle(xPos, yPos, thresh=0.25, maxtime=5000,test=False):
             thresh_ind = ind_upper
             if ind_upper == total_time-2:
                 print("moved 95 percent of the distance to the target in the last 2 time steps, no bifurcation recorded")
-                return [0,total_time-1], [0]
+                return [0,total_time-1], [np.pi]
     thresh_ind -= 1
             
     def detect_bif_points(ddirection):
@@ -188,10 +188,10 @@ def get_bifurcation_angle(xPos, yPos, thresh=0.25, maxtime=5000,test=False):
             thresh_value = 10
         above = ddirection[thresh_ind:] > thresh_value # this will still be our basis for
         if test:
-            print(f"THRESH VALUE: {thresh_value}")
-            print(f"direction: {direction}")
-            print(f"direction unwrapped: {direction_unwrapped}")
-            print(f"ddirection: {ddirection}")
+            #print(f"THRESH VALUE: {thresh_value}")
+            #print(f"direction: {direction}")
+            #print(f"direction unwrapped: {direction_unwrapped}")
+            #print(f"ddirection: {ddirection}")
             print(f"above: {above}")
         jump_ends = [0]
         in_jump = False
@@ -207,10 +207,12 @@ def get_bifurcation_angle(xPos, yPos, thresh=0.25, maxtime=5000,test=False):
         # maybe
 
     def get_angles(indices):
+        print(f"candidate indices: {indices}")
+        print(f"xpos: {xPos[indices]}, ypos: {yPos[indices]}")
         gap = min(10,-(indices[-1]//-10))
         true_indices = [0]
         if len(indices) <= 2:
-            return indices, [0]
+            return indices, [np.pi]
         angles = np.zeros(len(indices)-2)
         nback = 1
         for a in range(1,len(indices)-1):
@@ -235,7 +237,8 @@ def get_bifurcation_angle(xPos, yPos, thresh=0.25, maxtime=5000,test=False):
                 val = 1
             if -1 <= val <= 1:
                 angle = np.arccos(val)
-                if next_ind - curr_ind > gap and d2_sq > 9: 
+                print(f"index difference, {next_ind-curr_ind}, gap: {gap}, d2 sq: {d2_sq}")
+                if next_ind - curr_ind > gap and d2_sq > dist_thresh: 
                     if a > 1:
                         if np.abs(angles[a-2]-angle) > 0.05:
                             true_indices.append(indices[a])
@@ -268,6 +271,7 @@ def get_bifurcation_angle(xPos, yPos, thresh=0.25, maxtime=5000,test=False):
 
     jump_starts_unsmooth = detect_bif_points(d_direction_unsmooth)
     bif_indices, bif_angles = get_angles(jump_starts_unsmooth)
+    print(f"bif_indices: {bif_indices}, bif angles: {bif_angles}")
     return bif_indices, bif_angles
 
 def find_bumps(activity): # function not currently use, will keep it for now
