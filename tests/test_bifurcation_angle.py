@@ -2,6 +2,7 @@ import unittest
 from pathlib import Path
 import numpy as np
 from python_scripts.simulation_metrics import get_bifurcation_angle
+import matplotlib.pyplot as plt
 
 
 class Dimensions(unittest.TestCase):
@@ -53,37 +54,53 @@ class Thresholds(unittest.TestCase):
         # add two where there is another bifurcation that is less drastic in terms of angle, 
         # one that is a direct turn and one that is a gradual turn
         x_prebif = [50]*20
-        y_prebif = np.linspace(0,60,num=20)
-        x_firstbif = np.linspace(50,45,num=20)
-        y_firstbif = [60]*20
-        x_secondbif = np.linspace(45,40,num=20)
-        y_secondbif = np.linspace(60,55,num=20)
-
-        x_immediate = np.concat([x_prebif,x_firstbif,x_secondbif])
-        y_immediate = np.concat([y_prebif,y_firstbif,y_secondbif])
-
         y_gradualpre = np.linspace(0,58,num=20)
+
         bif_range = np.linspace(np.pi/2,np.pi,num=12)
         x_gradualfirst = [50]
         y_gradualfirst = [58]
         for item in bif_range:
-            x_gradualfirst.append(x_gradualfirst[-1]+np.cos(item))
-            y_gradualfirst.append(y_gradualfirst[-1]+np.sin(item))
-        print(x_gradualfirst)
-        print(y_gradualfirst)
-        x_gradual_post_first = np.linspace(x_gradualfirst[-1],47,num=20)
-        bif_2_range = np.linspace(np.pi,5*np.pi/4,num=12)
-        x_gradualsecond = [47]
-        y_gradualsecond = [60]
-        for r in bif_2_range:
-            x_gradualsecond.append(x_gradualsecond[-1]+2*np.cos(item))
-            y_gradualsecond.append(y_gradualsecond[-1]+2*np.sin(item))
+            x_gradualfirst.append(x_gradualfirst[-1]+1/6*np.cos(item))
+            y_gradualfirst.append(y_gradualfirst[-1]+1/6*np.sin(item))
+        
+        y_prebif = np.linspace(0,y_gradualfirst[-1],num=20)
 
-        x_post_second = np.linspace(x_gradualsecond[-1],45,num=20)
-        y_post_second = np.linspace(y_gradualsecond[-1],55,num=20)
+        x_firstbif = np.linspace(50,43,num=20)
+        y_firstbif = [y_gradualfirst[-1]]*20
+        x_gradual_post_first = np.linspace(x_gradualfirst[-1],43,num=20)
+
+        bif_2_range = np.linspace(np.pi,5*np.pi/4,num=12)
+        x_gradualsecond = [43]
+        y_gradualsecond = [y_firstbif[-1]]
+        for r in bif_2_range:
+            x_gradualsecond.append(x_gradualsecond[-1]+1/12*np.cos(r))
+            y_gradualsecond.append(y_gradualsecond[-1]+1/12*np.sin(r))
+
+        x_secondbif = np.linspace(43,40,num=20)
+        y_secondbif = np.linspace(y_gradualfirst[-1],53,num=20) # we need to make these angles the same
+
+        final_heading = bif_2_range[-1]    
+        seg_length = 20 * (1/12)            
+
+        dist = np.linspace(0, seg_length, 20)
+        x_post_second = x_gradualsecond[-1] + dist * np.cos(final_heading)
+        y_post_second = y_gradualsecond[-1] + dist * np.sin(final_heading)
+
+        x_immediate = np.concat([x_prebif,x_firstbif,x_secondbif])
+        y_immediate = np.concat([y_prebif,y_firstbif,y_secondbif])
+        plt.figure(1)
+        plt.scatter(x_immediate,y_immediate,s=3)
+
 
         x_gradual = np.concat([x_prebif,x_gradualfirst,x_gradual_post_first,x_gradualsecond,x_post_second])
-        y_gradual = np.concat([y_gradualpre,y_gradualfirst,y_firstbif,y_gradualfirst,y_post_second])
+        y_gradual = np.concat([y_gradualpre,y_gradualfirst,y_firstbif,y_gradualsecond,y_post_second])
+        plt.figure(2)
+        plt.scatter(x_gradual,y_gradual,s=3)
+        plt.show()
+        print(f"x immediate: {x_immediate}")
+        print(f"x gradual: {x_gradual}")
+        print(f"y immediate: {y_immediate}")
+        print(f"y gradual: {y_gradual}")
 
         thresholds = [0.1,0.2,0.4,0.7]
         for item in thresholds: 
@@ -145,8 +162,6 @@ class MovementThresholds(unittest.TestCase):
         self.assertEqual(1,len(angles_11_move))
         close_to_pi = np.pi - angles_11_move[0] < 0.01
         self.assertEqual(True, close_to_pi)
-
-
 
     
     def test_immediate_movement(self): # ADD CASES
