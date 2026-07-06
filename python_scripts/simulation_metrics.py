@@ -132,7 +132,7 @@ def get_bump_type(activity,maxtime=5000):
         phase = 2
     return phase
 
-def get_bifurcation_angle(xPos, yPos, thresh=0.25, dist_thresh = 1, maxtime=5000,test=False):
+def get_bifurcation_angle(xPos, yPos, thresh=0.25, dist_thresh = 25, maxtime=5000,test=False):
     '''
     A function that calculates the local extrema of the angle between the agent and the target, and uses them to 
     find the ratio of the difference between the angle of the agent at the bifurcation and the most direct path to the target
@@ -140,6 +140,10 @@ def get_bifurcation_angle(xPos, yPos, thresh=0.25, dist_thresh = 1, maxtime=5000
     Parameters:
         xPos: a list of x positions from a simulation
         yPos: a list of y positions from a simulation
+        thresh: the threshold for what proportion of the max direction change is flagged as a potential bifurcation
+        dist_thresh: the distance (squared) between points required for them to be considered seperate bifurcations
+        maxtime: the maximum time in the simulation (default is 5000)
+        test: a flag to print out details as the function runs
 
     Returns: 
         best_overall: a ratio representing the difference between the angle of the agent at the bifurcation and the most direct path. 
@@ -187,12 +191,12 @@ def get_bifurcation_angle(xPos, yPos, thresh=0.25, dist_thresh = 1, maxtime=5000
         if max_activation <= 0.0001: # if the max is very small (this is equivalent to about 1 degree of change over 18 time steps) then ensure no points are flagged
             thresh_value = 10
         above = ddirection[thresh_ind:] > thresh_value # this will still be our basis for
-        if test:
+        #if test:
             #print(f"THRESH VALUE: {thresh_value}")
             #print(f"direction: {direction}")
             #print(f"direction unwrapped: {direction_unwrapped}")
             #print(f"ddirection: {ddirection}")
-            print(f"above: {above}")
+            #print(f"above: {above}")
         jump_ends = [0]
         in_jump = False
         for i, val in enumerate(above):
@@ -207,8 +211,6 @@ def get_bifurcation_angle(xPos, yPos, thresh=0.25, dist_thresh = 1, maxtime=5000
         # maybe
 
     def get_angles(indices):
-        print(f"candidate indices: {indices}")
-        print(f"xpos: {xPos[indices]}, ypos: {yPos[indices]}")
         gap = min(10,-(indices[-1]//-10))
         true_indices = [0]
         if len(indices) <= 2:
@@ -237,7 +239,7 @@ def get_bifurcation_angle(xPos, yPos, thresh=0.25, dist_thresh = 1, maxtime=5000
                 val = 1
             if -1 <= val <= 1:
                 angle = np.arccos(val)
-                print(f"index difference, {next_ind-curr_ind}, gap: {gap}, d2 sq: {d2_sq}")
+                #print(f"index difference, {next_ind-curr_ind}, gap: {gap}, d2 sq: {d2_sq}")
                 if next_ind - curr_ind > gap and d2_sq > dist_thresh: 
                     if a > 1:
                         if np.abs(angles[a-2]-angle) > 0.05:
@@ -267,14 +269,19 @@ def get_bifurcation_angle(xPos, yPos, thresh=0.25, dist_thresh = 1, maxtime=5000
                 direction[index] = direction[index-1]
     
     direction_unwrapped = np.unwrap(direction)
+    adjustments = np.diff(direction_unwrapped) != np.diff(direction)
+    adjustment_inds = np.where(adjustments)[0]
     d_direction_unsmooth = np.abs(np.diff(direction_unwrapped))
 
     jump_starts_unsmooth = detect_bif_points(d_direction_unsmooth)
     bif_indices, bif_angles = get_angles(jump_starts_unsmooth)
-    print(f"bif_indices: {bif_indices}, bif angles: {bif_angles}")
+    #print(f"bif_indices: {bif_indices}, bif angles: {bif_angles}")
+    argmax_direction = np.argmax(d_direction_unsmooth[thresh_ind:])+thresh_ind
+    is_adj = argmax_direction in adjustment_inds
+    #print(f"max ddirection: {np.max(d_direction_unsmooth[thresh_ind:])}, argmax direction: {argmax_direction}, is argmax an adjusment? {is_adj}")
     return bif_indices, bif_angles
 
-def find_bumps(activity): # function not currently use, will keep it for now
+def find_bumps(activity): # function not currently in use, will keep it for now
     '''
     A function which takes in the activity data for a simulation and returns a list of where indices that are the peak of bumps at each time point in that simulation
     
