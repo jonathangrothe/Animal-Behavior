@@ -26,19 +26,25 @@ def coords_setup(xpts,ypts,line_len,dec_len,dec_factor):
     for item in bif_range:
         x_gradualfirst.append(x_gradualfirst[-1]+dec_factor[0]*np.cos(item))
         y_gradualfirst.append(y_gradualfirst[-1]+dec_factor[0]*np.sin(item))
-    
+    deltax_first = x_gradualfirst[-1]-x1
+    deltay_first = y_gradualfirst[-1]-y1
+    print(f"deltax_first: {deltax_first}, deltay_first: {deltay_first}")
     x_firstbif = np.linspace(x1,x2,num=line_len)
     y_firstbif = np.linspace(y1,y2,num=line_len)
-    x_gradual_post_first = np.linspace(x_gradualfirst[-1],x2,num=line_len)
-    y_gradual_post_first = np.linspace(y_gradualfirst[-1],y2,num=line_len)
+    x2_gr = x2+deltax_first
+    x3_gr = x3+deltax_first
+    y2_gr = y2+deltay_first
+    y3_gr = y3+deltay_first
+    x_gradual_post_first = np.linspace(x_gradualfirst[-1],x2_gr,num=line_len)
+    y_gradual_post_first = np.linspace(y_gradualfirst[-1],y2_gr,num=line_len)
 
-    a3 = np.atan2(y3-y2,x3-x2)
+    a3 = np.atan2(y3_gr-y2_gr,x3_gr-x2_gr)
     if np.abs(a3 - a2) > np.pi:
         if a3 <0 and a2 >0:
             a3 += 2*np.pi
     bif_2_range = np.linspace(a2,a3,num=dec_len)
-    x_gradualsecond = [x2]
-    y_gradualsecond = [y2]
+    x_gradualsecond = [x2_gr]
+    y_gradualsecond = [y2_gr]
     for r in bif_2_range:
         x_gradualsecond.append(x_gradualsecond[-1]+dec_factor[1]*np.cos(r))
         y_gradualsecond.append(y_gradualsecond[-1]+dec_factor[1]*np.sin(r))
@@ -46,7 +52,7 @@ def coords_setup(xpts,ypts,line_len,dec_len,dec_factor):
     x_secondbif = np.linspace(x2,x3,num=line_len)
     y_secondbif = np.linspace(y2,y3,num=line_len) 
 
-    seg_length = np.sqrt((x3-x2)**2+(y3-y2)**2)           
+    seg_length = np.sqrt((x3_gr-x2_gr)**2+(y3_gr-y2_gr)**2)           
 
     dist = np.linspace(0, seg_length, line_len)
     x_post_second = x_gradualsecond[-1] + dist * np.cos(a3)
@@ -118,30 +124,71 @@ class Thresholds(unittest.TestCase):
         line_lens = 20
         dec_lens = 20
         dec_factors = [1/10,1/10]
-        imm_coords, gradual_coords, angles = coords_setup(xpts_list[0],ypts_list[0],line_lens,dec_lens,dec_factors)
-        bigger_angle = max(angles)
-        smaller_angle = min(angles)
-        thresholds = [0.05,0.1,0.4,0.49,0.5,0.51,0.6,0.8,1,1.1]
+        im_total = 3*line_lens -1 
+        gr_total = im_total + 2*(dec_lens+1)
+        imm_coords, gradual_coords, angle_diffs = coords_setup(xpts_list[0],ypts_list[0],line_lens,dec_lens,dec_factors)
+        bigger_angle = max(angle_diffs)
+        smaller_angle = min(angle_diffs)
+        angle_argmax = 1+np.argmax(angle_diffs)
+        predicted_nobif_im = [0,im_total]
+        predicted_nobif_gr = [0,gr_total]
+        predicted_1bif_im = [0,line_lens*angle_argmax,im_total]
+        predicted_1bif_gr = [0,line_lens*angle_argmax+dec_lens*angle_argmax-2+angle_argmax,gr_total]
+        predicted_2bif_im = [0,line_lens,line_lens*2,im_total]
+        predicted_2bif_gr = [0,line_lens+dec_lens-1,line_lens*2+dec_lens*2,gr_total]
+        ratio = smaller_angle/bigger_angle
+        thresholds = [0.05,0.1,0.4,0.49,0.5,0.51,0.6,0.7,0.8,0.9,1.1]
+        colors_im = np.array(['blue']*len(imm_coords[0]), dtype=object)
+        colors_im[[20,40]] = 'red'
         colors = np.array(['blue'] * len(gradual_coords[0]), dtype=object)
-        colors[[41,61,80]] = 'red'
-        plt.figure(1)
-        plt.scatter(imm_coords[0],imm_coords[1])
-        plt.figure(2)
-        plt.scatter(gradual_coords[0],gradual_coords[1],color=colors)
+        colors[[39,80]] = 'red'
+        #plt.figure(1)
+        #plt.scatter(imm_coords[0],imm_coords[1],color=colors_im)
+        #plt.figure(2)
+        #plt.scatter(gradual_coords[0],gradual_coords[1],color=colors)
         for item in thresholds: 
             ind_imm, angles_imm = get_bifurcation_angle(imm_coords[0],imm_coords[1],item)
-            ind_gradual, angles_gradual = get_bifurcation_angle(gradual_coords[0],gradual_coords[1],item)
-            print(f"immediate: indices: {ind_imm}, angles: {angles_imm}")
-            print(f"gradual: indices: {ind_gradual}, angles: {angles_gradual}")
-            print(f"threshold: {item}, ratio: {smaller_angle/bigger_angle}")
-            #if smaller_angle/bigger_angle > item:
+            ind_gradual, angles_gradual = get_bifurcation_angle(gradual_coords[0],gradual_coords[1],item,25,5000,item)
+            print(f"immediate: x: {ind_imm}, y: {ind_imm}, angles: {angles_imm}")
+            print(f"gradual: x: {ind_gradual}, y: {ind_gradual} angles: {angles_gradual}")
+            print(f"threshold: {item}, ratio: {ratio}")
+            if item > 1:
+                self.assertEqual(2,len(ind_imm))
+                self.assertEqual(2,len(ind_gradual))
+                self.assertEqual(predicted_nobif_im,ind_imm)
+                self.assertEqual(predicted_nobif_gr,ind_gradual)
+                self.assertEqual(1,len(angles_imm))
+                self.assertEqual(1,len(angles_gradual))
+                self.assertAlmostEqual(np.pi,angles_imm[0])
+                self.assertAlmostEqual(np.pi,angles_gradual[0])
+            elif ratio > item:
+                self.assertEqual(4,len(ind_imm))
+                self.assertEqual(4,len(ind_gradual))
+                self.assertEqual(predicted_2bif_im,ind_imm)
+                self.assertEqual(predicted_2bif_gr,ind_gradual)
+                self.assertEqual(2,len(angles_imm))
+                self.assertEqual(2,len(angles_gradual))
+                self.assertAlmostEqual(angle_diffs[0],angles_imm[0])
+                self.assertAlmostEqual(angle_diffs[1],angles_imm[1])
+                #self.assertAlmostEqual(angles[0])
+                # we need to find the tolerance based on the dec_factors
+            elif ratio < item: 
+                self.assertEqual(3,len(ind_imm))
+                self.assertEqual(3,len(ind_gradual))
+                self.assertEqual(predicted_1bif_im,ind_imm)
+                self.assertEqual(predicted_1bif_gr,ind_gradual)
+                self.assertEqual(1,len(angles_imm))
+                self.assertEqual(1,len(angles_gradual))
+                self.assertAlmostEqual(bigger_angle,angles_imm[0])
+                # yeah the exactly equal case is tough tbh
+                # and the exactly one case is tough
+                # a little variance here is ok, and we should include that in docstring
+            # angle: should be very close in the immdiate case to the setup
+            # in the not immediate case it should be off by a factor of the distance it travels in the decision
+
                 
-        plt.show()
+        #plt.show()
 
-
-
-
-    
 class MovementThresholds(unittest.TestCase):
     '''
     Testing the threshold for beginning movement
