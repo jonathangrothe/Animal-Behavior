@@ -184,13 +184,14 @@ def get_bifurcation_angle(xPos, yPos, thresh=0.25, dist_thresh = 25, maxtime=500
                 print("moved 95 percent of the distance to the target in the last 2 time steps, no bifurcation recorded")
                 return [0,total_time-1], [np.pi]
     thresh_ind -= 1
-            
+    
     def detect_bif_points(ddirection):
         max_activation = np.max(ddirection[thresh_ind:])
         thresh_value = max_activation*thresh
+        print(f"thresh value in function: {thresh_value}")
         if max_activation <= 0.0001: # if the max is very small (this is equivalent to about 1 degree of change over 18 time steps) then ensure no points are flagged
             thresh_value = 10
-        above = ddirection[thresh_ind:] > thresh_value # this will still be our basis for
+        above = ddirection[thresh_ind:] >= thresh_value # this will still be our basis for
         #if test:
             #print(f"THRESH VALUE: {thresh_value}")
             #print(f"direction: {direction}")
@@ -244,12 +245,14 @@ def get_bifurcation_angle(xPos, yPos, thresh=0.25, dist_thresh = 25, maxtime=500
                     if a > 1:
                         if np.abs(angles[a-2]-angle) > 0.05:
                             true_indices.append(indices[a])
+                            print(f"ddirection at index: {d_direction_unsmooth[indices[a]-6:indices[a]+2]}")
                             angles[a-1] = angle
                         else: 
                             nback += 1
                     else:
                         angles[a-1] = angle
                         true_indices.append(indices[a])
+                        print(f"ddirection at index: {d_direction_unsmooth[indices[a]-1]}")
                 else:
                     nback += 1
             else:

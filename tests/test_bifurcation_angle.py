@@ -1,8 +1,64 @@
 import unittest
 from pathlib import Path
 import numpy as np
+import matplotlib.pyplot as plt
 from python_scripts.simulation_metrics import get_bifurcation_angle
 
+def coords_setup(xpts,ypts,line_len,dec_len,dec_factor):
+    x0 = xpts[0]
+    x1 = xpts[1]
+    x2 = xpts[2]
+    x3 = xpts[3]
+    y0 = ypts[0]
+    y1 = ypts[1]
+    y2 = ypts[2]
+    y3 = ypts[3]
+    x_prebif = np.linspace(x0,x1,num=line_len)
+    y_prebif = np.linspace(y0,y1,num=line_len)
+    a1 = np.atan2(y1-y0,x1-x0)
+    a2 = np.atan2(y2-y1,x2-x1)
+    if np.abs(a2 - a1) > np.pi:
+        if a2 <0 and a1 >0:
+            a2 += 2*np.pi
+    bif_range = np.linspace(a1,a2,num=dec_len)
+    x_gradualfirst = [x1]
+    y_gradualfirst = [y1]
+    for item in bif_range:
+        x_gradualfirst.append(x_gradualfirst[-1]+dec_factor[0]*np.cos(item))
+        y_gradualfirst.append(y_gradualfirst[-1]+dec_factor[0]*np.sin(item))
+    
+    x_firstbif = np.linspace(x1,x2,num=line_len)
+    y_firstbif = np.linspace(y1,y2,num=line_len)
+    x_gradual_post_first = np.linspace(x_gradualfirst[-1],x2,num=line_len)
+    y_gradual_post_first = np.linspace(y_gradualfirst[-1],y2,num=line_len)
+
+    a3 = np.atan2(y3-y2,x3-x2)
+    if np.abs(a3 - a2) > np.pi:
+        if a3 <0 and a2 >0:
+            a3 += 2*np.pi
+    bif_2_range = np.linspace(a2,a3,num=dec_len)
+    x_gradualsecond = [x2]
+    y_gradualsecond = [y2]
+    for r in bif_2_range:
+        x_gradualsecond.append(x_gradualsecond[-1]+dec_factor[1]*np.cos(r))
+        y_gradualsecond.append(y_gradualsecond[-1]+dec_factor[1]*np.sin(r))
+
+    x_secondbif = np.linspace(x2,x3,num=line_len)
+    y_secondbif = np.linspace(y2,y3,num=line_len) 
+
+    seg_length = np.sqrt((x3-x2)**2+(y3-y2)**2)           
+
+    dist = np.linspace(0, seg_length, line_len)
+    x_post_second = x_gradualsecond[-1] + dist * np.cos(a3)
+    y_post_second = y_gradualsecond[-1] + dist * np.sin(a3)
+
+    x_immediate = np.concat([x_prebif,x_firstbif,x_secondbif])
+    y_immediate = np.concat([y_prebif,y_firstbif,y_secondbif])
+    
+    x_gradual = np.concat([x_prebif,x_gradualfirst,x_gradual_post_first,x_gradualsecond,x_post_second])
+    y_gradual = np.concat([y_prebif,y_gradualfirst,y_gradual_post_first,y_gradualsecond,y_post_second])
+
+    return [x_immediate,y_immediate], [x_gradual, y_gradual], [a2-a1,a3-a2]
 
 class Dimensions(unittest.TestCase):
     '''
@@ -45,61 +101,45 @@ class Thresholds(unittest.TestCase):
         yPos[51:] = y_postbif
         thresholds = np.linspace(0.01,1.1,num=12)
         for item in thresholds:
-            print(f"thresh: {item}")
             ind_simple, angle_simple = get_bifurcation_angle(xPos,yPos,item)
-            # add tests
+            if item <= 1:
+                self.assertEqual(3,len(ind_simple))
+                self.assertEqual(1,len(angle_simple))
+                angle_close = 2.35619 < angle_simple[0] < 2.3562
+                self.assertEqual(True, angle_close)
+            else:
+                self.assertEqual(2,len(ind_simple))
+                self.assertAlmostEqual(np.pi,angle_simple[0])
 
     
     def test_boundary_double(self):
-        # add two where there is another bifurcation that is less drastic in terms of angle, 
-        # one that is a direct turn and one that is a gradual turn
-        x_prebif = [50]*20
-        y_gradualpre = np.linspace(0,58,num=20)
-
-        bif_range = np.linspace(np.pi/2,np.pi,num=12)
-        x_gradualfirst = [50]
-        y_gradualfirst = [58]
-        for item in bif_range:
-            x_gradualfirst.append(x_gradualfirst[-1]+1/6*np.cos(item))
-            y_gradualfirst.append(y_gradualfirst[-1]+1/6*np.sin(item))
-        
-        y_prebif = np.linspace(0,y_gradualfirst[-1],num=20)
-
-        x_firstbif = np.linspace(50,43,num=20)
-        y_firstbif = [y_gradualfirst[-1]]*20
-        x_gradual_post_first = np.linspace(x_gradualfirst[-1],43,num=20)
-
-        bif_2_range = np.linspace(np.pi,5*np.pi/4,num=12)
-        x_gradualsecond = [43]
-        y_gradualsecond = [y_firstbif[-1]]
-        for r in bif_2_range:
-            x_gradualsecond.append(x_gradualsecond[-1]+1/12*np.cos(r))
-            y_gradualsecond.append(y_gradualsecond[-1]+1/12*np.sin(r))
-
-        x_secondbif = np.linspace(43,40,num=20)
-        y_secondbif = np.linspace(y_gradualfirst[-1],53,num=20) # we need to make these angles the same
-
-        final_heading = bif_2_range[-1]    
-        seg_length = 20 * (1/12)            
-
-        dist = np.linspace(0, seg_length, 20)
-        x_post_second = x_gradualsecond[-1] + dist * np.cos(final_heading)
-        y_post_second = y_gradualsecond[-1] + dist * np.sin(final_heading)
-
-        x_immediate = np.concat([x_prebif,x_firstbif,x_secondbif])
-        y_immediate = np.concat([y_prebif,y_firstbif,y_secondbif])
-
-        
-        x_gradual = np.concat([x_prebif,x_gradualfirst,x_gradual_post_first,x_gradualsecond,x_post_second])
-        y_gradual = np.concat([y_gradualpre,y_gradualfirst,y_firstbif,y_gradualsecond,y_post_second])
-        thresholds = np.linspace(0.05,0.7,num=15)
+        xpts_list = [[50,50,40,34]]
+        ypts_list = [[50,80,80,74]]
+        line_lens = 20
+        dec_lens = 20
+        dec_factors = [1/10,1/10]
+        imm_coords, gradual_coords, angles = coords_setup(xpts_list[0],ypts_list[0],line_lens,dec_lens,dec_factors)
+        bigger_angle = max(angles)
+        smaller_angle = min(angles)
+        thresholds = [0.05,0.1,0.4,0.49,0.5,0.51,0.6,0.8,1,1.1]
+        colors = np.array(['blue'] * len(gradual_coords[0]), dtype=object)
+        colors[[41,61,80]] = 'red'
+        plt.figure(1)
+        plt.scatter(imm_coords[0],imm_coords[1])
+        plt.figure(2)
+        plt.scatter(gradual_coords[0],gradual_coords[1],color=colors)
         for item in thresholds: 
-            ind_immediate, angles_immediate = get_bifurcation_angle(x_immediate,y_immediate,item,25,5000,True)
-            ind_gradual, angles_gradual = get_bifurcation_angle(x_gradual, y_gradual,item,25,5000,True)
-            print(f"threshold: {item}")
-            print(f"indices immediate: {ind_immediate}, angles immediate: {angles_immediate}")
-            print(f"indices gradual: {ind_gradual}, angles gradual: {angles_gradual}")
-            # add tests
+            ind_imm, angles_imm = get_bifurcation_angle(imm_coords[0],imm_coords[1],item)
+            ind_gradual, angles_gradual = get_bifurcation_angle(gradual_coords[0],gradual_coords[1],item)
+            print(f"immediate: indices: {ind_imm}, angles: {angles_imm}")
+            print(f"gradual: indices: {ind_gradual}, angles: {angles_gradual}")
+            print(f"threshold: {item}, ratio: {smaller_angle/bigger_angle}")
+            #if smaller_angle/bigger_angle > item:
+                
+        plt.show()
+
+
+
 
     
 class MovementThresholds(unittest.TestCase):
