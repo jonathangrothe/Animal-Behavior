@@ -18,7 +18,7 @@ for a in range(nagents):
     initialx[a] = 50
     initialy[a] = 50
 initialxt = [50-15*np.sqrt(3),50,50+15*np.sqrt(3)]
-initialyt = [65,80,65]
+initialyt = [35,80,35]
 
 T = 5000
 periodicflag = 0
@@ -295,7 +295,7 @@ boundaries_tar = np.arange(-1,3) - 0.5
 norm_tar = mcolors.BoundaryNorm(boundaries_tar,cmap1.N)
 boundaries_phase = np.arange(5) - 0.5
 norm_phase = mcolors.BoundaryNorm(boundaries_phase,cmap2.N)
-categories_tar = ['fails', 'outer', 'center']
+categories_tar = ['fails', 'both', 'reaches']
 categories_phase = ['0 bumps', '1 bump', '2 bumps','3 bumps']
 
 im1 = axs_metric[0].imshow(target_df, cmap=cmap1,origin='lower',extent=[h0_range[0], h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
@@ -319,7 +319,7 @@ cbar5.set_label('angle of second bifurcation')
 cbar6 = plt.colorbar(im6)
 cbar6.set_label('number of bifurcations')
 
-subfigs_metric.suptitle(f"Heatmaps for π/3 between targets, average of {sample_size} samples")
+subfigs_metric.suptitle(f"Heatmaps for 2π/3 between targets, average of {sample_size} samples")
 width_ratio = [1]*n_thresh
 width_ratio.append(0.08)
 subfigs_act, axs_act = plt.subplots(nrows=3,ncols=n_thresh+1,figsize=(18,6),gridspec_kw={'width_ratios': width_ratio},num=2)

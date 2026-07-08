@@ -13,14 +13,14 @@ def coords_setup(xpts,ypts,line_len,dec_len,dec_factor):
     y1 = ypts[1]
     y2 = ypts[2]
     y3 = ypts[3]
-    x_prebif = np.linspace(x0,x1,num=line_len)
-    y_prebif = np.linspace(y0,y1,num=line_len)
+    x_prebif = np.linspace(x0,x1,num=line_len[0])
+    y_prebif = np.linspace(y0,y1,num=line_len[0])
     a1 = np.atan2(y1-y0,x1-x0)
     a2 = np.atan2(y2-y1,x2-x1)
     if np.abs(a2 - a1) > np.pi:
         if a2 <0 and a1 >0:
             a2 += 2*np.pi
-    bif_range = np.linspace(a1,a2,num=dec_len)
+    bif_range = np.linspace(a1,a2,num=dec_len[0])
     x_gradualfirst = [x1]
     y_gradualfirst = [y1]
     for item in bif_range:
@@ -29,32 +29,32 @@ def coords_setup(xpts,ypts,line_len,dec_len,dec_factor):
     deltax_first = x_gradualfirst[-1]-x1
     deltay_first = y_gradualfirst[-1]-y1
     print(f"deltax_first: {deltax_first}, deltay_first: {deltay_first}")
-    x_firstbif = np.linspace(x1,x2,num=line_len)
-    y_firstbif = np.linspace(y1,y2,num=line_len)
+    x_firstbif = np.linspace(x1,x2,num=line_len[1])
+    y_firstbif = np.linspace(y1,y2,num=line_len[1])
     x2_gr = x2+deltax_first
     x3_gr = x3+deltax_first
     y2_gr = y2+deltay_first
     y3_gr = y3+deltay_first
-    x_gradual_post_first = np.linspace(x_gradualfirst[-1],x2_gr,num=line_len)
-    y_gradual_post_first = np.linspace(y_gradualfirst[-1],y2_gr,num=line_len)
+    x_gradual_post_first = np.linspace(x_gradualfirst[-1],x2_gr,num=line_len[1])
+    y_gradual_post_first = np.linspace(y_gradualfirst[-1],y2_gr,num=line_len[1])
 
     a3 = np.atan2(y3_gr-y2_gr,x3_gr-x2_gr)
     if np.abs(a3 - a2) > np.pi:
         if a3 <0 and a2 >0:
             a3 += 2*np.pi
-    bif_2_range = np.linspace(a2,a3,num=dec_len)
+    bif_2_range = np.linspace(a2,a3,num=dec_len[1])
     x_gradualsecond = [x2_gr]
     y_gradualsecond = [y2_gr]
     for r in bif_2_range:
         x_gradualsecond.append(x_gradualsecond[-1]+dec_factor[1]*np.cos(r))
         y_gradualsecond.append(y_gradualsecond[-1]+dec_factor[1]*np.sin(r))
 
-    x_secondbif = np.linspace(x2,x3,num=line_len)
-    y_secondbif = np.linspace(y2,y3,num=line_len) 
+    x_secondbif = np.linspace(x2,x3,num=line_len[2])
+    y_secondbif = np.linspace(y2,y3,num=line_len[2]) 
 
     seg_length = np.sqrt((x3_gr-x2_gr)**2+(y3_gr-y2_gr)**2)           
 
-    dist = np.linspace(0, seg_length, line_len)
+    dist = np.linspace(0, seg_length, line_len[2])
     x_post_second = x_gradualsecond[-1] + dist * np.cos(a3)
     y_post_second = y_gradualsecond[-1] + dist * np.sin(a3)
 
@@ -64,7 +64,7 @@ def coords_setup(xpts,ypts,line_len,dec_len,dec_factor):
     x_gradual = np.concat([x_prebif,x_gradualfirst,x_gradual_post_first,x_gradualsecond,x_post_second])
     y_gradual = np.concat([y_prebif,y_gradualfirst,y_gradual_post_first,y_gradualsecond,y_post_second])
 
-    return [x_immediate,y_immediate], [x_gradual, y_gradual], [a2-a1,a3-a2]
+    return [x_immediate,y_immediate], [x_gradual, y_gradual], [a1,a2,a3]
 
 class Dimensions(unittest.TestCase):
     '''
@@ -119,26 +119,60 @@ class Thresholds(unittest.TestCase):
 
     
     def test_boundary_double(self):
-        xpts_list = [[50,50,40,34]]
+        xpts_list = [[50,50,40,34],[50,50,60,66],[50,30,70,60],[50,30,70,80],[50,80,70,30],[50,70,30,20]]
         ypts_list = [[50,80,80,74]]
-        line_lens = 20
-        dec_lens = 20
-        dec_factors = [1/10,1/10]
-        im_total = 3*line_lens -1 
-        gr_total = im_total + 2*(dec_lens+1)
-        imm_coords, gradual_coords, angle_diffs = coords_setup(xpts_list[0],ypts_list[0],line_lens,dec_lens,dec_factors)
+        x1 = xpts_list[0][1]
+        x2 = xpts_list[0][2]
+        y0 = ypts_list[0][0]
+        y1 = ypts_list[0][1]
+        y2 = ypts_list[0][2]
+        y3 = ypts_list[0][3]
+        line_lens = [20,20,20]
+        dec_lens = np.array([20,20])
+        dec_factors = [1/10,1/5]
+        im_total = sum(line_lens) -1 
+        gr_total = im_total + sum(dec_lens+1)
+        imm_coords, gradual_coords, angles_setup = coords_setup(xpts_list[0],ypts_list[0],line_lens,dec_lens,dec_factors)
+        imm_coords1, gradual_coords1, angles_setup1 = coords_setup(xpts_list[1], ypts_list[0],line_lens,dec_lens,dec_factors)
+        print(f'angles 0: {angles_setup}, angles 1: {angles_setup1}')
+        angle_diffs = np.diff(angles_setup)
         bigger_angle = max(angle_diffs)
         smaller_angle = min(angle_diffs)
         angle_argmax = 1+np.argmax(angle_diffs)
+        # calculate the tolerance: treat the arc as a circle based on each angle, and dec_factor
+        for item in xpts_list: 
+            imm_coordst, gradual_coordst, angles_setupt = coords_setup(item,ypts_list[0],line_lens,dec_lens,dec_factors)
+            angle_diffst = np.diff(angles_setupt)
+            x0= item[0]
+            x1 = item[1]
+            x2 = item[2]
+            x3 = item[3]
+            d1 = angle_diffst[0]/(dec_lens[0]-1)
+            r1 = dec_factors[0]/2*np.sin(d1/2)
+            # checl angle_diffst[0], if >0, cw, else ccw
+            cw1 = 1 if angle_diffst[0] > 0 else -1
+            c1_x = x1 - cw1*dec_factors[0]*np.sin(angles_setupt[0])
+            c1_y = y1 + cw1*dec_factors[0]*np.cos(angles_setupt[0])
+            cangle01 = np.atan2(c1_y-y0,c1_x-x0)
+            cangle11 = np.atan2(c1_y-y2,c1_x-x2)
+            d2 = angle_diffst[1]/(dec_lens[1]-1)
+            r2 = dec_factors[1]/2*np.sin(d2/2)
+            cw2 = 1 if angle_diffst[1] > 0 else -1
+            c2_x = x2 - cw2*dec_factors[1]*np.sin(angles_setupt[1])
+            c2_y = y2 + cw2*dec_factors[1]*np.cos(angles_setupt[1])
+            cangle11 = np.atan2(c2_y-y1,c2_x-x1)
+            cangle21 = np.atan2(c2_y-y3,c2_x-x3)
+            print(f"xpts: {item}, ypts: {ypts_list[0]}")
+            print(f"angles: {angles_setupt}")
+            print(f"c1: {c1_x,c1_y}, r1: {r1}, c angle s: {cangle01}, c angle e: {cangle11}")
+            print(f"c2: {c2_x,c2_y}, r2: {r2}, c angle s: {cangle11}, c angle e: {cangle21}")
         predicted_nobif_im = [0,im_total]
         predicted_nobif_gr = [0,gr_total]
-        predicted_1bif_im = [0,line_lens*angle_argmax,im_total]
-        predicted_1bif_gr = [0,line_lens*angle_argmax+dec_lens*angle_argmax-2+angle_argmax,gr_total]
-        predicted_2bif_im = [0,line_lens,line_lens*2,im_total]
-        predicted_2bif_gr = [0,line_lens+dec_lens-1,line_lens*2+dec_lens*2,gr_total]
+        predicted_1bif_im = [0,sum(line_lens[:angle_argmax]),im_total]
+        predicted_1bif_gr = [0,sum(line_lens[:angle_argmax])+sum(dec_lens[:angle_argmax])-2+angle_argmax,gr_total]
+        predicted_2bif_im = [0,line_lens[0],sum(line_lens[:2]),im_total]
+        predicted_2bif_gr = [0,line_lens[0]+dec_lens[0]-1,sum(line_lens[:2])+sum(dec_lens[:2]),gr_total]
         ratio = smaller_angle/bigger_angle
-        bif_diff = 0 # calculate how much it can move in the bifurcation based on tolerance
-        angle_tol = np.atan2(ypts_list[0][angle_argmax],xpts_list[0][angle_argmax]+bif_diff) 
         print(f"angle diffs: {angle_diffs}")
         thresholds = [0.05,0.1,0.4,0.49,0.5,0.51,0.6,0.7,0.8,0.9,1.1]
         colors_im = np.array(['blue']*len(imm_coords[0]), dtype=object)

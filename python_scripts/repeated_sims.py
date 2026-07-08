@@ -45,7 +45,7 @@ def sample_sims(bp,changing_params,n_samples,include_trajs,include_activity):
             bp[param] = changing_params[param][index]
             print(f"param: {param}, value: {changing_params[param][index]}")
         for sample in range(n_samples):
-                print(f"sample: {sample}")
+                #print(f"sample: {sample}")
                 headings, xPos, yPos, targetsx, targetsy, activity = sim_ra.simulate_ring_attractor(bp['N'],bp['L'],bp['T'],bp['ntargets'],bp['nagents'],bp['allocentricFlag'],
                                                                                  bp['periodicFlag'],bp['rEgo'],bp['rEgoTarget'],bp['Egonumber'],bp['distf'],
                                                                                  bp['adistf'],bp['J'],bp['beta'],bp['h0'],bp['h_b'],bp['dt'],bp['v0'],bp['v0t'],
