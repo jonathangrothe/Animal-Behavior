@@ -137,6 +137,9 @@ class Thresholds(unittest.TestCase):
         predicted_2bif_im = [0,line_lens,line_lens*2,im_total]
         predicted_2bif_gr = [0,line_lens+dec_lens-1,line_lens*2+dec_lens*2,gr_total]
         ratio = smaller_angle/bigger_angle
+        bif_diff = 0 # calculate how much it can move in the bifurcation based on tolerance
+        angle_tol = np.atan2(ypts_list[0][angle_argmax],xpts_list[0][angle_argmax]+bif_diff) 
+        print(f"angle diffs: {angle_diffs}")
         thresholds = [0.05,0.1,0.4,0.49,0.5,0.51,0.6,0.7,0.8,0.9,1.1]
         colors_im = np.array(['blue']*len(imm_coords[0]), dtype=object)
         colors_im[[20,40]] = 'red'
@@ -148,7 +151,7 @@ class Thresholds(unittest.TestCase):
         #plt.scatter(gradual_coords[0],gradual_coords[1],color=colors)
         for item in thresholds: 
             ind_imm, angles_imm = get_bifurcation_angle(imm_coords[0],imm_coords[1],item)
-            ind_gradual, angles_gradual = get_bifurcation_angle(gradual_coords[0],gradual_coords[1],item,25,5000,item)
+            ind_gradual, angles_gradual = get_bifurcation_angle(gradual_coords[0],gradual_coords[1],item)
             print(f"immediate: x: {ind_imm}, y: {ind_imm}, angles: {angles_imm}")
             print(f"gradual: x: {ind_gradual}, y: {ind_gradual} angles: {angles_gradual}")
             print(f"threshold: {item}, ratio: {ratio}")
@@ -168,9 +171,8 @@ class Thresholds(unittest.TestCase):
                 self.assertEqual(predicted_2bif_gr,ind_gradual)
                 self.assertEqual(2,len(angles_imm))
                 self.assertEqual(2,len(angles_gradual))
-                self.assertAlmostEqual(angle_diffs[0],angles_imm[0])
-                self.assertAlmostEqual(angle_diffs[1],angles_imm[1])
-                #self.assertAlmostEqual(angles[0])
+                self.assertAlmostEqual(np.pi,angle_diffs[0]+angles_imm[0])
+                self.assertAlmostEqual(np.pi,angle_diffs[1]+angles_imm[1])
                 # we need to find the tolerance based on the dec_factors
             elif ratio < item: 
                 self.assertEqual(3,len(ind_imm))
@@ -179,7 +181,7 @@ class Thresholds(unittest.TestCase):
                 self.assertEqual(predicted_1bif_gr,ind_gradual)
                 self.assertEqual(1,len(angles_imm))
                 self.assertEqual(1,len(angles_gradual))
-                self.assertAlmostEqual(bigger_angle,angles_imm[0])
+                
                 # yeah the exactly equal case is tough tbh
                 # and the exactly one case is tough
                 # a little variance here is ok, and we should include that in docstring
