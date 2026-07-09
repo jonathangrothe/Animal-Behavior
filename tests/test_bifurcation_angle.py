@@ -5,6 +5,12 @@ import matplotlib.pyplot as plt
 from python_scripts.simulation_metrics import get_bifurcation_angle
 
 def coords_setup(xpts,ypts,line_len,dec_len,dec_factor):
+    # CURRENT GOAL: 
+    # Change this so that we are always 'cutting corners' in the bifurcation.
+    # this way we know that halfway through the arc of the curve we have the angle furthest from the 'true' bifurcation angle that is acceptable. 
+    # we can use the formula for an arithmetic progression of angles to solve for how much change in x and change in y there have been at different points?
+    # change this to give immediate coords, gradual coords, immediate indices, gradual indices, immediate angles, gradual angles
+    # should probably also add a way to make the turn irregular?
     x0 = xpts[0]
     x1 = xpts[1]
     x2 = xpts[2]
@@ -13,8 +19,14 @@ def coords_setup(xpts,ypts,line_len,dec_len,dec_factor):
     y1 = ypts[1]
     y2 = ypts[2]
     y3 = ypts[3]
+    # calculate these using progression
+    #delta_x1 = 
+    #delta_y1 = 
+    #delta_x2 = 
+    #delta_y2 = 
     x_prebif = np.linspace(x0,x1,num=line_len[0])
     y_prebif = np.linspace(y0,y1,num=line_len[0])
+    #x_gr_prebif = np.linspace(x0,)
     a1 = np.atan2(y1-y0,x1-x0)
     a2 = np.atan2(y2-y1,x2-x1)
     if np.abs(a2 - a1) > np.pi:
