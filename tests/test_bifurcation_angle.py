@@ -17,7 +17,9 @@ def solve_curve_start(x0,y0, x2,y2, a1, a2, dec_len, dec_factor):
     u1 = np.array([np.cos(a1), np.sin(a1)])
     u2 = np.array([np.cos(a2), np.sin(a2)])
     t, s = np.linalg.solve(np.column_stack([u1, -u2]), (p2 - p0) - D)
-
+    # problem: this can accept nonsensical angles, and if the angle is small enough it will put the curve in the wrong direction
+    # so if it would put the angle in the wrong direction we need to move the theoretical bifurcation point closer to the start/end points
+    # we will then have to adjust a1 and a2 approrpriately, so that their difference is bigger, allowing the curve to start at a normal place
     return p0 + t*u1   # (x1, y1)
 
 def coords_setup(xpts,ypts,line_len,dec_len,dec_factor):
@@ -33,17 +35,24 @@ def coords_setup(xpts,ypts,line_len,dec_len,dec_factor):
     y1 = ypts[1]
     y2 = ypts[2]
     y3 = ypts[3]
+    print(f"xs: {xpts}, ys: {ypts}")
     x_prebif = np.linspace(x0,x1,num=line_len[0])
     y_prebif = np.linspace(y0,y1,num=line_len[0])
     a1 = np.atan2(y1-y0,x1-x0)
     a2 = np.atan2(y2-y1,x2-x1)
     a3 = np.atan2(y3-y2,x3-x2)
+    print(f"pre correction: a1: {a1}, a2: {a2}, a3: {a3}")
     if np.abs(a2 - a1) > np.pi:
         if a2 <0 and a1 >0:
             a2 += 2*np.pi
+        if a2 >0 and a1 < 0:
+            a2 -= 2*np.pi
     if np.abs(a3 - a2) > np.pi:
         if a3 <0 and a2 >0:
             a3 += 2*np.pi
+        if a2 <0 and a3 >0:
+            a3 -= 2*np.pi
+    print(f"post correction: a1: {a1}, a2: {a2}, a3: {a3}")
     x1_gr,y1_gr = solve_curve_start(x0,y0,x2,y2,a1,a2,dec_len[0],dec_factor[0])
     x_gr_prebif = np.linspace(x0,x1_gr,num=line_len[0])
     y_gr_prebif = np.linspace(y0,y1_gr,num=line_len[0])
@@ -53,12 +62,13 @@ def coords_setup(xpts,ypts,line_len,dec_len,dec_factor):
     for item in bif_range:
         x_gradualfirst.append(x_gradualfirst[-1]+dec_factor[0]*np.cos(item))
         y_gradualfirst.append(y_gradualfirst[-1]+dec_factor[0]*np.sin(item))
-    print(f"p0: {x0,y0}, p1: {x1,y1}, p1_gr:{x1_gr,y1_gr}, p2: {x2,y2}")
     x_firstbif = np.linspace(x1,x2,num=line_len[1])
     y_firstbif = np.linspace(y1,y2,num=line_len[1])
     x2_gr,y2_gr = solve_curve_start(x1,y1,x3,y3,a2,a3,dec_len[1],dec_factor[1])
     x_gradual_post_first = np.linspace(x_gradualfirst[-1],x2_gr,num=line_len[1])
     y_gradual_post_first = np.linspace(y_gradualfirst[-1],y2_gr,num=line_len[1])
+    print(f"x gradual: start: {x1_gr}, end: {x_gradualfirst[-1]}")
+    print(f"y gradual: start: {y1_gr}, end: {y_gradualfirst[-1]}")
 
     
     bif_2_range = np.linspace(a2,a3,num=dec_len[1])
@@ -67,6 +77,8 @@ def coords_setup(xpts,ypts,line_len,dec_len,dec_factor):
     for r in bif_2_range:
         x_gradualsecond.append(x_gradualsecond[-1]+dec_factor[1]*np.cos(r))
         y_gradualsecond.append(y_gradualsecond[-1]+dec_factor[1]*np.sin(r))
+    print(f"x gradual 2: start: {x2_gr}, end: {x_gradualsecond[-1]}")
+    print(f"y gradual 2: start: {y2_gr}, end: {y_gradualsecond[-1]}")
 
     x_secondbif = np.linspace(x2,x3,num=line_len[2])
     y_secondbif = np.linspace(y2,y3,num=line_len[2]) 
@@ -80,86 +92,48 @@ def coords_setup(xpts,ypts,line_len,dec_len,dec_factor):
     x_gradual = np.concat([x_gr_prebif,x_gradualfirst,x_gradual_post_first,x_gradualsecond,x_gradual_post_second])
     y_gradual = np.concat([y_gr_prebif,y_gradualfirst,y_gradual_post_first,y_gradualsecond,y_gradual_post_second])
 
-    angle_s1 = np.atan2(y2-y1_gr,x2-x1_gr)-a1
-    angle_e1 = a2-np.atan2(y_gradualfirst[-1]-y0,x_gradualfirst[-1]-x0)
-    angle_m1 = 0
-    if a1 <= np.pi/2 <= a2:
-        step_size = (a2-a1)/dec_len[0]
-        ds = np.abs(a1-np.pi/2)
-        de = np.abs(a2-np.pi/2)
-        delta_90 = min(ds,de)
-        closer = -1 if de<ds else 1
-        ind = delta_90//step_size
-        x_ind = 0
-        y_ind = 0
-        x_ind = x_gradualfirst[int(closer*ind)]
-        y_ind = y_gradualfirst[int(closer*ind)]
-        d1_sq = (x_ind-x0)**2+(y_ind-y0)**2
-        d2_sq = (x2-x_ind)**2+(y2-y_ind)**2
-        d3_sq = (x2-x0)**2+(y2-y0)**2
-        d1 = np.sqrt(d1_sq)
-        d2 = np.sqrt(d2_sq)
-        val = (d1_sq+d2_sq-d3_sq)/(2*d1*d2)
-        angle_m1 = np.arccos(val)
-    if a1 <= 3*np.pi/2 <= a2:
-        step_size = (a2-a1)/dec_len[0]
-        ds = np.abs(a1-3*np.pi/2)
-        de = np.abs(a2-3*np.pi/2)
-        delta_90 = min(ds,de)
-        closer = -1 if de<ds else 1
-        ind = delta_90//step_size
-        x_ind = 0
-        y_ind = 0
-        x_ind = x_gradualfirst[int(closer*ind)]
-        y_ind = y_gradualfirst[int(closer*ind)]
-        d1_sq = (x_ind-x0)**2+(y_ind-y0)**2
-        d2_sq = (x2-x_ind)**2+(y2-y_ind)**2
-        d3_sq = (x2-x0)**2+(y2-y0)**2
-        d1 = np.sqrt(d1_sq)
-        d2 = np.sqrt(d2_sq)
-        val = (d1_sq+d2_sq-d3_sq)/(2*d1*d2)
-        angle_m1 = np.arccos(val)
-    angle_s2 = np.atan2(y3-y2_gr,x3-x2_gr)-a2
-    angle_e2 = a3-np.atan2(y_gradualsecond[-1]-y1,x_gradualsecond[-1])
-    angle_m2 = 0
-    if a2 <= np.pi/2 <= a3:
-        step_size = (a3-a2)/dec_len[1]
-        ds = np.abs(a2-np.pi/2)
-        de = np.abs(a3-np.pi/2)
-        delta_90 = min(ds,de)
-        closer = -1 if de<ds else 1
-        ind = delta_90//step_size
-        x_ind = 0
-        y_ind = 0
-        x_ind = x_gradualsecond[int(closer*ind)]
-        y_ind = y_gradualsecond[int(closer*ind)]
-        d1_sq = (x_ind-x1)**2+(y_ind-y1)**2
-        d2_sq = (x3-x_ind)**2+(y3-y_ind)**2
-        d3_sq = (x3-x1)**2+(y3-y1)**2
-        d1 = np.sqrt(d1_sq)
-        d2 = np.sqrt(d2_sq)
-        val = (d1_sq+d2_sq-d3_sq)/(2*d1*d2)
-        angle_m2 = np.arccos(val)
-    if a2 <= 3*np.pi/2 <= a3:
-        step_size = (a3-a2)/dec_len[1]
-        ds = np.abs(a2-3*np.pi/2)
-        de = np.abs(a3-3*np.pi/2)
-        delta_90 = min(ds,de)
-        closer = -1 if de<ds else 1
-        ind = delta_90//step_size
-        x_ind = 0
-        y_ind = 0
-        x_ind = x_gradualsecond[int(closer*ind)]
-        y_ind = y_gradualsecond[int(closer*ind)]
-        d1_sq = (x_ind-x1)**2+(y_ind-y1)**2
-        d2_sq = (x3-x_ind)**2+(y3-y_ind)**2
-        d3_sq = (x3-x1)**2+(y3-y1)**2
-        d1 = np.sqrt(d1_sq)
-        d2 = np.sqrt(d2_sq)
-        val = (d1_sq+d2_sq-d3_sq)/(2*d1*d2)
-        angle_m2 = np.arccos(val)
-    print(f"first curve: angle at start: {angle_s1}, at middle critical point (if exists): {angle_m1}, at end: {angle_e1}")
-    print(f"second curve: angle at start: {angle_s2}, at middle critical point (if exists): {angle_m2}, at end: {angle_e2}")
+    # the start point of the curve effectively adjusts a2 for the first bifurcation
+    # and the end point of the curve effectively adjusts a1 for the first bifurcation
+    a2_adj = np.atan2(y2-y1_gr,x2-x1_gr)
+    print(f"a2 start: {a2_adj}, a2 actual: {a2}")
+    delta_start = a2_adj-a2
+    print(f"difference in bif angle from true at curve start: {delta_start}")
+    a1_adj = np.atan2(y_gradualfirst[-1]-y0,x_gradualfirst[-1]-x0)
+    print(f"a1 end: {a1_adj}, a1 actual: {a1}")
+    delta_end = a1-a1_adj
+    print(f"difference in bif angle from true at curve end: {delta_end}")
+    # if the biggest difference in bif angle would come in the middle curve, then we need to adjust both angles, 
+    # add both differences
+    mid_a1adj = a1
+    mid_a2adj = a2
+    for index in range(len(x_gradualfirst)):
+        x_ind = x_gradualfirst[index]
+        y_ind = y_gradualfirst[index]
+        mid_a2adj = np.atan2(y2-y_ind,x2-x_ind)
+        mid_a1adj = np.atan2(y_ind-y0,x_ind-x0)
+        #print(f"a1 adjusted: {mid_a1adj}, a2 adj: {mid_a2adj}")
+        delta_middle = a2-mid_a2adj + mid_a1adj-a1
+        print(f"difference in bif angle from true at index {index} of the curve: {delta_middle}")
+
+    a3_adj = np.atan2(y3-y2_gr,x3-x2_gr)
+    print(f"a3 start: {a3_adj}, a3 actual: {a3}")
+    delta_start2 = a3_adj-a3
+    print(f"difference in bif angle from second bif start: {delta_start2}")
+    a2_adj = np.atan2(y_gradualsecond[-1]-y1,x_gradualsecond[-1]-x1)
+    print(f"a2 end: {a2_adj}, a2 actual: {a2}")
+    delta_end = a2-a2_adj
+    print(f"difference in bif angle from second bif end: {delta_end}")
+    mid2_a3adj = a3
+    mid2_a2adj = a2
+    for index in range(len(x_gradualsecond)):
+        x_ind = x_gradualsecond[index]
+        y_ind = y_gradualsecond[index]
+        mid2_a3adj = np.atan2(y3-y_ind,x3-x_ind)
+        mid2_a2adj = np.atan2(y_ind-y1,x_ind-x1)
+        delta_middle2 = a3-mid2_a3adj + mid2_a2adj-a2
+        print(f"difference in bif angle from true in the to index {index} of the curve: {delta_middle2}")
+
+
     return [x_immediate,y_immediate], [x_gradual, y_gradual], [a1,a2,a3]
 
 class Dimensions(unittest.TestCase):
@@ -239,6 +213,7 @@ class Thresholds(unittest.TestCase):
         ypts_test = [[50,60,62,65],[50,40,20,35],[50,40,38,35]]
         for x in xpts_test:
             for y in ypts_test:
+                print(f"START OF TESTS")
                 imm_coords, gradual_coords, angles_setup = coords_setup(x,y,line_lens,dec_lens,dec_factors)
                 plt.figure(1)
                 plt.scatter(gradual_coords[0],gradual_coords[1],c='blue',s=0.5)
