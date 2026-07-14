@@ -17,8 +17,8 @@ initialy = np.zeros(nagents)
 for a in range(nagents):
     initialx[a] = 50
     initialy[a] = 50
-initialxt = [35,50,65]
-initialyt = [50+15*np.sqrt(3),80,50+15*np.sqrt(3)]
+initialxt = [50-15*np.sqrt(3),50,50+15*np.sqrt(3)]
+initialyt = [65,80,65]
 
 T = 5000
 periodicflag = 0
@@ -319,7 +319,7 @@ cbar5.set_label('angle of second bifurcation')
 cbar6 = plt.colorbar(im6)
 cbar6.set_label('number of bifurcations')
 
-subfigs_metric.suptitle(f"Heatmaps for π/6 between targets, average of {sample_size} samples")
+subfigs_metric.suptitle(f"Heatmaps for π/3 between targets, average of {sample_size} samples")
 width_ratio = [1]*n_thresh
 width_ratio.append(0.08)
 subfigs_act, axs_act = plt.subplots(nrows=3,ncols=n_thresh+1,figsize=(18,6),gridspec_kw={'width_ratios': width_ratio},num=2)
@@ -353,11 +353,11 @@ cbar_a2.set_label('angle of second bifurcation')
 cbar_alen = subfigs_act.colorbar(axs_act[3*(n_thresh)+1].images[0], cax=axs_act[3*n_thresh+2],shrink=0.5)
 cbar_alen.set_label('number of bifurcations')
 
-cbar_m1 = subfigs_act.colorbar(axs_mov[n_thresh-1].images[0], cax=axs_mov[n_thresh])
+cbar_m1 = subfigs_mov.colorbar(axs_mov[n_thresh-1].images[0], cax=axs_mov[n_thresh])
 cbar_m1.set_label('angle of first bifurcation')
-cbar_m2 = subfigs_act.colorbar(axs_mov[2*n_thresh].images[0], cax=axs_mov[2*n_thresh+1])
+cbar_m2 = subfigs_mov.colorbar(axs_mov[2*n_thresh].images[0], cax=axs_mov[2*n_thresh+1])
 cbar_m2.set_label('angle of second bifurcation')
-cbar_mlen = subfigs_act.colorbar(axs_mov[3*n_thresh+1].images[0], cax=axs_mov[3*n_thresh+2])
+cbar_mlen = subfigs_mov.colorbar(axs_mov[3*n_thresh+1].images[0], cax=axs_mov[3*n_thresh+2])
 cbar_mlen.set_label('number of bifurcations')
 
 subfigs_act.suptitle("Activity threshold analysis for angle 1, angle 2, and number of bifurcations")
