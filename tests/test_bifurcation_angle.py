@@ -8,6 +8,37 @@ def solve_curve_start(x0,y0, x1,y1, x2,y2, dec_len):
     # helper function for setup, solves for where the curve should start to cut corners
     a1 = np.atan2(y1-y0,x1-x0)
     a2 = np.atan2(y2-y1,x2-x1)
+    print(f"initial solve curve start: a1: {a1}, a2: {a2}")
+    t = 3
+    if (a1 >= 0 and a2 >= 0) or (a1 < 0 and a2 < 0):
+        if (np.abs(a1) <= np.pi/2 and np.abs(a2) <= np.pi/2) or (np.abs(a1) > np.pi/2 and np.abs(a2) > np.pi/2):
+            t = 1
+        else:
+            t = 2
+    elif (np.abs(a1) <= np.pi/2 and np.abs(a2) <= np.pi/2):
+        t = 4
+    
+    adj_a1 = a1
+    adj_a2 = a2
+    if adj_a1 > np.pi/2: 
+        adj_a1 = np.pi - a1
+    if adj_a1 < 0:
+        if adj_a1 < -np.pi/2:
+            adj_a1 = adj_a1 + np.pi
+        else: 
+            adj_a1 = -a1 
+    if adj_a2 > np.pi/2: 
+        adj_a2 = np.pi - a2
+    if adj_a2 < 0:
+        if adj_a2 < -np.pi/2:
+            adj_a2 = adj_a2 + np.pi
+        else: 
+            adj_a2 = -a2
+    a_bigger = max(adj_a1,adj_a2)
+    a_smaller = min(adj_a1,adj_a2)
+    b_bigger = np.pi/2-a_bigger
+    b_smaller = np.pi/2-a_smaller
+
     if np.abs(a2 - a1) > np.pi:
         if a2 <0 and a1 >0:
             a2 += 2*np.pi
@@ -19,13 +50,21 @@ def solve_curve_start(x0,y0, x1,y1, x2,y2, dec_len):
     d = (a2 - a1) / (n - 1)
     scale = np.sin(n*d/2) / np.sin(d/2)
     mid_angle = a1 + (n-1)*d/2
+
+    aprox_angle = a_bigger - a_smaller
+    if t == 1:
+        aprox_angle = a_smaller + b_bigger + np.pi/2
+    if t == 2:
+        aprox_angle = a_smaller + a_bigger
+    if t == 4:
+        aprox_angle = b_bigger + b_smaller
     
-    base = scale * np.array([np.cos(mid_angle),np.sin(mid_angle)])
-    # here we need to calculate a good way of finding how acute the angle is in a way that makes sense and scales
-    dec_factor = np.abs(min(base)/sum(np.abs(base)))*0.2 # this is not scaling right: we need to focus on the acuity of the angle rather than just the ratio....
-    #dec_factor = 0.2
-    print(dec_factor)
-    D = dec_factor * base
+    print(f"ADJUSTED a1: {adj_a1} true a1: {a1} b1: {np.pi/2-adj_a1}, adjusted a2: {adj_a2}, true a2: {a2}, b2: {np.pi/2-adj_a2}, type: {t}")
+
+    dec_factor = aprox_angle*0.2/np.pi 
+    print(f"aproximate bifurcation angle: {aprox_angle}, dec_factor: {dec_factor}")
+    
+    D = dec_factor * scale * np.array([np.cos(mid_angle),np.sin(mid_angle)])
     u1 = np.array([np.cos(a1), np.sin(a1)])
     u2 = np.array([np.cos(a2), np.sin(a2)])
     t, s = np.linalg.solve(np.column_stack([u1, -u2]), (p2 - p0) - D)
@@ -48,21 +87,26 @@ def coords_setup(xpts,ypts,line_len,dec_len):
     y_prebif = np.linspace(y0,y1,num=line_len[0])
     a1 = np.atan2(y1-y0,x1-x0)
     a2 = np.atan2(y2-y1,x2-x1)
+    a2_adj_b1 = a2
     a3 = np.atan2(y3-y2,x3-x2)
-    if np.abs(a2 - a1) > np.pi:
-        if a2 <0 and a1 >0:
-            a2 += 2*np.pi
-        if a2 >0 and a1 < 0:
-            a2 -= 2*np.pi
-    if np.abs(a3 - a2) > np.pi:
-        if a3 <0 and a2 >0:
+    print(f"initial: a1: {a1}, a2: {a2}, a3: {a3}")
+    if np.abs(a3 - a2) > np.pi: 
+        print(f"entered second adjustment: a2: {a2}, a3: {a3}")
+        if a3 < 0 and a2 > 0:
             a3 += 2*np.pi
-        if a2 <0 and a3 >0:
+        if a3 > 0 and a2 < 0:
             a3 -= 2*np.pi
+    if np.abs(a2 - a1) > np.pi:
+        print(f"entered first adjustment: a1: {a1}, a2: {a2}")
+        if a2 < 0 and a1 > 0:
+            a2_adj_b1 += 2*np.pi
+        if a2 > 0 and a1 < 0:
+            a2_adj_b1 -= 2*np.pi
+    print(f"angles post adjustment: a1: {a1}, a2 for b1: {a2_adj_b1}, a2 for b2: {a2}, a3: {a3}")
     x1_gr,y1_gr,dec_factor1 = solve_curve_start(x0,y0,x1,y1,x2,y2,dec_len[0])
     x_gr_prebif = np.linspace(x0,x1_gr,num=line_len[0])
     y_gr_prebif = np.linspace(y0,y1_gr,num=line_len[0])
-    bif_range = np.linspace(a1,a2,num=dec_len[0])
+    bif_range = np.linspace(a1,a2_adj_b1,num=dec_len[0])
     x_gradualfirst = [x1_gr]
     y_gradualfirst = [y1_gr]
     for item in bif_range:
@@ -74,7 +118,6 @@ def coords_setup(xpts,ypts,line_len,dec_len):
     x2_gr,y2_gr, dec_factor2 = solve_curve_start(x1,y1,x2,y2,x3,y3,dec_len[1])
     x_gradual_post_first = np.linspace(x_gradualfirst[-1],x2_gr,num=line_len[1])
     y_gradual_post_first = np.linspace(y_gradualfirst[-1],y2_gr,num=line_len[1])
-
     bif_2_range = np.linspace(a2,a3,num=dec_len[1])
     x_gradualsecond = [x2_gr]
     y_gradualsecond = [y2_gr]
@@ -176,18 +219,12 @@ class SetUp(unittest.TestCase):
             x = xpts_arr[r,:]
             y = ypts_arr[r,:]
             imm_coords, gradual_coords, setupangles = coords_setup(x,y,line_lens,dec_lens)
-            print(f"setup angles (over pi): {np.divide(setupangles,np.pi)}")
+            print(f"index: {r}, setup angles (over pi): {np.divide(setupangles,np.pi)}")
             plt.figure(1)
             plt.scatter(imm_coords[0],imm_coords[1],c='blue',s=1)
             plt.scatter(gradual_coords[0],gradual_coords[1],c='red',s=1)
             plt.show()
 
-
-
-        
-
-
-        
 
 
 class Dimensions(unittest.TestCase):
@@ -252,7 +289,7 @@ class Thresholds(unittest.TestCase):
         y2 = ypts_list[0][2]
         y3 = ypts_list[0][3]
         line_lens = [20,20,20]
-        dec_lens = [20,20]
+        dec_lens = np.array([20,20])
         im_total = sum(line_lens) -1 
         gr_total = im_total + sum(dec_lens+1)
         imm_coords, gradual_coords, angles_setup = coords_setup(xpts_list[0],ypts_list[0],line_lens,dec_lens)
