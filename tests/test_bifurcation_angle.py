@@ -8,32 +8,49 @@ def solve_curve_start(x0,y0, x1,y1, x2,y2, dec_len):
     # helper function for setup, solves for where the curve should start to cut corners
     a1 = np.atan2(y1-y0,x1-x0)
     a2 = np.atan2(y2-y1,x2-x1)
-    print(f"initial solve curve start: a1: {a1}, a2: {a2}")
-    t = 3
-    if (a1 >= 0 and a2 >= 0) or (a1 < 0 and a2 < 0):
-        if (np.abs(a1) <= np.pi/2 and np.abs(a2) <= np.pi/2) or (np.abs(a1) > np.pi/2 and np.abs(a2) > np.pi/2):
-            t = 1
-        else:
-            t = 2
-    elif (np.abs(a1) <= np.pi/2 and np.abs(a2) <= np.pi/2):
-        t = 4
-    
+    qa1 = 1
+    qa2 = 1    
     adj_a1 = a1
     adj_a2 = a2
     if adj_a1 > np.pi/2: 
         adj_a1 = np.pi - a1
+        qa1 = 2
     if adj_a1 < 0:
         if adj_a1 < -np.pi/2:
             adj_a1 = adj_a1 + np.pi
+            qa1 = 3
         else: 
-            adj_a1 = -a1 
+            adj_a1 = -a1
+            qa1 = 4
     if adj_a2 > np.pi/2: 
         adj_a2 = np.pi - a2
+        qa2 = 2
     if adj_a2 < 0:
         if adj_a2 < -np.pi/2:
             adj_a2 = adj_a2 + np.pi
+            qa2 = 3
         else: 
             adj_a2 = -a2
+            qa2 = 4
+    t = 0
+    quad_diff = qa2-qa1
+    if quad_diff == 0:
+        t = 1
+    if np.abs(quad_diff) == 2:
+        t = 3
+    if np.abs(quad_diff) == 3:
+        t = 4
+    if quad_diff == -1:
+        if qa1 == 3:
+            t = 4
+        else:
+            t = 2
+    if quad_diff == 1:
+        if qa1 == 2:
+            t = 4
+        else:
+            t = 2
+
     a_bigger = max(adj_a1,adj_a2)
     a_smaller = min(adj_a1,adj_a2)
     b_bigger = np.pi/2-a_bigger
@@ -58,11 +75,8 @@ def solve_curve_start(x0,y0, x1,y1, x2,y2, dec_len):
         aprox_angle = a_smaller + a_bigger
     if t == 4:
         aprox_angle = b_bigger + b_smaller
-    
-    print(f"ADJUSTED a1: {adj_a1} true a1: {a1} b1: {np.pi/2-adj_a1}, adjusted a2: {adj_a2}, true a2: {a2}, b2: {np.pi/2-adj_a2}, type: {t}")
 
     dec_factor = aprox_angle*0.2/np.pi 
-    print(f"aproximate bifurcation angle: {aprox_angle}, dec_factor: {dec_factor}")
     
     D = dec_factor * scale * np.array([np.cos(mid_angle),np.sin(mid_angle)])
     u1 = np.array([np.cos(a1), np.sin(a1)])
@@ -70,8 +84,6 @@ def solve_curve_start(x0,y0, x1,y1, x2,y2, dec_len):
     t, s = np.linalg.solve(np.column_stack([u1, -u2]), (p2 - p0) - D)
     start_points = p0 + t*u1
     finish_points = start_points + D
-    print(f"start_points: {start_points}")
-    print(f"finish_points: {finish_points}")
     return start_points[0], start_points[1], dec_factor   # (x1, y1)
     
 def coords_setup(xpts,ypts,line_len,dec_len):
@@ -89,20 +101,16 @@ def coords_setup(xpts,ypts,line_len,dec_len):
     a2 = np.atan2(y2-y1,x2-x1)
     a2_adj_b1 = a2
     a3 = np.atan2(y3-y2,x3-x2)
-    print(f"initial: a1: {a1}, a2: {a2}, a3: {a3}")
     if np.abs(a3 - a2) > np.pi: 
-        print(f"entered second adjustment: a2: {a2}, a3: {a3}")
         if a3 < 0 and a2 > 0:
             a3 += 2*np.pi
         if a3 > 0 and a2 < 0:
             a3 -= 2*np.pi
     if np.abs(a2 - a1) > np.pi:
-        print(f"entered first adjustment: a1: {a1}, a2: {a2}")
         if a2 < 0 and a1 > 0:
             a2_adj_b1 += 2*np.pi
         if a2 > 0 and a1 < 0:
             a2_adj_b1 -= 2*np.pi
-    print(f"angles post adjustment: a1: {a1}, a2 for b1: {a2_adj_b1}, a2 for b2: {a2}, a3: {a3}")
     x1_gr,y1_gr,dec_factor1 = solve_curve_start(x0,y0,x1,y1,x2,y2,dec_len[0])
     x_gr_prebif = np.linspace(x0,x1_gr,num=line_len[0])
     y_gr_prebif = np.linspace(y0,y1_gr,num=line_len[0])
@@ -180,9 +188,10 @@ class SetUp(unittest.TestCase):
     testing the set up
     '''
     def test_allquadrants(self):
-        a1 = np.pi/10
-        a2 = 4*np.pi/9
-        a3 = np.pi/4      
+        rng = np.random.default_rng()
+        a1 = rng.uniform(0, np.pi / 2)
+        a2 = rng.uniform(0, np.pi / 2)
+        a3 = rng.uniform(0, np.pi / 2)   
         a1_list = []
         a2_list = []
         a3_list = []
@@ -219,7 +228,6 @@ class SetUp(unittest.TestCase):
             x = xpts_arr[r,:]
             y = ypts_arr[r,:]
             imm_coords, gradual_coords, setupangles = coords_setup(x,y,line_lens,dec_lens)
-            print(f"index: {r}, setup angles (over pi): {np.divide(setupangles,np.pi)}")
             plt.figure(1)
             plt.scatter(imm_coords[0],imm_coords[1],c='blue',s=1)
             plt.scatter(gradual_coords[0],gradual_coords[1],c='red',s=1)
