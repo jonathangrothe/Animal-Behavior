@@ -3,58 +3,14 @@ from pathlib import Path
 import numpy as np
 import matplotlib.pyplot as plt
 from python_scripts.simulation_metrics import get_bifurcation_angle
+from helper_functions import helpers
 
 def solve_curve_start(x0,y0, x1,y1, x2,y2, dec_len):
     # helper function for setup, solves for where the curve should start to cut corners
+    # 
     a1 = np.atan2(y1-y0,x1-x0)
     a2 = np.atan2(y2-y1,x2-x1)
-    qa1 = 1
-    qa2 = 1    
-    adj_a1 = a1
-    adj_a2 = a2
-    if adj_a1 > np.pi/2: 
-        adj_a1 = np.pi - a1
-        qa1 = 2
-    if adj_a1 < 0:
-        if adj_a1 < -np.pi/2:
-            adj_a1 = adj_a1 + np.pi
-            qa1 = 3
-        else: 
-            adj_a1 = -a1
-            qa1 = 4
-    if adj_a2 > np.pi/2: 
-        adj_a2 = np.pi - a2
-        qa2 = 2
-    if adj_a2 < 0:
-        if adj_a2 < -np.pi/2:
-            adj_a2 = adj_a2 + np.pi
-            qa2 = 3
-        else: 
-            adj_a2 = -a2
-            qa2 = 4
-    t = 0
-    quad_diff = qa2-qa1
-    if quad_diff == 0:
-        t = 1
-    if np.abs(quad_diff) == 2:
-        t = 3
-    if np.abs(quad_diff) == 3:
-        t = 4
-    if quad_diff == -1:
-        if qa1 == 3:
-            t = 4
-        else:
-            t = 2
-    if quad_diff == 1:
-        if qa1 == 2:
-            t = 4
-        else:
-            t = 2
-
-    a_bigger = max(adj_a1,adj_a2)
-    a_smaller = min(adj_a1,adj_a2)
-    b_bigger = np.pi/2-a_bigger
-    b_smaller = np.pi/2-a_smaller
+    aprox_angle = helpers.get_estimated_angle(a1,a2)
 
     if np.abs(a2 - a1) > np.pi:
         if a2 <0 and a1 >0:
@@ -68,14 +24,10 @@ def solve_curve_start(x0,y0, x1,y1, x2,y2, dec_len):
     scale = np.sin(n*d/2) / np.sin(d/2)
     mid_angle = a1 + (n-1)*d/2
 
-    aprox_angle = a_bigger - a_smaller
-    if t == 1:
-        aprox_angle = a_smaller + b_bigger + np.pi/2
-    if t == 2:
-        aprox_angle = a_smaller + a_bigger
-    if t == 4:
-        aprox_angle = b_bigger + b_smaller
 
+
+    
+    print(f"aprox angle here: {aprox_angle}")
     dec_factor = aprox_angle*0.2/np.pi 
     
     D = dec_factor * scale * np.array([np.cos(mid_angle),np.sin(mid_angle)])
@@ -84,7 +36,17 @@ def solve_curve_start(x0,y0, x1,y1, x2,y2, dec_len):
     t, s = np.linalg.solve(np.column_stack([u1, -u2]), (p2 - p0) - D)
     start_points = p0 + t*u1
     finish_points = start_points + D
-    return start_points[0], start_points[1], dec_factor   # (x1, y1)
+    
+    hyp = (x2-x0)**2+(y2-y0)**2
+    end_d1_sq = (finish_points[0]-x0)**2+(finish_points[1]-y0)**2
+    end_d2_sq = (x2-finish_points[0])**2+(y2-finish_points[1])**2
+    end_d1 = np.sqrt(end_d1_sq)
+    end_d2 = np.sqrt(end_d2_sq)
+    end_val = (end_d1_sq+end_d2_sq-hyp)/(2*end_d1*end_d2)
+    end_angle = np.arccos(end_val)
+    tolerance =  np.abs(end_angle-aprox_angle)
+
+    return start_points[0], start_points[1], dec_factor, tolerance, aprox_angle  # (x1, y1)
     
 def coords_setup(xpts,ypts,line_len,dec_len):
     x0 = xpts[0]
@@ -111,19 +73,21 @@ def coords_setup(xpts,ypts,line_len,dec_len):
             a2_adj_b1 += 2*np.pi
         if a2 > 0 and a1 < 0:
             a2_adj_b1 -= 2*np.pi
-    x1_gr,y1_gr,dec_factor1 = solve_curve_start(x0,y0,x1,y1,x2,y2,dec_len[0])
+    x1_gr,y1_gr,dec_factor1, tolerance1, flat_angle1 = solve_curve_start(x0,y0,x1,y1,x2,y2,dec_len[0])
     x_gr_prebif = np.linspace(x0,x1_gr,num=line_len[0])
     y_gr_prebif = np.linspace(y0,y1_gr,num=line_len[0])
     bif_range = np.linspace(a1,a2_adj_b1,num=dec_len[0])
     x_gradualfirst = [x1_gr]
     y_gradualfirst = [y1_gr]
+
     for item in bif_range:
         x_gradualfirst.append(x_gradualfirst[-1]+dec_factor1*np.cos(item))
         y_gradualfirst.append(y_gradualfirst[-1]+dec_factor1*np.sin(item))
+
     x_firstbif = np.linspace(x1,x2,num=line_len[1])
     y_firstbif = np.linspace(y1,y2,num=line_len[1])
 
-    x2_gr,y2_gr, dec_factor2 = solve_curve_start(x1,y1,x2,y2,x3,y3,dec_len[1])
+    x2_gr,y2_gr, dec_factor2, tolerance2, flat_angle2 = solve_curve_start(x1,y1,x2,y2,x3,y3,dec_len[1])
     x_gradual_post_first = np.linspace(x_gradualfirst[-1],x2_gr,num=line_len[1])
     y_gradual_post_first = np.linspace(y_gradualfirst[-1],y2_gr,num=line_len[1])
     bif_2_range = np.linspace(a2,a3,num=dec_len[1])
@@ -145,47 +109,14 @@ def coords_setup(xpts,ypts,line_len,dec_len):
     x_gradual = np.concat([x_gr_prebif,x_gradualfirst,x_gradual_post_first,x_gradualsecond,x_gradual_post_second])
     y_gradual = np.concat([y_gr_prebif,y_gradualfirst,y_gradual_post_first,y_gradualsecond,y_gradual_post_second])
 
-    # the start point of the curve effectively adjusts a2 for the first bifurcation
-    # and the end point of the curve effectively adjusts a1 for the first bifurcation
-    a2_adj = np.atan2(y2-y1_gr,x2-x1_gr)
-    delta_start = a2_adj-a2
-    a1_adj = np.atan2(y_gradualfirst[-1]-y0,x_gradualfirst[-1]-x0)
-    delta_end = a1-a1_adj
-    # if the biggest difference in bif angle would come in the middle curve, then we need to adjust both angles, 
-    # add both differences
-    mid_a1adj = a1
-    mid_a2adj = a2
-    for index in range(len(x_gradualfirst)):
-        x_ind = x_gradualfirst[index]
-        y_ind = y_gradualfirst[index]
-        mid_a2adj = np.atan2(y2-y_ind,x2-x_ind)
-        mid_a1adj = np.atan2(y_ind-y0,x_ind-x0)
-        #print(f"a1 adjusted: {mid_a1adj}, a2 adj: {mid_a2adj}")
-        delta_middle = a2-mid_a2adj + mid_a1adj-a1
+    return [x_immediate,y_immediate], [x_gradual, y_gradual], [tolerance1,tolerance2], [flat_angle1, flat_angle2]
 
-    a3_adj = np.atan2(y3-y2_gr,x3-x2_gr)
-    delta_start2 = a3_adj-a3
-    a2_adj = np.atan2(y_gradualsecond[-1]-y1,x_gradualsecond[-1]-x1)
-    delta_end = a2-a2_adj
-    mid2_a3adj = a3
-    mid2_a2adj = a2
-    for index in range(len(x_gradualsecond)):
-        x_ind = x_gradualsecond[index]
-        y_ind = y_gradualsecond[index]
-        mid2_a3adj = np.atan2(y3-y_ind,x3-x_ind)
-        mid2_a2adj = np.atan2(y_ind-y1,x_ind-x1)
-        delta_middle2 = a3-mid2_a3adj + mid2_a2adj-a2
-
-    angles_secondbiff= np.atan2(np.diff(y_gradualsecond),np.diff(x_gradualsecond))
-    # now at each bifurcation we've calculated the angle at the start and the end and the max (in the loop, we haven't saved it)
-    # so this will become what allows us to check if we got the angle right (especially in case we change how get_bifurcation_angle works to be more accurate)
-    # currently we should know the index of the change and be able to take the angle at the end to check pretty easily....
-
-    return [x_immediate,y_immediate], [x_gradual, y_gradual], [a1,a2,a3]
-
-class SetUp(unittest.TestCase):
+class ToleranceTesting(unittest.TestCase):
     '''
-    testing the set up
+    testing some simple two bifurcation cases where the trajectory moves smoothly between three angles in a pattern of line, turn, line, turn, line
+    making sure that the measured bifurcation angle is within a certain value of the theoretical bifurcation angle based on the details of the curve
+    the idea is that our get_bifurcation_angle function should detect the start and end points of the turn, and either return the angle at one of them, or a 'better' angle in between
+    in these simple cases the bifurcation angles at the start and end point should be the same
     '''
     def test_allquadrants(self):
         rng = np.random.default_rng()
@@ -227,12 +158,20 @@ class SetUp(unittest.TestCase):
         for r in range(64):
             x = xpts_arr[r,:]
             y = ypts_arr[r,:]
-            imm_coords, gradual_coords, setupangles = coords_setup(x,y,line_lens,dec_lens)
+            imm_coords, gradual_coords, tolerances, theor_angle = coords_setup(x,y,line_lens,dec_lens)
+            ind, angle = get_bifurcation_angle(gradual_coords[0],gradual_coords[1],0.01)
+            print(f"theoretical angles: {theor_angle}")
+            print(f"angles: {angle}")
+            print(f"differences: {np.abs(np.subtract(theor_angle,angle))}")
+            print(f"tolerance for first bif: {tolerances[0]}, tolerance for second bif: {tolerances[1]}")
             plt.figure(1)
             plt.scatter(imm_coords[0],imm_coords[1],c='blue',s=1)
             plt.scatter(gradual_coords[0],gradual_coords[1],c='red',s=1)
             plt.show()
-
+            within_tol1 = np.abs(theor_angle[0]-angle[0]) <= tolerances[0]
+            within_tol2 = np.abs(theor_angle[1]-angle[1]) <= tolerances[1]
+            #self.assertEqual(True, within_tol1)
+            #self.assertEqual(True, within_tol2)
 
 
 class Dimensions(unittest.TestCase):
@@ -288,22 +227,16 @@ class Thresholds(unittest.TestCase):
 
     
     def test_boundary_double(self):
-        xpts_list = [[50,50,40,34]]
-        ypts_list = [[50,80,80,74]]
-        x1 = xpts_list[0][1]
-        x2 = xpts_list[0][2]
-        y0 = ypts_list[0][0]
-        y1 = ypts_list[0][1]
-        y2 = ypts_list[0][2]
-        y3 = ypts_list[0][3]
+        xpts_list = [50,70,24,34]
+        ypts_list = [50,90,30,65]
         line_lens = [20,20,20]
         dec_lens = np.array([20,20])
         im_total = sum(line_lens) -1 
         gr_total = im_total + sum(dec_lens+1)
-        imm_coords, gradual_coords, angles_setup = coords_setup(xpts_list[0],ypts_list[0],line_lens,dec_lens)
+        imm_coords, gradual_coords, angles_setup = coords_setup(xpts_list,ypts_list,line_lens,dec_lens)
         plt.figure(1)
-        plt.scatter(imm_coords[0],imm_coords[1],c='blue')
-        plt.scatter(gradual_coords[0],gradual_coords[1],c='red')
+        plt.scatter(imm_coords[0],imm_coords[1],c='blue',s=1)
+        plt.scatter(gradual_coords[0],gradual_coords[1],c='red',s=1)
         plt.show()
         print(f'angles 0: {angles_setup}')
         angle_diffs = np.diff(angles_setup)
@@ -324,9 +257,11 @@ class Thresholds(unittest.TestCase):
         for item in thresholds: 
             ind_imm, angles_imm = get_bifurcation_angle(imm_coords[0],imm_coords[1],item)
             ind_gradual, angles_gradual = get_bifurcation_angle(gradual_coords[0],gradual_coords[1],item)
+            print(f"threshold: {item}, ratio: {ratio}")
+            print(f"angle diffs: {angle_diffs}")
             print(f"immediate: x: {ind_imm}, y: {ind_imm}, angles: {angles_imm}")
             print(f"gradual: x: {ind_gradual}, y: {ind_gradual} angles: {angles_gradual}")
-            print(f"threshold: {item}, ratio: {ratio}")
+            
             if item > 1:
                 self.assertEqual(2,len(ind_imm))
                 self.assertEqual(2,len(ind_gradual))

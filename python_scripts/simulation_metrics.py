@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.signal import find_peaks
 import matplotlib.pyplot as plt
+from helper_functions import helpers
 
 # -------- Getting metrics --------
 
@@ -190,25 +191,29 @@ def get_bifurcation_angle(xPos, yPos, thresh=0.25, dist_thresh = 25, maxtime=500
         thresh_value = max_activation*thresh
         if max_activation <= 0.0001: # if the max is very small (this is equivalent to about 1 degree of change over 18 time steps) then ensure no points are flagged
             thresh_value = 10
-        above = ddirection[thresh_ind:] >= thresh_value # this will still be our basis for
+        above = ddirection[thresh_ind:] >= thresh_value
         if test:
             print(f"THRESH VALUE: {thresh_value}")
             print(f"direction: {direction}")
             print(f"direction unwrapped: {direction_unwrapped}")
             print(f"ddirection: {ddirection}")
             print(f"above: {above}")
-        jump_ends = [0]
+        jump_ends = []
+        jump_starts = []
         in_jump = False
         for i, val in enumerate(above):
             if val and not in_jump: 
+                jump_starts.append(i + thresh_ind)
                 in_jump = True
             elif not val and in_jump:
-                jump_ends.append(i + thresh_ind)
+                jump_ends.append(i + thresh_ind - 1)
                 in_jump = False
-        jump_ends.append(total_time-1)
-        return jump_ends
+        #jump_ends.append(total_time-1)
+        jump_starts.append(total_time-1)
+        print(f"jump starts: {jump_starts}")
+        print(f"jump ends: {jump_ends}")
+        return jump_starts, jump_ends
         # once we have this we want to make sure each bif point is suitably different from each other one (ie: different angle, far away, different direction)
-        # maybe
 
     def get_angles(indices):
         gap = min(10,-(indices[-1]//-10))
@@ -269,16 +274,25 @@ def get_bifurcation_angle(xPos, yPos, thresh=0.25, dist_thresh = 25, maxtime=500
                 direction[index] = direction[index-1]
     
     direction_unwrapped = np.unwrap(direction)
-    adjustments = np.diff(direction_unwrapped) != np.diff(direction)
-    adjustment_inds = np.where(adjustments)[0]
     d_direction_unsmooth = np.abs(np.diff(direction_unwrapped))
 
-    jump_starts_unsmooth = detect_bif_points(d_direction_unsmooth)
-    bif_indices, bif_angles = get_angles(jump_starts_unsmooth)
-    #print(f"bif_indices: {bif_indices}, bif angles: {bif_angles}")
-    argmax_direction = np.argmax(d_direction_unsmooth[thresh_ind:])+thresh_ind
-    is_adj = argmax_direction in adjustment_inds
-    #print(f"max ddirection: {np.max(d_direction_unsmooth[thresh_ind:])}, argmax direction: {argmax_direction}, is argmax an adjusment? {is_adj}")
+    jump_starts, jump_ends = detect_bif_points(d_direction_unsmooth)
+    # now that we have this
+    # prevangle = angle from p0 to s0
+    # for each item in end, calculate angle between end and next start
+    theoretical_angles = []
+    prev_angle = np.atan2(yPos[jump_starts[0]]-y0,xPos[jump_starts[0]]-x0)
+    for ind, bif_end in enumerate(jump_ends):
+        next_angle = np.atan2(yPos[jump_starts[ind+1]]-yPos[jump_ends[ind]],xPos[jump_starts[ind+1]]-xPos[jump_ends[ind]])
+        theoretical_angle = helpers.get_estimated_angle(prev_angle,next_angle)
+        print(f"theoretical angle: {theoretical_angle}")
+        theoretical_angles.append(theoretical_angle)
+        prev_angle = next_angle
+        # now we can calculate the theoretical angle using the same method we did in the setup function
+        
+    jump_ends_old = np.concat([[0],jump_ends,[total_time-1]])
+    bif_indices, bif_angles = get_angles(jump_ends_old)
+
     return bif_indices, bif_angles
 
 def find_bumps(activity): # function not currently in use, will keep it for now
