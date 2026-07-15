@@ -3,14 +3,14 @@ from pathlib import Path
 import numpy as np
 import matplotlib.pyplot as plt
 from python_scripts.simulation_metrics import get_bifurcation_angle
-from helper_functions import helpers
+from helper_functions.helpers import get_estimated_angle
 
 def solve_curve_start(x0,y0, x1,y1, x2,y2, dec_len):
     # helper function for setup, solves for where the curve should start to cut corners
     # 
     a1 = np.atan2(y1-y0,x1-x0)
     a2 = np.atan2(y2-y1,x2-x1)
-    aprox_angle = helpers.get_estimated_angle(a1,a2)
+    aprox_angle = get_estimated_angle(a1,a2)
 
     if np.abs(a2 - a1) > np.pi:
         if a2 <0 and a1 >0:

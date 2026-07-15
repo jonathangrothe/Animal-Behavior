@@ -1,8 +1,8 @@
 # file which contains a function for running the simulation many times (with the option to alter the settings each time)
 # and returns data on 'success' and trajectories
 import numpy as np
-import simulate_ringattractor as sim_ra
-import simulation_metrics as sim_met
+from . import simulate_ringattractor as sim_ra
+from . import simulation_metrics as sim_met
 
 def sample_sims(bp,changing_params,n_samples,include_trajs,include_activity):
     '''

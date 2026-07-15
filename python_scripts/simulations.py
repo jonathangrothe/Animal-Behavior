@@ -2,8 +2,8 @@ import time
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
-import simulation_metrics as sim_met
-import repeated_sims
+from . import simulation_metrics as sim_met
+from . import repeated_sims
 
 
 L = 100
@@ -82,9 +82,9 @@ base = {'N':N,
 
 plot_neurons = True
 plot_trajs = True
-sample_size = 2
-h0_list = [[0.235,0.235,0.235],[0.225,0.225,0.225],[0.22,0.22,0.22]]
-sigma_list = [0.2,0.2,0.2]
+sample_size = 1
+h0_list = [[0.22,0.22,0.22],[0.224,0.224,0.224],[0.325,0.325,0.325],[0.335,0.335,0.335]]
+sigma_list = [0.16,0.165,0.32,0.32]
 change = {'sigma':sigma_list, 'h0':h0_list}
 target_list, time_list, activity_list, x_list, y_list, headings_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
 
@@ -102,7 +102,7 @@ for i in range(len(target_list)):
         targx = initialxt[target]
         targy = initialyt[target]
     bif_start = time.perf_counter()
-    indices, bifurcation_angles = sim_met.get_bifurcation_angle(curr_xpos,curr_ypos,0.25,5000,True)
+    indices, bifurcation_angles = sim_met.get_bifurcation_angle(curr_xpos,curr_ypos,0.25,5000)
     bif_end = time.perf_counter()
     bif_time = bif_end - bif_start
     print(f"bif time: {bif_time:.6f} seconds")
@@ -112,13 +112,15 @@ for i in range(len(target_list)):
     bump_time = end_time-start_time
     print(f"time to get bump type: {bump_time:.6f} seconds")
     angles.append(bifurcation_angles)
+    if len(indices) == 0:
+        indices = [0]
     bif_indices.append(indices)
     phases.append(phase)
 
 n_plots = len(h0_list)
-ncols = 3
+ncols = 4
 nrows = 1
-fig = plt.figure(layout='constrained',figsize=(11,8))
+fig = plt.figure(layout='constrained',figsize=(14,8))
 subfigs = fig.subfigures(2,1, wspace=0.1)
 axs0 = subfigs[0].subplots(nrows,ncols)
 axs0 = axs0.flatten()
