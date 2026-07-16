@@ -133,7 +133,7 @@ def get_bump_type(activity,maxtime=5000):
         phase = 2
     return phase
 
-def get_bifurcation_angle(xPos, yPos, thresh=0.25, maxtime=5000,test=False):
+def get_bifurcation_angle(xPos, yPos, headings, thresh=0.25, maxtime=5000,test=False):
     '''
     A function that calculates the local extrema of the angle between the agent and the target, and uses them to 
     find the ratio of the difference between the angle of the agent at the bifurcation and the most direct path to the target
@@ -164,6 +164,8 @@ def get_bifurcation_angle(xPos, yPos, thresh=0.25, maxtime=5000,test=False):
     x0, y0 = xPos[0], yPos[0]
     targetx, targety = xPos[-1], yPos[-1]
 
+    # add checks for headings
+
     # FINDING THE START
     dist_to_targ = np.sqrt((x0-targetx)**2+(y0-targety)**2)
     movement_thresh = dist_to_targ*0.05
@@ -191,6 +193,7 @@ def get_bifurcation_angle(xPos, yPos, thresh=0.25, maxtime=5000,test=False):
     thresh_ind -= 1
 
     # DDIRECTION SETUP
+    '''
     xdiff = np.diff(xPos)
     ydiff = np.diff(yPos)
     direction = np.atan2(ydiff,xdiff)
@@ -201,25 +204,36 @@ def get_bifurcation_angle(xPos, yPos, thresh=0.25, maxtime=5000,test=False):
     
     direction_unwrapped = np.unwrap(direction)
     ddirection = np.abs(np.diff(direction_unwrapped))
+    '''
+    headings_unwrapped = np.unwrap(headings)
+    dheadings = np.abs(np.diff(headings_unwrapped))
+
+
     
     # FINDING BIFURCATION REGIONS STARTS AND ENDS
     
-    max_activation = np.max(ddirection[thresh_ind:])
-    argmax_act = np.argmax(ddirection[thresh_ind:])
+    max_activation = np.max(dheadings[thresh_ind:])
+    argmax_act = np.argmax(dheadings[thresh_ind:])
     print(f"argmax of activation: {argmax_act+thresh_ind}")
     thresh_value = max_activation*thresh
+    '''
     plt.figure(1)
-    plt.plot(ddirection[thresh_ind:])
+    plt.plot(dheadings[thresh_ind:])
+    plt.title("dheadings absolute value")
+    plt.figure(2)
+    plt.plot(np.diff(headings_unwrapped)[thresh_ind:])
+    plt.title("dheadings straight up")
     plt.show()
+    '''
     if max_activation <= 0.0001: # if the max is very small (this is equivalent to about 1 degree of change over 18 time steps) then ensure no points are flagged
         thresh_value = 10
-    above = ddirection[thresh_ind:] >= thresh_value
+    above = dheadings[thresh_ind:] >= thresh_value
     print(f"number above: {sum(above)}")
     if test:
         print(f"THRESH VALUE: {thresh_value}")
-        print(f"direction: {direction}")
-        print(f"direction unwrapped: {direction_unwrapped}")
-        print(f"ddirection: {ddirection}")
+        print(f"heading: {headings}")
+        print(f"direction unwrapped: {headings_unwrapped}")
+        print(f"ddirection: {dheadings}")
         print(f"above: {above}")
 
     jump_ends = []
@@ -240,18 +254,18 @@ def get_bifurcation_angle(xPos, yPos, thresh=0.25, maxtime=5000,test=False):
     true_starts = []
     true_ends = []
     prev_angle = np.atan2(yPos[jump_starts[0]]-y0,xPos[jump_starts[0]]-x0)
-    print("PASS 1:")
+    #print("PASS 1:")
     for ind, bif_end in enumerate(jump_ends):
         next_angle = np.atan2(yPos[jump_starts[ind+1]]-yPos[bif_end],xPos[jump_starts[ind+1]]-xPos[bif_end])
         theoretical_angle = get_estimated_angle(prev_angle,next_angle)
-        print(f"start: {jump_starts[ind]}, end: {jump_ends[ind]}, theoretical angle: {theoretical_angle}, prev angle: {prev_angle}, next angle: {next_angle}")
+        #print(f"start: {jump_starts[ind]}, end: {jump_ends[ind]}, theoretical angle: {theoretical_angle}, prev angle: {prev_angle}, next angle: {next_angle}")
         if theoretical_angle < 170/360*2*np.pi:
             #theoretical_angles.append(theoretical_angle)
             true_starts.append(jump_starts[ind])
             true_ends.append(jump_ends[ind])
-            print(f"angle accepted in pass 1")
-        else:
-            print("angle rejected in pass 1")
+            #print(f"angle accepted in pass 1")
+        #else:
+            #print("angle rejected in pass 1")
         prev_angle = next_angle
     true_starts.append(total_time-1)
     theoretical_angles = []
@@ -261,14 +275,14 @@ def get_bifurcation_angle(xPos, yPos, thresh=0.25, maxtime=5000,test=False):
     for ind, bif_end in enumerate(true_ends):
         next_angle = np.atan2(yPos[true_starts[ind+1]]-yPos[bif_end],xPos[true_starts[ind+1]]-xPos[bif_end])
         theoretical_angle = get_estimated_angle(prev_angle,next_angle)
-        print(f"start: {true_starts[ind]}, end: {true_ends[ind]}, theoretical angle: {theoretical_angle}")
+        #print(f"start: {true_starts[ind]}, end: {true_ends[ind]}, theoretical angle: {theoretical_angle}")
         if theoretical_angle < 170/360*2*np.pi:
-            print("angle accepted in pass 2")
+            #print("angle accepted in pass 2")
             theoretical_angles.append(theoretical_angle)
             true_true_starts.append(true_starts[ind])
             true_true_ends.append(true_ends[ind])
-        else:
-            print("angle rejected in pass 2")
+        #else:
+            #print("angle rejected in pass 2")
         prev_angle = next_angle
     #print(f"jump starts: {true_true_starts}")
     #print(f"jump ends: {true_true_ends}")

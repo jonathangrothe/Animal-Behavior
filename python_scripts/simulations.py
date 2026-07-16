@@ -93,6 +93,8 @@ angles = []
 bif_indices = []
 for i in range(len(target_list)):
     curr_activity = activity_list[i]
+    curr_headings = headings_list[i][0]
+    print(curr_headings)
     curr_xpos = x_list[i:(i+1)][0]
     curr_ypos = y_list[i:(i+1)][0]
     target = target_list[i]
@@ -102,7 +104,7 @@ for i in range(len(target_list)):
         targx = initialxt[target]
         targy = initialyt[target]
     bif_start = time.perf_counter()
-    indices, bifurcation_angles = sim_met.get_bifurcation_angle(curr_xpos,curr_ypos,0.25,5000)
+    indices, bifurcation_angles = sim_met.get_bifurcation_angle(curr_xpos,curr_ypos,curr_headings,0.25,5000)
     bif_end = time.perf_counter()
     bif_time = bif_end - bif_start
     print(f"bif time: {bif_time:.6f} seconds")

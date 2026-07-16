@@ -146,11 +146,12 @@ for sigma_index in range(n_sigma):
 
     for i in range(total_sims):
         curr_activity = activity_list[i]
+        curr_headings = headings_list[i][0]
         curr_xpos = x_list[i:(i+1)][0]
         curr_ypos = y_list[i:(i+1)][0]
         phase = sim_met.get_bump_type(curr_activity)
         phases.append(phase)
-        sim_indices, sim_angle = sim_met.get_bifurcation_angle(curr_xpos, curr_ypos,0.25,25)
+        sim_indices, sim_angle = sim_met.get_bifurcation_angle(curr_xpos,curr_ypos,curr_headings,0.25,25)
         sim_len = len(sim_angle)
         if sim_len > 0:
             angles.append(sim_angle[0])
@@ -169,7 +170,7 @@ for sigma_index in range(n_sigma):
         # for each threshold: 
         # get angle1, angle2, len(angle)
         for indexa, athresh in enumerate(act_thresholds):
-            athresh_indices, athresh_angles = sim_met.get_bifurcation_angle(curr_xpos, curr_ypos,athresh,25)
+            athresh_indices, athresh_angles = sim_met.get_bifurcation_angle(curr_xpos, curr_ypos,curr_headings, athresh,25)
             athresh_len = len(athresh_angles)
             if athresh_len > 0:
                 act_angle1_arr[indexa,i] = athresh_angles[0]
@@ -188,7 +189,7 @@ for sigma_index in range(n_sigma):
         # for each distance threshold:
         # get angle1, angle2, len(angle)
         for indexm, mthresh in enumerate(mov_thresholds_sq):
-            mthresh_indices, mthresh_angles = sim_met.get_bifurcation_angle(curr_xpos, curr_ypos,0.25,mthresh)
+            mthresh_indices, mthresh_angles = sim_met.get_bifurcation_angle(curr_xpos, curr_ypos,curr_headings,0.25,mthresh)
             mthresh_len = len(mthresh_angles)
             if mthresh_len > 0:
                 mov_angle1_arr[indexm,i] = mthresh_angles[0]

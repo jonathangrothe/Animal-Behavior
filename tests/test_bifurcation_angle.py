@@ -11,6 +11,7 @@ def solve_curve_start(x0,y0, x1,y1, x2,y2, dec_len):
     a1 = np.atan2(y1-y0,x1-x0)
     a2 = np.atan2(y2-y1,x2-x1)
     aprox_angle = get_estimated_angle(a1,a2)
+    dec_factor = aprox_angle*0.2/np.pi 
 
     if np.abs(a2 - a1) > np.pi:
         if a2 <0 and a1 >0:
@@ -23,13 +24,6 @@ def solve_curve_start(x0,y0, x1,y1, x2,y2, dec_len):
     d = (a2 - a1) / (n - 1)
     scale = np.sin(n*d/2) / np.sin(d/2)
     mid_angle = a1 + (n-1)*d/2
-
-
-
-    
-    print(f"aprox angle here: {aprox_angle}")
-    dec_factor = aprox_angle*0.2/np.pi 
-    
     D = dec_factor * scale * np.array([np.cos(mid_angle),np.sin(mid_angle)])
     u1 = np.array([np.cos(a1), np.sin(a1)])
     u2 = np.array([np.cos(a2), np.sin(a2)])
@@ -109,7 +103,36 @@ def coords_setup(xpts,ypts,line_len,dec_len):
     x_gradual = np.concat([x_gr_prebif,x_gradualfirst,x_gradual_post_first,x_gradualsecond,x_gradual_post_second])
     y_gradual = np.concat([y_gr_prebif,y_gradualfirst,y_gradual_post_first,y_gradualsecond,y_gradual_post_second])
 
-    return [x_immediate,y_immediate], [x_gradual, y_gradual], [tolerance1,tolerance2], [flat_angle1, flat_angle2]
+    time_imm = len(x_immediate)
+    time_gr = len(x_gradual)
+    x_imm_diff = np.diff(x_immediate)
+    y_imm_diff = np.diff(y_immediate)
+    x_gr_diff = np.diff(x_gradual)
+    y_gr_diff = np.diff(y_gradual)
+    headings_imm = np.zeros(time_imm)
+    headings_gr = np.zeros(time_gr)
+    headings_imm[0] = np.atan2(y1-y0,x1-x0)
+    headings_gr[0] = np.atan2(y1-y0,x1-x0)
+    
+    for index in range(time_imm-1):
+        if (np.abs(x_imm_diff[index]) < 1e-9) or (np.abs(y_imm_diff[index]) < 1e-9):
+            headings_imm[index+1] = headings_imm[index]
+        else:
+            head_angle = np.atan2(y_imm_diff[index],x_imm_diff[index])
+            if head_angle < 0: 
+                head_angle += 2*np.pi
+            headings_imm[index+1] = head_angle
+    
+    for index in range(time_gr-1):
+        if (np.abs(x_gr_diff[index]) < 1e-9) or (np.abs(y_gr_diff[index]) < 1e-9):
+            headings_gr[index+1] = headings_gr[index]
+        else:
+            head_angle = np.atan2(y_gr_diff[index],x_gr_diff[index])
+            if head_angle < 0: 
+                head_angle += 2*np.pi
+            headings_gr[index+1] = head_angle
+        
+    return [x_immediate,y_immediate, headings_imm], [x_gradual, y_gradual, headings_gr], [tolerance1,tolerance2], [flat_angle1, flat_angle2]
 
 class ToleranceTesting(unittest.TestCase):
     '''
@@ -159,7 +182,7 @@ class ToleranceTesting(unittest.TestCase):
             x = xpts_arr[r,:]
             y = ypts_arr[r,:]
             imm_coords, gradual_coords, tolerances, theor_angle = coords_setup(x,y,line_lens,dec_lens)
-            ind, angle = get_bifurcation_angle(gradual_coords[0],gradual_coords[1],0.01)
+            ind, angle = get_bifurcation_angle(gradual_coords[0],gradual_coords[1],gradual_coords[2],0.01)
             print(f"theoretical angles: {theor_angle}")
             print(f"angles: {angle}")
             print(f"differences: {np.abs(np.subtract(theor_angle,angle))}")
@@ -170,6 +193,7 @@ class ToleranceTesting(unittest.TestCase):
             plt.show()
             within_tol1 = np.abs(theor_angle[0]-angle[0]) <= tolerances[0]
             within_tol2 = np.abs(theor_angle[1]-angle[1]) <= tolerances[1]
+            print(f"WITHIN: 1: {within_tol1}, 2: {within_tol2}")
             #self.assertEqual(True, within_tol1)
             #self.assertEqual(True, within_tol2)
 
@@ -186,9 +210,10 @@ class Dimensions(unittest.TestCase):
         xPos = np.array([50]*10)
         yPos = np.array([50]*8)
         yPos_correct = np.linspace(50,80,num=10)
+        headings = np.array([np.pi/2]*10)
         with self.assertRaises(ValueError):
             bif_angle = get_bifurcation_angle(xPos,yPos)
-        correct_ind, correct_angle = get_bifurcation_angle(xPos,yPos_correct)
+        correct_ind, correct_angle = get_bifurcation_angle(xPos,yPos_correct,headings)
         self.assertEqual(2,len(correct_ind))
         self.assertEqual(1,len(correct_angle))
         self.assertEqual(0,correct_ind[0])
@@ -203,19 +228,29 @@ class Thresholds(unittest.TestCase):
         '''
         Testing the boundaries for a bifurcation being above or below the threshold for a simple case of single bifurcation
         '''
-        x_prebif = [50]*51
-        x_postbif = np.linspace(50,40,num=31)
-        y_prebif = np.linspace(0,50,num=51)
-        y_postbif = np.linspace(50,60,num=31)
         xPos = np.zeros(82)
         yPos = np.zeros(82)
-        xPos[0:51] = x_prebif
-        xPos[51:] = x_postbif
-        yPos[0:51] = y_prebif
-        yPos[51:] = y_postbif
+        headings = np.zeros(82)
+        xPos[0:51] = [50]*51
+        xPos[51:] = np.linspace(50,40,num=31)
+        yPos[0:51] = np.linspace(0,50,num=51)
+        yPos[51:] = np.linspace(50,60,num=31)
+        headings[0] = np.pi/2
+        y_diff = np.diff(yPos)
+        x_diff = np.diff(xPos)
+        
+        for i in range(81):
+            if (np.abs(x_diff[i]) < 1e-9) or (np.abs(y_diff[i]) < 1e-9):
+                headings[i+1] = headings[i]
+            else:
+                head_angle = np.atan2(y_diff[i],x_diff[i])
+                if head_angle < 0: 
+                    head_angle += 2*np.pi
+                headings[i+1] = head_angle
+
         thresholds = np.linspace(0.01,1.1,num=12)
         for item in thresholds:
-            ind_simple, angle_simple = get_bifurcation_angle(xPos,yPos,item)
+            ind_simple, angle_simple = get_bifurcation_angle(xPos,yPos,headings,item)
             if item <= 1:
                 self.assertEqual(3,len(ind_simple))
                 self.assertEqual(1,len(angle_simple))
@@ -233,16 +268,16 @@ class Thresholds(unittest.TestCase):
         dec_lens = np.array([20,20])
         im_total = sum(line_lens) -1 
         gr_total = im_total + sum(dec_lens+1)
-        imm_coords, gradual_coords, angles_setup = coords_setup(xpts_list,ypts_list,line_lens,dec_lens)
+        imm_coords, gradual_coords, tolerances, flat_angles = coords_setup(xpts_list,ypts_list,line_lens,dec_lens)
         plt.figure(1)
         plt.scatter(imm_coords[0],imm_coords[1],c='blue',s=1)
         plt.scatter(gradual_coords[0],gradual_coords[1],c='red',s=1)
         plt.show()
-        print(f'angles 0: {angles_setup}')
-        angle_diffs = np.diff(angles_setup)
-        bigger_angle = max(angle_diffs)
-        smaller_angle = min(angle_diffs)
-        angle_argmax = 1+np.argmax(angle_diffs)
+        print(f'angles: {flat_angles}')
+        #angle_diff = np.abs(flat_angles[1]-flat_angles[0])
+        bigger_angle = max(flat_angles)
+        smaller_angle = min(flat_angles)
+        angle_argmax = 0 if flat_angles[0] > flat_angles[1] else 1
                 
         predicted_nobif_im = [0,im_total]
         predicted_nobif_gr = [0,gr_total]
@@ -251,17 +286,15 @@ class Thresholds(unittest.TestCase):
         predicted_2bif_im = [0,line_lens[0],sum(line_lens[:2]),im_total]
         predicted_2bif_gr = [0,line_lens[0]+dec_lens[0]-1,sum(line_lens[:2])+sum(dec_lens[:2]),gr_total]
         ratio = smaller_angle/bigger_angle
-        print(f"angle diffs: {angle_diffs}")
         thresholds = [0.05,0.1,0.4,0.49,0.5,0.51,0.6,0.7,0.8,0.9,1.1]
 
         for item in thresholds: 
-            ind_imm, angles_imm = get_bifurcation_angle(imm_coords[0],imm_coords[1],item)
-            ind_gradual, angles_gradual = get_bifurcation_angle(gradual_coords[0],gradual_coords[1],item)
+            ind_imm, angles_imm = get_bifurcation_angle(imm_coords[0],imm_coords[1],imm_coords[2],item)
+            ind_gradual, angles_gradual = get_bifurcation_angle(gradual_coords[0],gradual_coords[1],gradual_coords[2],item)
             print(f"threshold: {item}, ratio: {ratio}")
-            print(f"angle diffs: {angle_diffs}")
             print(f"immediate: x: {ind_imm}, y: {ind_imm}, angles: {angles_imm}")
             print(f"gradual: x: {ind_gradual}, y: {ind_gradual} angles: {angles_gradual}")
-            
+            # need to fix the indices that we're returning (we're returning the start and end of the bif when we are expecting one for each bif and the start and end)
             if item > 1:
                 self.assertEqual(2,len(ind_imm))
                 self.assertEqual(2,len(ind_gradual))
@@ -278,8 +311,12 @@ class Thresholds(unittest.TestCase):
                 self.assertEqual(predicted_2bif_gr,ind_gradual)
                 self.assertEqual(2,len(angles_imm))
                 self.assertEqual(2,len(angles_gradual))
-                self.assertAlmostEqual(np.pi,angle_diffs[0]+angles_imm[0])
-                self.assertAlmostEqual(np.pi,angle_diffs[1]+angles_imm[1])
+                within_tol1 = np.abs(flat_angles[0] - angles_gradual[0]) <= tolerances[0]
+                within_tol2 = np.abs(flat_angles[1] - angles_gradual[1]) <= tolerances[1]
+                self.assertAlmostEqual(flat_angles[0],angles_imm[0])
+                self.assertAlmostEqual(flat_angles[1],angles_imm[1])
+                self.assertEqual(True, within_tol1)
+                self.assertEqual(True, within_tol2)
                 # we need to find the tolerance based on the dec_factors
             elif ratio < item: 
                 self.assertEqual(3,len(ind_imm))
@@ -302,7 +339,7 @@ class MovementThresholds(unittest.TestCase):
     '''
     Testing the threshold for beginning movement
     '''
-    def test_late_movement(self): 
+    def test_late_movement(self): # CHANGE INTO USING COORDS SETUP
         '''
         Testing cases when the movement doesn't start until late, if it starts at the end then it doesn't count as movement
         '''
@@ -348,7 +385,7 @@ class MovementThresholds(unittest.TestCase):
         self.assertEqual(True, close_to_pi)
 
     
-    def test_immediate_movement(self): # ADD CASES
+    def test_immediate_movement(self): # ADD CASES - USING COORDS SETUP
         '''
         Testing cases when the agent immediately moves and moves rapidly ()
         '''
@@ -359,7 +396,7 @@ class MovementThresholds(unittest.TestCase):
         self.assertEqual(1,len(angles_frantic))
         self.assertAlmostEqual(np.pi,angles_frantic[0])
 
-    def test_movement_boundaries(self):
+    def test_movement_boundaries(self): # ADD CASES USING COORDS SETUP (if we even keep this element of get_bifurcation_angle)
         '''
         Testing cases when the bifurcation happens right on the border of the movement boundaries
         '''
@@ -389,7 +426,7 @@ class MaxTime(unittest.TestCase):
     '''
     Tests for the maxtime parameter
     '''
-    def test_maxtime(self):
+    def test_maxtime(self): # USE coords setup 
         '''
         Tests for the maxtime parameter
         '''
@@ -412,7 +449,7 @@ class MaxTime(unittest.TestCase):
         self.assertEqual(1,len(ind_timecrunch))
         self.assertEqual(1,len(angles_timecrunch))
 
-class Gap(unittest.TestCase):
+class Gap(unittest.TestCase): # USE COORDS SETUP (if we even decide to keep this element)
     def test_small_gap(self):
         '''
         Testing for when the min_gap is small 
@@ -469,7 +506,7 @@ class UnexpectedMovement(unittest.TestCase):
 
     #def test_smooth(self):
 
-class ExpectedSixty(unittest.TestCase):
+class ExpectedSixty(unittest.TestCase): # USE COORDS SETUP
     def test_expected60(self):
         '''
         Testing 'normal' 60 degrees between targets cases
