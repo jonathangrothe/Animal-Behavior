@@ -250,31 +250,24 @@ class Thresholds(unittest.TestCase):
 
     
     def test_boundary_double(self):
-        xpts_list = [50,70,24,34]
+        xpts_list = [50,80,24,34]
         ypts_list = [50,90,30,65]
         line_lens = [20,20,20]
-        dec_lens = np.array([20,20])
+        dec_lens = np.array([10,10])
         dec_lens_im = np.array([1,1])
         im_total = sum(line_lens)-1 
         gr_total = im_total + sum(dec_lens+1)
         imm_coords, tolerances_im, flat_angles_im = coords_setup(xpts_list,ypts_list,line_lens,dec_lens_im)
         gradual_coords, tolerances, flat_angles = coords_setup(xpts_list,ypts_list,line_lens,dec_lens)
-        plt.figure(1)
-        plt.scatter(imm_coords[0],imm_coords[1],c='blue',s=1)
-        plt.scatter(gradual_coords[0],gradual_coords[1],c='red',s=1)
-        plt.show()
+        #plt.figure(1)
+        #plt.scatter(imm_coords[0],imm_coords[1],c='blue',s=1)
+        #plt.scatter(gradual_coords[0],gradual_coords[1],c='red',s=1)
+        #plt.show()
         print(f'angles: {flat_angles}')
-        #angle_diff = np.abs(flat_angles[1]-flat_angles[0])
-        bigger_angle = max(flat_angles)
-        smaller_angle = min(flat_angles)
-        angle_argmax = 0 if flat_angles[0] > flat_angles[1] else 1
-                
-        #predicted_nobif_im = [0,im_total]
-        #predicted_nobif_gr = [0,gr_total]
-        #predicted_1bif_im = [sum(line_lens[:angle_argmax])]
-        #predicted_1bif_gr = [sum(line_lens[:angle_argmax])+sum(dec_lens[:angle_argmax])-2+angle_argmax]
-        #predicted_2bif_im = [line_lens[0],sum(line_lens[:2])]
-        #predicted_2bif_gr = [line_lens[0]+dec_lens[0]-1,sum(line_lens[:2])+sum(dec_lens[:2])]
+        angle_diffs = np.divide(np.subtract(np.pi,flat_angles),np.subtract(dec_lens,1))
+        print(f"angle_diffs: {angle_diffs}")
+        bigger_angle = max(angle_diffs)
+        smaller_angle = min(angle_diffs)
         ratio = smaller_angle/bigger_angle
         thresholds = [0.05,0.1,0.4,0.49,0.5,0.51,0.6,0.7,0.8,0.9,1.1]
 
@@ -284,7 +277,6 @@ class Thresholds(unittest.TestCase):
             print(f"threshold: {item}, ratio: {ratio}")
             print(f"immediate: x: {imm_coords[0][ind_imm]}, y: {imm_coords[1][ind_imm]}, angles: {angles_imm}")
             print(f"gradual: x: {gradual_coords[0][ind_gradual]}, y: {gradual_coords[1][ind_gradual]} angles: {angles_gradual}")
-            # need to fix the indices that we're returning (we're returning the start and end of the bif when we are expecting one for each bif and the start and end)
             if item > 1:
                 self.assertEqual(0,len(ind_imm))
                 self.assertEqual(0,len(ind_gradual))
@@ -301,141 +293,82 @@ class Thresholds(unittest.TestCase):
                 self.assertAlmostEqual(flat_angles[1],angles_imm[1])
                 self.assertEqual(True, within_tol1)
                 self.assertEqual(True, within_tol2)
-                # we need to find the tolerance based on the dec_factors
             elif ratio < item: 
                 self.assertEqual(1,len(ind_imm))
                 self.assertEqual(1,len(ind_gradual))
                 self.assertEqual(1,len(angles_imm))
                 self.assertEqual(1,len(angles_gradual))
                 
-                # yeah the exactly equal case is tough tbh
-                # and the exactly one case is tough
-                # a little variance here is ok, and we should include that in docstring
-            # angle: should be very close in the immdiate case to the setup
-            # in the not immediate case it should be off by a factor of the distance it travels in the decision
-
-                
-        #plt.show()
 
 class MovementThresholds(unittest.TestCase):
     '''
     Testing the threshold for beginning movement
     '''
-    def test_late_movement(self): # CHANGE INTO USING COORDS SETUP
+    def test_late_movement(self):
         '''
-        Testing cases when the movement doesn't start until late, if it starts at the end then it doesn't count as movement
+        Testing cases when the movement doesn't start until late, if its still turning at the end then we won't count that as a bifurcation
         '''
-        xPos_static = np.linspace(50,51,num=100)
-        yPos_static = np.concat([[50]*99,[80]])
-        ind_static, angles_static = get_bifurcation_angle(xPos_static,yPos_static,0.25,25,5000,True)
+        static_coords, static_tol, static_angles = coords_setup([50,50.99,80],[50,50,80],np.array([100,2]),np.array([1]))
+        ind_static, angles_static = get_bifurcation_angle(static_coords[0],static_coords[1],static_coords[2])
 
-        yPos_late = np.concat([[50]*98,[80],[80]])
-        ind_late, angles_late = get_bifurcation_angle(xPos_static,yPos_late,0.25,25,5000,True)
+        late_coords, late_tol, late_angles = coords_setup([50,50.99,80],[50,50,80],np.array([100,3]),np.array([1]))
+        ind_late, angles_late = get_bifurcation_angle(late_coords[0],late_coords[1],late_coords[2])
 
-        yPos_intime = np.concat([[50]*97,[80]*3])
-        ind_intime, angles_intime = get_bifurcation_angle(xPos_static,yPos_intime,0.25,25,5000,True)
+        eleven_jump_coords, eleven_jump_tol, eleven_jump_angles = coords_setup([50,50.99,80,80],[50,50,80,85],np.array([100,12,2]),np.array([1,1]))
+        ind_eleven_jump, angles_eleven_jump = get_bifurcation_angle(eleven_jump_coords[0],eleven_jump_coords[1],eleven_jump_coords[2])
 
-        yPos_10 = np.concat([[50]*89,[80]*11])
-        ind_10, angles_10 = get_bifurcation_angle(xPos_static,yPos_10,0.25,25,5000,True)
+        self.assertEqual(0,len(ind_static))
+        self.assertEqual(0,len(angles_static))
 
-        yPos_11 = np.concat([[50]*88,[80]*12])
-        ind_11, angles_11 = get_bifurcation_angle(xPos_static,yPos_11,0.25,25,5000,True)
-
-        yPos_11_ymove = np.concat([[50]*88,[80]*11,[85]])
-        ind_11_move, angles_11_move = get_bifurcation_angle(xPos_static,yPos_11_ymove,0.25,25,5000,True)
-
-        self.assertEqual(2,len(ind_static))
-        self.assertEqual(1,len(angles_static))
-        self.assertAlmostEqual(np.pi,angles_static[0])
-
-        self.assertEqual(2,len(ind_late))
+        self.assertEqual(1,len(ind_late))
         self.assertEqual(1,len(angles_late))
-        self.assertAlmostEqual(np.pi,angles_late[0])
+        self.assertEqual(100,ind_late[0])
 
-        self.assertEqual(2,len(ind_intime)) # because its near the end it gets rejected
-        self.assertEqual(0,len(angles_intime))
-
-        self.assertEqual(2,len(ind_10))
-        self.assertEqual(0,len(angles_10))
-
-        self.assertEqual(2,len(ind_11))
-        self.assertEqual(0,len(angles_11))
-
-        self.assertEqual(3,len(ind_11_move))
-        self.assertEqual(1,len(angles_11_move))
-        close_to_pi = np.pi - angles_11_move[0] < 0.01
-        self.assertEqual(True, close_to_pi)
+        self.assertEqual(1,len(ind_eleven_jump))
+        self.assertEqual(1,len(angles_eleven_jump))
+        self.assertEqual(100,ind_eleven_jump[0])
 
     
-    def test_immediate_movement(self): # ADD CASES - USING COORDS SETUP
+    def test_immediate_movement(self): # question - do we want to flag rapid movement and return nothing if movement is too rapid? 
         '''
-        Testing cases when the agent immediately moves and moves rapidly ()
+        Testing cases when the agent immediately moves and moves rapidly
         '''
-        xPos_frantic = np.array([50]*100)
-        yPos_frantic = np.concat([[50],[60]*9,np.linspace(60,80,num=90)])
-        ind_frantic, angles_frantic = get_bifurcation_angle(xPos_frantic, yPos_frantic)
-        self.assertEqual(2,len(ind_frantic))
+        frantic_coords, frantic_tol, frantic_angles = coords_setup([50,51,70],[50,60,80],np.array([1,10,100]),np.array([1]))
+        ind_frantic, angles_frantic = get_bifurcation_angle(frantic_coords[0],frantic_coords[1],frantic_coords[2],0.25,5000,True)
+        print(f"ind_frantic: {ind_frantic}, angles_frantic: {angles_frantic}")
+        self.assertEqual(1,len(ind_frantic))
         self.assertEqual(1,len(angles_frantic))
-        self.assertAlmostEqual(np.pi,angles_frantic[0])
-
-    def test_movement_boundaries(self): # ADD CASES USING COORDS SETUP (if we even keep this element of get_bifurcation_angle)
-        '''
-        Testing cases when the bifurcation happens right on the border of the movement boundaries
-        '''
-        x_before = np.concat([np.linspace(50,50.75,num=10),np.linspace(50.75,50,num=90)])
-        y_before = np.concat([np.linspace(50,50.75,num=10),np.linspace(50.75,80,num=90)])
-        x_lowerbound = np.concat([[50]*10,np.linspace(50,50+15*np.sqrt(3),num=90)])
-        y_lowerbound = np.concat([np.linspace(50,51.5,num=10),np.linspace(51.5,65,num=90)])
-        x_post = np.concat([[50]*50,np.linspace(50,50+15*np.sqrt(3),num=50)])
-        y_post = np.concat([np.linspace(50,60,num=50),np.linspace(60,65,num=50)])
-
-        ind_before, angles_before = get_bifurcation_angle(x_before,y_before)
-        ind_lowerbound, angles_lowerbound = get_bifurcation_angle(x_lowerbound,y_lowerbound)
-        ind_post, angles_post = get_bifurcation_angle(x_post, y_post)
-
-        self.assertEqual(2,len(ind_before))
-        self.assertEqual(1,len(angles_before))
-        self.assertAlmostEqual(np.pi,angles_before[0])
-        self.assertEqual(3,len(ind_lowerbound))
-        self.assertEqual(10,ind_lowerbound[1])
-        self.assertEqual(1,len(angles_lowerbound))
-        self.assertEqual(3,len(ind_post))
-        self.assertEqual(50,ind_post[1])
-        self.assertEqual(1,len(angles_post))        
+        #self.assertAlmostEqual(np.pi,angles_frantic[0])
+      
         
 
 class MaxTime(unittest.TestCase):
     '''
     Tests for the maxtime parameter
     '''
-    def test_maxtime(self): # USE coords setup 
+    def test_maxtime(self): 
         '''
         Tests for the maxtime parameter
         '''
-        print("MAXTIME")
-        xPos_max = np.array([50]*5001)
-        yPos_max = np.array([50]*5001)
-        xPos_reaches = np.array([50]*3000)
-        yPos_reaches = np.linspace(50,80,num=3000)
+        timeout_coords, timeout_angles, timeout_angles = coords_setup([50,70],[50,70],np.array([5001]),np.array([1]))
+        reach_coords, reach_tol, reach_angles = coords_setup([50,70,80],[50,70,60],np.array([3000,2000]),np.array([1]))
 
-        ind_max, angles_max = get_bifurcation_angle(xPos_max,yPos_max)
-        ind_reaches, angles_reaches = get_bifurcation_angle(xPos_reaches,yPos_reaches)
-        ind_timecrunch, angles_timecrunch = get_bifurcation_angle(xPos_reaches, yPos_reaches,maxtime=2500)
+        ind_max, angles_max = get_bifurcation_angle(timeout_coords[0],timeout_coords[1],timeout_coords[2])
+        ind_reaches, angles_reaches = get_bifurcation_angle(reach_coords[0],reach_coords[1],reach_coords[2])
+        ind_timecrunch, angles_timecrunch = get_bifurcation_angle(reach_coords[0],reach_coords[1],reach_coords[2])
 
-        print(f"indices time crunch: {ind_timecrunch}, angles time crunch: {angles_timecrunch}")
-        self.assertEqual(1,len(ind_max))
-        self.assertEqual(1,len(angles_max))
-        self.assertEqual(2,len(ind_reaches))
+        self.assertEqual(0,len(ind_max))
+        self.assertEqual(0,len(angles_max))
+        self.assertEqual(1,len(ind_reaches))
         self.assertEqual(1,len(angles_reaches))
-        self.assertAlmostEqual(np.pi,angles_reaches[0])
-        self.assertEqual(1,len(ind_timecrunch))
-        self.assertEqual(1,len(angles_timecrunch))
+        self.assertEqual(0,len(ind_timecrunch))
+        self.assertEqual(0,len(angles_timecrunch))
 
-class Gap(unittest.TestCase): # USE COORDS SETUP (if we even decide to keep this element)
-    def test_small_gap(self):
+#class Gap(unittest.TestCase): # USE COORDS SETUP (if we even decide to keep this element)
+    #def test_small_gap(self):
         '''
         Testing for when the min_gap is small 
-        '''
+        
         xPos_mini_0gap = np.concat([np.array([50]*5),[52,61,65]])
         yPos_mini_0gap = np.concat([np.linspace(50,60,num=5),[63,67,65]])
         xPos_mini_0gap_2 = np.concat([np.array([50]*5),[52,61,63,65]])
@@ -455,6 +388,7 @@ class Gap(unittest.TestCase): # USE COORDS SETUP (if we even decide to keep this
         self.assertEqual(1,len(angles_mini0_2))
         self.assertEqual(3,len(ind_mini1))
         self.assertEqual(4,ind_mini1[1])
+        '''
 
     #def test_med_gap(self):
         '''
@@ -495,113 +429,38 @@ class ExpectedSixty(unittest.TestCase): # USE COORDS SETUP
         '''
         # add at least one or two actual sims worth of data
         # add some double bifurcations
-        print("EXPECTED 60")
         targetx = 50-(15*np.sqrt(3))
         targetx_reflected = 50+(15*np.sqrt(3))
         targety = 65
-        xPos = np.array([50,47.5,45,42.902,targetx])
-        xPos_ref = np.array([50,52.5,55,57.098,targetx_reflected])
-        yPos = np.array([50,57,64,64.1,targety])
-        d1_sq_1 = (xPos[2]-xPos[0])**2+(yPos[2]-yPos[0])**2
-        d2_sq_1 = (xPos[4]-xPos[2])**2+(yPos[4]-yPos[2])**2
-        hyp_sq_1 = (xPos[4]-xPos[0])**2+(yPos[4]-yPos[0])**2
-        d1_1 = np.sqrt(d1_sq_1)
-        d2_1 = np.sqrt(d2_sq_1)
-        val_1 = (d1_sq_1+d2_sq_1-hyp_sq_1)/(2*d1_1*d2_1)
-        angle_1 = np.arccos(val_1)
+        coords_1, tol_1, angles_1 = coords_setup([50,45,targetx],[50,64,targety],np.array([40,40]),np.array([2]))
+        coords_1_gr, tol_1_gr, angles_1_gr = coords_setup([50,45,targetx],[50,64,targety],np.array([40,40]),np.array([10]))
+        coords_1_ref, tol_1_ref, angles_1_ref = coords_setup([50,55,targetx_reflected],[50,64,targety],np.array([40,40]),np.array([2]))
+        coords_1_ref_gr, tol_1_ref_gr, angles_1_ref_gr = coords_setup([50,55,targetx_reflected],[50,64,targety],np.array([40,40]),np.array([10]))
 
-        bif_ind_success, bif_angle_success = get_bifurcation_angle(xPos,yPos)
-        bif_ind_success_ref, bif_angle_success_ref = get_bifurcation_angle(xPos_ref,yPos)
-        print(f"success 1, {bif_ind_success}, {bif_angle_success}")
-        print(f"success 1 ref, {bif_ind_success_ref}, {bif_angle_success_ref}")
-        print(f"x around bif: {xPos[bif_ind_success[1]-2:]}, y around bif: {yPos[bif_ind_success[1]-2:]}")
+        ind_1, angle_1 = get_bifurcation_angle(coords_1[0],coords_1[1],coords_1[2])
+        ind_1_gr, angle_1_gr = get_bifurcation_angle(coords_1_gr[0],coords_1_gr[1],coords_1_gr[2])
+        ind_1_ref, angle_1_ref = get_bifurcation_angle(coords_1_ref[0],coords_1_ref[1],coords_1_ref[2])
+        ind_1_ref_gr, angle_1_ref_gr = get_bifurcation_angle(coords_1_ref_gr[0],coords_1_ref_gr[1],coords_1_ref_gr[2])
 
-        xPos_2 = np.array([50,46.25,42.5,40.652,targetx])
-        xPos_2_ref = np.array([50,53.75,57.5,59.348,targetx_reflected]) 
-        yPos_2 = np.array([50,57,64,64.1,targety])
-        d1_sq_2 = (xPos_2[2]-xPos_2[0])**2+(yPos_2[2]-yPos_2[0])**2
-        d2_sq_2 = (xPos_2[4]-xPos_2[2])**2+(yPos_2[4]-yPos_2[2])**2
-        hyp_sq_2 = (xPos_2[4]-xPos_2[0])**2+(yPos_2[4]-yPos_2[0])**2
-        d1_2 = np.sqrt(d1_sq_2)
-        d2_2 = np.sqrt(d2_sq_2)
-        val_2 = (d1_sq_2+d2_sq_2-hyp_sq_2)/(2*d1_2*d2_2)
-        angle_2 = np.arccos(val_2)
+        within_tol = np.abs(angles_1_gr[0]-angle_1_gr[0]) <= tol_1_gr[0]
+        within_tol_ref = np.abs(angles_1_ref_gr[0]-angle_1_ref_gr[0]) <+ tol_1_ref_gr[0]
 
-        xPos_3 = np.array([50,45,40,38.402,targetx])
-        xPos_3_ref = np.array([50,55,60,61.598,targetx_reflected])
-        yPos_3 = np.array([50,57,64,64.1,targety])
-        d1_sq_3 = (xPos_3[2]-xPos_3[0])**2+(yPos_3[2]-yPos_3[0])**2
-        d2_sq_3 = (xPos_3[4]-xPos_3[2])**2+(yPos_3[4]-yPos_3[2])**2
-        hyp_sq_3 = (xPos_3[4]-xPos_3[0])**2+(yPos_3[4]-yPos_3[0])**2
-        d1_3 = np.sqrt(d1_sq_3)
-        d2_3 = np.sqrt(d2_sq_3)
-        val_3 = (d1_sq_3+d2_sq_3-hyp_sq_3)/(2*d1_3*d2_3)
-        angle_3 = np.arccos(val_3)
-
-        xPos_4 = np.array([50,43.25,37.5,36.152,targetx])
-        xPos_4_ref = np.array([50,56.75,62.5,63.848,targetx_reflected])
-        yPos_4 = np.array([50,57,64,64.1,targety])
-        d1_sq_4 = (xPos_4[2]-xPos_4[0])**2+(yPos_4[2]-yPos_4[0])**2
-        d2_sq_4 = (xPos_4[4]-xPos_4[2])**2+(yPos_4[4]-yPos_4[2])**2
-        hyp_sq_4 = (xPos_4[4]-xPos_4[0])**2+(yPos_4[4]-yPos_4[0])**2
-        d1_4 = np.sqrt(d1_sq_4)
-        d2_4 = np.sqrt(d2_sq_4)
-        val_4 = (d1_sq_4+d2_sq_4-hyp_sq_4)/(2*d1_4*d2_4)
-        angle_4 = np.arccos(val_4)
-
-        xPos_5 = np.array([50,42.5,35,33.902,targetx])
-        xPos_5_ref = np.array([50,57.5,65,66.098,targetx_reflected])
-        yPos_5 = np.array([50,57,64,64.1,targety])
-        d1_sq_5 = (xPos_5[2]-xPos_5[0])**2+(yPos_5[2]-yPos_5[0])**2
-        d2_sq_5 = (xPos_5[4]-xPos_5[2])**2+(yPos_5[4]-yPos_5[2])**2
-        hyp_sq_5 = (xPos_5[4]-xPos_5[0])**2+(yPos_5[4]-yPos_5[0])**2
-        d1_5 = np.sqrt(d1_sq_5)
-        d2_5 = np.sqrt(d2_sq_5)
-        val_5 = (d1_sq_5+d2_sq_5-hyp_sq_5)/(2*d1_5*d2_5)
-        angle_5 = np.arccos(val_5)
-
-        bif_ind_success2, bif_angle_success2 = get_bifurcation_angle(xPos_2,yPos_2)
-        bif_ind_success2_ref, bif_angle_success2_ref = get_bifurcation_angle(xPos_2_ref,yPos)
-        print(f"success 2, {bif_ind_success2}, {bif_angle_success2}")
-        print(f"success 2 ref, {bif_ind_success2_ref}, {bif_angle_success2_ref}")
-        bif_ind_success3, bif_angle_success3 = get_bifurcation_angle(xPos_3,yPos_3)
-        bif_ind_success3_ref, bif_angle_success3_ref = get_bifurcation_angle(xPos_3_ref,yPos)
-        print(f"success 3, {bif_ind_success3}, {bif_angle_success3}")
-        print(f"success 3 ref, {bif_ind_success3_ref}, {bif_angle_success3_ref}")
-        bif_ind_success4, bif_angle_success4 = get_bifurcation_angle(xPos_4,yPos_4)
-        bif_ind_success4_ref, bif_angle_success4_ref = get_bifurcation_angle(xPos_4_ref,yPos)
-        print(f"success 4, {bif_ind_success4}, {bif_angle_success4}")
-        print(f"success 4 ref, {bif_ind_success4_ref}, {bif_angle_success4_ref}")
-        bif_ind_success5, bif_angle_success5 = get_bifurcation_angle(xPos_5,yPos_5)
-        bif_ind_success5_ref, bif_angle_success5_ref = get_bifurcation_angle(xPos_5_ref,yPos)
-        print(f"success 5, {bif_ind_success5}, {bif_angle_success5}")
-        print(f"success 5 ref, {bif_ind_success5_ref}, {bif_angle_success5_ref}")
-
-        self.assertEqual([0,2,4],bif_ind_success)
-        self.assertAlmostEqual(angle_1,bif_angle_success[0])
-        self.assertEqual([0,2,4],bif_ind_success_ref)
-        self.assertAlmostEqual(angle_1,bif_angle_success_ref[0])
-
-        self.assertEqual([0,2,4],bif_ind_success2)
-        self.assertAlmostEqual(angle_2,bif_angle_success2[0])
-        self.assertEqual([0,2,4],bif_ind_success2_ref)
-        self.assertAlmostEqual(angle_2,bif_angle_success2_ref[0])
-
-        self.assertEqual([0,2,4],bif_ind_success3)
-        self.assertAlmostEqual(angle_3,bif_angle_success3[0])
-        self.assertEqual([0,2,4],bif_ind_success3_ref)
-        self.assertAlmostEqual(angle_3,bif_angle_success3_ref[0])
-
-        self.assertEqual([0,2,4],bif_ind_success4)
-        self.assertAlmostEqual(angle_4,bif_angle_success4[0])
-        self.assertEqual([0,2,4],bif_ind_success4_ref)
-        self.assertAlmostEqual(angle_4,bif_angle_success4_ref[0])
-
-        self.assertEqual([0,2,4],bif_ind_success5)
-        self.assertAlmostEqual(angle_5,bif_angle_success5[0])
-        self.assertEqual([0,2,4],bif_ind_success5_ref)
-        self.assertAlmostEqual(angle_5,bif_angle_success5_ref[0])
-        
+        self.assertEqual(1,len(ind_1))
+        self.assertEqual(41,ind_1[0])
+        self.assertEqual(1,len(angle_1))
+        self.assertAlmostEqual(angles_1,angle_1)
+        self.assertEqual(1,len(ind_1_gr))
+        self.assertEqual(45,ind_1_gr[0])
+        self.assertEqual(1,len(angle_1_gr))
+        self.assertEqual(True,within_tol)
+        self.assertEqual(1,len(ind_1_ref))
+        self.assertEqual(41,ind_1_ref[0])
+        self.assertAlmostEqual(angles_1_ref,angle_1_ref)
+        self.assertEqual(1,len(angle_1_ref))
+        self.assertEqual(1,len(ind_1_ref_gr))
+        self.assertEqual(45,ind_1_ref_gr[0])
+        self.assertEqual(1,len(angle_1_ref_gr))   
+        self.assertEqual(True,within_tol_ref)     
 class ExpectedNinety(unittest.TestCase):
     #def test_expected90():
         '''

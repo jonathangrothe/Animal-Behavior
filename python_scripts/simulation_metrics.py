@@ -151,7 +151,6 @@ def get_bifurcation_angle(xPos, yPos, headings, thresh=0.25, maxtime=5000,test=F
     true_indices: the approximate indices where bifurcations occur. Taken as the mean between the start and end indices of each valid bifurcation. Length equal to the number of valid bifurcations
     theoretical_angles: the angles calculated as the angle between the line in the direction before the bifurcation and the line in the direction after the bifurcation. Length equal to the number of valid bifurcations.
     '''
-
     # VALIDITY CHECKS / SETUP
     if np.shape(xPos)[0] == 1:
         xPos = xPos.ravel()
@@ -160,22 +159,24 @@ def get_bifurcation_angle(xPos, yPos, headings, thresh=0.25, maxtime=5000,test=F
         raise ValueError("arrays for x position and y position are different sizes")
     total_time = len(xPos)
     if maxtime <= total_time:
-        return [],[]
+        total_time = maxtime
+        xPos = xPos[:total_time]
+        yPos = yPos[:total_time]
+        headings = headings[:total_time]
     x0, y0 = xPos[0], yPos[0]
     targetx, targety = xPos[-1], yPos[-1]
 
     # add checks for headings
-
     # FINDING THE START
     dist_to_targ = np.sqrt((x0-targetx)**2+(y0-targety)**2)
     movement_thresh = dist_to_targ*0.05
     found_thresh = False
     thresh_ind = 0
     increment_search = 20
-    if increment_search > total_time-2:
-        increment_search = total_time-2
+    if increment_search > total_time-1:
+        increment_search = total_time-1
     while not found_thresh: 
-        ind_upper = min(thresh_ind + increment_search, total_time-2)
+        ind_upper = min(thresh_ind + increment_search, total_time-1)
         dist_from_start = np.sqrt((xPos[ind_upper-1]-x0)**2+(yPos[ind_upper-1]-y0)**2)
         if dist_from_start > movement_thresh:
             dists_sq  = (xPos[thresh_ind:ind_upper]-x0)**2 + (yPos[thresh_ind:ind_upper]-y0)**2
@@ -187,10 +188,11 @@ def get_bifurcation_angle(xPos, yPos, headings, thresh=0.25, maxtime=5000,test=F
                     break
         else:
             thresh_ind = ind_upper
-            if ind_upper == total_time-2:
-                print("moved 95 percent of the distance to the target in the last 2 time steps, no bifurcation recorded")
-                return [], []
-    thresh_ind -= 1
+            if ind_upper == total_time-1:
+                thresh_ind = total_time-1
+                break     
+    thresh_ind -= 1 #difference in length between xPos and dheading
+    print(f"thresh_ind: {thresh_ind}")
 
     # DDIRECTION SETUP
     '''
@@ -207,9 +209,9 @@ def get_bifurcation_angle(xPos, yPos, headings, thresh=0.25, maxtime=5000,test=F
     '''
     headings_unwrapped = np.unwrap(headings)
     dheadings = np.abs(np.diff(headings_unwrapped))
-    
     # FINDING BIFURCATION REGIONS STARTS AND ENDS
     max_activation = np.max(dheadings[thresh_ind:])
+    #print(f"dheadings from thresh ind to end: {dheadings[thresh_ind:]}")
     #argmax_act = np.argmax(dheadings[thresh_ind:])
     #print(f"argmax of activation: {argmax_act+thresh_ind}")
     thresh_value = max_activation*thresh
@@ -225,9 +227,9 @@ def get_bifurcation_angle(xPos, yPos, headings, thresh=0.25, maxtime=5000,test=F
     if test:
         print(f"THRESH VALUE: {thresh_value}")
         print(f"heading: {headings}")
-        print(f"direction unwrapped: {headings_unwrapped}")
+        #print(f"direction unwrapped: {headings_unwrapped}")
         print(f"ddirection: {dheadings}")
-        print(f"above: {above}")
+        #print(f"above: {above}")
     print(f"above: {above}")
     jump_ends = []
     jump_starts = []
@@ -253,6 +255,7 @@ def get_bifurcation_angle(xPos, yPos, headings, thresh=0.25, maxtime=5000,test=F
     for ind, bif_end in enumerate(jump_ends):
         next_angle = np.atan2(yPos[jump_starts[ind+1]]-yPos[bif_end],xPos[jump_starts[ind+1]]-xPos[bif_end])
         theoretical_angle = get_estimated_angle(prev_angle,next_angle)
+        print(f"theoretical angle: {theoretical_angle}")
         #print(f"start: {jump_starts[ind]}, end: {jump_ends[ind]}, theoretical angle: {theoretical_angle}, prev angle: {prev_angle}, next angle: {next_angle}")
         if theoretical_angle < 170/360*2*np.pi:
             #theoretical_angles.append(theoretical_angle)
