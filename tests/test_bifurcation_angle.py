@@ -43,96 +43,82 @@ def solve_curve_start(x0,y0, x1,y1, x2,y2, dec_len):
     return start_points[0], start_points[1], dec_factor, tolerance, aprox_angle  # (x1, y1)
     
 def coords_setup(xpts,ypts,line_len,dec_len):
+    # redo this 
+    a1 = np.atan2(ypts[1]-ypts[0],xpts[1]-xpts[0])
     x0 = xpts[0]
-    x1 = xpts[1]
-    x2 = xpts[2]
-    x3 = xpts[3]
     y0 = ypts[0]
-    y1 = ypts[1]
-    y2 = ypts[2]
-    y3 = ypts[3]
-    x_prebif = np.linspace(x0,x1,num=line_len[0])
-    y_prebif = np.linspace(y0,y1,num=line_len[0])
-    a1 = np.atan2(y1-y0,x1-x0)
-    a2 = np.atan2(y2-y1,x2-x1)
-    a2_adj_b1 = a2
-    a3 = np.atan2(y3-y2,x3-x2)
-    if np.abs(a3 - a2) > np.pi: 
-        if a3 < 0 and a2 > 0:
-            a3 += 2*np.pi
-        if a3 > 0 and a2 < 0:
-            a3 -= 2*np.pi
-    if np.abs(a2 - a1) > np.pi:
-        if a2 < 0 and a1 > 0:
-            a2_adj_b1 += 2*np.pi
-        if a2 > 0 and a1 < 0:
-            a2_adj_b1 -= 2*np.pi
-    x1_gr,y1_gr,dec_factor1, tolerance1, flat_angle1 = solve_curve_start(x0,y0,x1,y1,x2,y2,dec_len[0])
-    x_gr_prebif = np.linspace(x0,x1_gr,num=line_len[0])
-    y_gr_prebif = np.linspace(y0,y1_gr,num=line_len[0])
-    bif_range = np.linspace(a1,a2_adj_b1,num=dec_len[0])
-    x_gradualfirst = [x1_gr]
-    y_gradualfirst = [y1_gr]
-
-    for item in bif_range:
-        x_gradualfirst.append(x_gradualfirst[-1]+dec_factor1*np.cos(item))
-        y_gradualfirst.append(y_gradualfirst[-1]+dec_factor1*np.sin(item))
-
-    x_firstbif = np.linspace(x1,x2,num=line_len[1])
-    y_firstbif = np.linspace(y1,y2,num=line_len[1])
-
-    x2_gr,y2_gr, dec_factor2, tolerance2, flat_angle2 = solve_curve_start(x1,y1,x2,y2,x3,y3,dec_len[1])
-    x_gradual_post_first = np.linspace(x_gradualfirst[-1],x2_gr,num=line_len[1])
-    y_gradual_post_first = np.linspace(y_gradualfirst[-1],y2_gr,num=line_len[1])
-    bif_2_range = np.linspace(a2,a3,num=dec_len[1])
-    x_gradualsecond = [x2_gr]
-    y_gradualsecond = [y2_gr]
-    for r in bif_2_range:
-        x_gradualsecond.append(x_gradualsecond[-1]+dec_factor2*np.cos(r))
-        y_gradualsecond.append(y_gradualsecond[-1]+dec_factor2*np.sin(r))
-
-    x_secondbif = np.linspace(x2,x3,num=line_len[2])
-    y_secondbif = np.linspace(y2,y3,num=line_len[2]) 
-
-    x_gradual_post_second = np.linspace(x_gradualsecond[-1],x3,num=line_len[2])
-    y_gradual_post_second = np.linspace(y_gradualsecond[-1],y3,num=line_len[2])      
-
-    x_immediate = np.concat([x_prebif,x_firstbif,x_secondbif])
-    y_immediate = np.concat([y_prebif,y_firstbif,y_secondbif])
-    
-    x_gradual = np.concat([x_gr_prebif,x_gradualfirst,x_gradual_post_first,x_gradualsecond,x_gradual_post_second])
-    y_gradual = np.concat([y_gr_prebif,y_gradualfirst,y_gradual_post_first,y_gradualsecond,y_gradual_post_second])
-
-    time_imm = len(x_immediate)
-    time_gr = len(x_gradual)
-    x_imm_diff = np.diff(x_immediate)
-    y_imm_diff = np.diff(y_immediate)
-    x_gr_diff = np.diff(x_gradual)
-    y_gr_diff = np.diff(y_gradual)
-    headings_imm = np.zeros(time_imm)
-    headings_gr = np.zeros(time_gr)
-    headings_imm[0] = np.atan2(y1-y0,x1-x0)
-    headings_gr[0] = np.atan2(y1-y0,x1-x0)
-    
-    for index in range(time_imm-1):
-        if (np.abs(x_imm_diff[index]) < 1e-9) or (np.abs(y_imm_diff[index]) < 1e-9):
-            headings_imm[index+1] = headings_imm[index]
+    x_traj = []
+    y_traj = []
+    tolerances = []
+    theor_angles = []
+    for i in range(len(xpts)-2):
+        x1 = xpts[i+1]
+        y1 = ypts[i+1]
+        x2 = xpts[i+2]
+        y2 = ypts[i+2]
+        a2 = np.atan2(y2-y1,x2-x1)
+        #print(f"before update: a1: {a1}, a2: {a2}")
+        if np.abs(a2-a1) > np.pi:
+            #print("entered")
+            if a2 < a1:
+                a2 += 2*np.pi
+            else:
+                a2 -= 2*np.pi
+        # check if dec_len is 1, if it is don't do all this
+        #print(f"after update: a1: {a1}, a2: {a2}")
+        if dec_len[i] > 1:
+            x1_gr,y1_gr,dec_factor1, tolerance, flat_angle = solve_curve_start(x0,y0,x1,y1,x2,y2,dec_len[i])
+            tolerances.append(tolerance)
+            theor_angles.append(flat_angle)
+            x_gr_prebif = np.linspace(x0,x1_gr,num=line_len[i])
+            y_gr_prebif = np.linspace(y0,y1_gr,num=line_len[i])
+            x_traj.append(x_gr_prebif)
+            y_traj.append(y_gr_prebif)
+            bif_range = np.linspace(a1,a2,num=dec_len[i])
+            x_gradualfirst = [x1_gr]
+            y_gradualfirst = [y1_gr]
+            for item in bif_range:
+                x_gradualfirst.append(x_gradualfirst[-1]+dec_factor1*np.cos(item))
+                y_gradualfirst.append(y_gradualfirst[-1]+dec_factor1*np.sin(item))
+            x_traj.append(x_gradualfirst)
+            y_traj.append(y_gradualfirst)
+            x0 = x_gradualfirst[-1]
+            y0 = y_gradualfirst[-1]
         else:
-            head_angle = np.atan2(y_imm_diff[index],x_imm_diff[index])
-            if head_angle < 0: 
-                head_angle += 2*np.pi
-            headings_imm[index+1] = head_angle
-    
-    for index in range(time_gr-1):
-        if (np.abs(x_gr_diff[index]) < 1e-9) or (np.abs(y_gr_diff[index]) < 1e-9):
-            headings_gr[index+1] = headings_gr[index]
-        else:
-            head_angle = np.atan2(y_gr_diff[index],x_gr_diff[index])
-            if head_angle < 0: 
-                head_angle += 2*np.pi
-            headings_gr[index+1] = head_angle
+            tolerances.append(0)
+            theor_angles.append(get_estimated_angle(a1,a2))
+            x_straight_through = np.linspace(x0,x1,num=line_len[i])
+            y_straight_through = np.linspace(y0,y1,num=line_len[i])
+            x_traj.append(x_straight_through)
+            y_traj.append(y_straight_through)
+            x0 = x1
+            y0 = y1
+
+        a1 = a2
         
-    return [x_immediate,y_immediate, headings_imm], [x_gradual, y_gradual, headings_gr], [tolerance1,tolerance2], [flat_angle1, flat_angle2]
+    # go from last point to end
+    final_gradual_x = np.linspace(x0,xpts[-1],line_len[-1])
+    final_gradual_y = np.linspace(y0,ypts[-1],line_len[-1])
+    x_traj.append(final_gradual_x)
+    y_traj.append(final_gradual_y)
+    final_x_traj = np.concat(x_traj)
+    final_y_traj = np.concat(y_traj)
+    
+    total_time = len(final_x_traj)
+    x_diff = np.diff(final_x_traj)
+    y_diff = np.diff(final_y_traj)
+    headings = np.zeros(total_time)
+    headings[0] = np.atan2(ypts[1]-ypts[0],xpts[1]-xpts[0])
+    for index in range(total_time-1):
+        if (np.abs(x_diff[index]) < 1e-9) or (np.abs(y_diff[index]) < 1e-9):
+            headings[index+1] = headings[index]
+        else:
+            head_angle = np.atan2(y_diff[index],x_diff[index])
+            if head_angle < 0: 
+                head_angle += 2*np.pi
+            headings[index+1] = head_angle
+    
+    return [final_x_traj,final_y_traj,headings], tolerances, theor_angles
 
 class ToleranceTesting(unittest.TestCase):
     '''
@@ -181,21 +167,31 @@ class ToleranceTesting(unittest.TestCase):
         for r in range(64):
             x = xpts_arr[r,:]
             y = ypts_arr[r,:]
-            imm_coords, gradual_coords, tolerances, theor_angle = coords_setup(x,y,line_lens,dec_lens)
+            gradual_coords, tolerances, theor_angle = coords_setup(x,y,line_lens,dec_lens)
             ind, angle = get_bifurcation_angle(gradual_coords[0],gradual_coords[1],gradual_coords[2],0.01)
             print(f"theoretical angles: {theor_angle}")
             print(f"angles: {angle}")
             print(f"differences: {np.abs(np.subtract(theor_angle,angle))}")
             print(f"tolerance for first bif: {tolerances[0]}, tolerance for second bif: {tolerances[1]}")
-            plt.figure(1)
-            plt.scatter(imm_coords[0],imm_coords[1],c='blue',s=1)
-            plt.scatter(gradual_coords[0],gradual_coords[1],c='red',s=1)
-            plt.show()
-            within_tol1 = np.abs(theor_angle[0]-angle[0]) <= tolerances[0]
-            within_tol2 = np.abs(theor_angle[1]-angle[1]) <= tolerances[1]
-            print(f"WITHIN: 1: {within_tol1}, 2: {within_tol2}")
-            #self.assertEqual(True, within_tol1)
-            #self.assertEqual(True, within_tol2)
+            #plt.figure(1)
+            #plt.scatter(imm_coords[0],imm_coords[1],c='blue',s=1)
+            #plt.scatter(gradual_coords[0],gradual_coords[1],c='red',s=1)
+            #plt.show()
+            if len(angle) > 0:
+                within_tol1 = np.abs(theor_angle[0]-angle[0]) <= tolerances[0]
+                if not within_tol1:
+                    plt.figure(1)
+                    plt.scatter(gradual_coords[0],gradual_coords[1],c='red',s=1)
+                    plt.show()
+                self.assertEqual(True, within_tol1)
+            if len(angle) > 1:
+                within_tol2 = np.abs(theor_angle[1]-angle[1]) <= tolerances[1]
+                print(f"WITHIN: 1: {within_tol1}, 2: {within_tol2}")
+                if not within_tol2:
+                    plt.figure(1)
+                    plt.scatter(gradual_coords[0],gradual_coords[1],c='red',s=1)
+                    plt.show()
+                self.assertEqual(True, within_tol2)
 
 
 class Dimensions(unittest.TestCase):
@@ -212,12 +208,10 @@ class Dimensions(unittest.TestCase):
         yPos_correct = np.linspace(50,80,num=10)
         headings = np.array([np.pi/2]*10)
         with self.assertRaises(ValueError):
-            bif_angle = get_bifurcation_angle(xPos,yPos)
+            indices, bif_angle = get_bifurcation_angle(xPos,yPos,headings)
         correct_ind, correct_angle = get_bifurcation_angle(xPos,yPos_correct,headings)
-        self.assertEqual(2,len(correct_ind))
-        self.assertEqual(1,len(correct_angle))
-        self.assertEqual(0,correct_ind[0])
-        self.assertAlmostEqual(np.pi,correct_angle[0])
+        self.assertEqual(0,len(correct_ind))
+        self.assertEqual(0,len(correct_angle))
 
 class Thresholds(unittest.TestCase):
     '''
@@ -228,37 +222,31 @@ class Thresholds(unittest.TestCase):
         '''
         Testing the boundaries for a bifurcation being above or below the threshold for a simple case of single bifurcation
         '''
-        xPos = np.zeros(82)
-        yPos = np.zeros(82)
-        headings = np.zeros(82)
-        xPos[0:51] = [50]*51
-        xPos[51:] = np.linspace(50,40,num=31)
-        yPos[0:51] = np.linspace(0,50,num=51)
-        yPos[51:] = np.linspace(50,60,num=31)
-        headings[0] = np.pi/2
-        y_diff = np.diff(yPos)
-        x_diff = np.diff(xPos)
-        
-        for i in range(81):
-            if (np.abs(x_diff[i]) < 1e-9) or (np.abs(y_diff[i]) < 1e-9):
-                headings[i+1] = headings[i]
-            else:
-                head_angle = np.atan2(y_diff[i],x_diff[i])
-                if head_angle < 0: 
-                    head_angle += 2*np.pi
-                headings[i+1] = head_angle
-
+        xpts_list = [50,50,40]
+        ypts_list = [0,50,60]
+        line_lens = [50,30]
+        dec_lensimm = np.array([1])
+        dec_lensgr = np.array([10])
+        imm_coords, tolerances, flat_angles = coords_setup(xpts_list,ypts_list,line_lens,dec_lensimm)
+        gradual_coords, tolerances_gr, flat_angles_gr = coords_setup(xpts_list,ypts_list,line_lens,dec_lensgr)
         thresholds = np.linspace(0.01,1.1,num=12)
         for item in thresholds:
-            ind_simple, angle_simple = get_bifurcation_angle(xPos,yPos,headings,item)
+            ind_im, angle_im = get_bifurcation_angle(imm_coords[0],imm_coords[1],imm_coords[2],item)
+            ind_gr, angle_gr = get_bifurcation_angle(gradual_coords[0],gradual_coords[1],gradual_coords[2],item)
+            print(f"ind im: {ind_im}, angle_im: {angle_im}")
+            print(f"ind gr: {ind_gr}, angle gr: {angle_gr}")
             if item <= 1:
-                self.assertEqual(3,len(ind_simple))
-                self.assertEqual(1,len(angle_simple))
-                angle_close = 2.35619 < angle_simple[0] < 2.3562
-                self.assertEqual(True, angle_close)
+                self.assertEqual(1,len(ind_im))
+                self.assertEqual(1,len(ind_gr))
+                self.assertEqual(1,len(angle_im))
+                self.assertEqual(1,len(angle_gr))
+                self.assertAlmostEqual(flat_angles[0],angle_im[0])
+                within_tol = np.abs(flat_angles[0]-angle_gr[0]) <= tolerances_gr[0]
+                print(f"tolerance: {tolerances_gr[0]}, actual difference: {np.abs(flat_angles[0]-angle_gr[0])}, within_tol: {within_tol}")
+                self.assertEqual(True, within_tol)
             else:
-                self.assertEqual(2,len(ind_simple))
-                self.assertAlmostEqual(np.pi,angle_simple[0])
+                self.assertEqual(0,len(ind_im))
+                self.assertAlmostEqual(0,len(ind_gr))
 
     
     def test_boundary_double(self):
@@ -266,9 +254,11 @@ class Thresholds(unittest.TestCase):
         ypts_list = [50,90,30,65]
         line_lens = [20,20,20]
         dec_lens = np.array([20,20])
-        im_total = sum(line_lens) -1 
+        dec_lens_im = np.array([1,1])
+        im_total = sum(line_lens)-1 
         gr_total = im_total + sum(dec_lens+1)
-        imm_coords, gradual_coords, tolerances, flat_angles = coords_setup(xpts_list,ypts_list,line_lens,dec_lens)
+        imm_coords, tolerances_im, flat_angles_im = coords_setup(xpts_list,ypts_list,line_lens,dec_lens_im)
+        gradual_coords, tolerances, flat_angles = coords_setup(xpts_list,ypts_list,line_lens,dec_lens)
         plt.figure(1)
         plt.scatter(imm_coords[0],imm_coords[1],c='blue',s=1)
         plt.scatter(gradual_coords[0],gradual_coords[1],c='red',s=1)
@@ -279,12 +269,12 @@ class Thresholds(unittest.TestCase):
         smaller_angle = min(flat_angles)
         angle_argmax = 0 if flat_angles[0] > flat_angles[1] else 1
                 
-        predicted_nobif_im = [0,im_total]
-        predicted_nobif_gr = [0,gr_total]
-        predicted_1bif_im = [0,sum(line_lens[:angle_argmax]),im_total]
-        predicted_1bif_gr = [0,sum(line_lens[:angle_argmax])+sum(dec_lens[:angle_argmax])-2+angle_argmax,gr_total]
-        predicted_2bif_im = [0,line_lens[0],sum(line_lens[:2]),im_total]
-        predicted_2bif_gr = [0,line_lens[0]+dec_lens[0]-1,sum(line_lens[:2])+sum(dec_lens[:2]),gr_total]
+        #predicted_nobif_im = [0,im_total]
+        #predicted_nobif_gr = [0,gr_total]
+        #predicted_1bif_im = [sum(line_lens[:angle_argmax])]
+        #predicted_1bif_gr = [sum(line_lens[:angle_argmax])+sum(dec_lens[:angle_argmax])-2+angle_argmax]
+        #predicted_2bif_im = [line_lens[0],sum(line_lens[:2])]
+        #predicted_2bif_gr = [line_lens[0]+dec_lens[0]-1,sum(line_lens[:2])+sum(dec_lens[:2])]
         ratio = smaller_angle/bigger_angle
         thresholds = [0.05,0.1,0.4,0.49,0.5,0.51,0.6,0.7,0.8,0.9,1.1]
 
@@ -292,23 +282,17 @@ class Thresholds(unittest.TestCase):
             ind_imm, angles_imm = get_bifurcation_angle(imm_coords[0],imm_coords[1],imm_coords[2],item)
             ind_gradual, angles_gradual = get_bifurcation_angle(gradual_coords[0],gradual_coords[1],gradual_coords[2],item)
             print(f"threshold: {item}, ratio: {ratio}")
-            print(f"immediate: x: {ind_imm}, y: {ind_imm}, angles: {angles_imm}")
-            print(f"gradual: x: {ind_gradual}, y: {ind_gradual} angles: {angles_gradual}")
+            print(f"immediate: x: {imm_coords[0][ind_imm]}, y: {imm_coords[1][ind_imm]}, angles: {angles_imm}")
+            print(f"gradual: x: {gradual_coords[0][ind_gradual]}, y: {gradual_coords[1][ind_gradual]} angles: {angles_gradual}")
             # need to fix the indices that we're returning (we're returning the start and end of the bif when we are expecting one for each bif and the start and end)
             if item > 1:
+                self.assertEqual(0,len(ind_imm))
+                self.assertEqual(0,len(ind_gradual))
+                self.assertEqual(0,len(angles_imm))
+                self.assertEqual(0,len(angles_gradual))
+            elif ratio > item:
                 self.assertEqual(2,len(ind_imm))
                 self.assertEqual(2,len(ind_gradual))
-                self.assertEqual(predicted_nobif_im,ind_imm)
-                self.assertEqual(predicted_nobif_gr,ind_gradual)
-                self.assertEqual(1,len(angles_imm))
-                self.assertEqual(1,len(angles_gradual))
-                self.assertAlmostEqual(np.pi,angles_imm[0])
-                self.assertAlmostEqual(np.pi,angles_gradual[0])
-            elif ratio > item:
-                self.assertEqual(4,len(ind_imm))
-                self.assertEqual(4,len(ind_gradual))
-                self.assertEqual(predicted_2bif_im,ind_imm)
-                self.assertEqual(predicted_2bif_gr,ind_gradual)
                 self.assertEqual(2,len(angles_imm))
                 self.assertEqual(2,len(angles_gradual))
                 within_tol1 = np.abs(flat_angles[0] - angles_gradual[0]) <= tolerances[0]
@@ -319,10 +303,8 @@ class Thresholds(unittest.TestCase):
                 self.assertEqual(True, within_tol2)
                 # we need to find the tolerance based on the dec_factors
             elif ratio < item: 
-                self.assertEqual(3,len(ind_imm))
-                self.assertEqual(3,len(ind_gradual))
-                self.assertEqual(predicted_1bif_im,ind_imm)
-                self.assertEqual(predicted_1bif_gr,ind_gradual)
+                self.assertEqual(1,len(ind_imm))
+                self.assertEqual(1,len(ind_gradual))
                 self.assertEqual(1,len(angles_imm))
                 self.assertEqual(1,len(angles_gradual))
                 

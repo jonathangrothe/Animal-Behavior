@@ -135,21 +135,21 @@ def get_bump_type(activity,maxtime=5000):
 
 def get_bifurcation_angle(xPos, yPos, headings, thresh=0.25, maxtime=5000,test=False):
     '''
-    A function that calculates the local extrema of the angle between the agent and the target, and uses them to 
-    find the ratio of the difference between the angle of the agent at the bifurcation and the most direct path to the target
-
-    Parameters:
-        xPos: a list of x positions from a simulation
-        yPos: a list of y positions from a simulation
-        thresh: the threshold for what proportion of the max direction change is flagged as a potential bifurcation
-        dist_thresh: the distance (squared) between points required for them to be considered seperate bifurcations
-        maxtime: the maximum time in the simulation (default is 5000)
-        test: a flag to print out details as the function runs
-
-    Returns: 
-        best_overall: a ratio representing the difference between the angle of the agent at the bifurcation and the most direct path. 
-                    Calculated by taking both the local max and local mins of the angle, finding the first one where the agent has moved more than 1 total unit, 
-                    then seeing if the difference between the most direct path and the first local max or first local min is bigger.
+    A function that takes the xpositions, ypositions, and headings from a trajectory, to determine the bifurcation points, using a threshold to determine if a turn is too insignificant to be counted. 
+    Here a bifurcation is assumed to be a region of indices, from the index where the agent begins to turn to where it stops turning, 
+    which gives us 4 points: the start point, the bifurcation start point, the bifurcation end point, and the end point. We assume there are straight lines between the start point and the bifurcation start point
+    and the bifurcation end point and the end point. 
+    The bifurcation angle is then calculated as the angle between where the lines meet (which is assumed to not be on the path the agent travels, but would be the angle if the agent turned all the way in one step)
+    Parameters: 
+    xPos: the x positions of the agent
+    yPos: the y positions of the agent
+    headings: the headings of the agent
+    thresh: a constant from 0 to 1 (should generally be close to 0) which controls what proporition of the maximum change in direction we will consider to be part of a bifurcation
+    maxtime: the maximum time allowed in the simulation
+    test: a parameter to control whether or not we print out some values
+    Returns:
+    true_indices: the approximate indices where bifurcations occur. Taken as the mean between the start and end indices of each valid bifurcation. Length equal to the number of valid bifurcations
+    theoretical_angles: the angles calculated as the angle between the line in the direction before the bifurcation and the line in the direction after the bifurcation. Length equal to the number of valid bifurcations.
     '''
 
     # VALIDITY CHECKS / SETUP
@@ -160,7 +160,7 @@ def get_bifurcation_angle(xPos, yPos, headings, thresh=0.25, maxtime=5000,test=F
         raise ValueError("arrays for x position and y position are different sizes")
     total_time = len(xPos)
     if maxtime <= total_time:
-        return [0],[np.pi]
+        return [],[]
     x0, y0 = xPos[0], yPos[0]
     targetx, targety = xPos[-1], yPos[-1]
 
@@ -189,7 +189,7 @@ def get_bifurcation_angle(xPos, yPos, headings, thresh=0.25, maxtime=5000,test=F
             thresh_ind = ind_upper
             if ind_upper == total_time-2:
                 print("moved 95 percent of the distance to the target in the last 2 time steps, no bifurcation recorded")
-                return [0,total_time-1], [np.pi]
+                return [], []
     thresh_ind -= 1
 
     # DDIRECTION SETUP
@@ -207,35 +207,28 @@ def get_bifurcation_angle(xPos, yPos, headings, thresh=0.25, maxtime=5000,test=F
     '''
     headings_unwrapped = np.unwrap(headings)
     dheadings = np.abs(np.diff(headings_unwrapped))
-
-
     
     # FINDING BIFURCATION REGIONS STARTS AND ENDS
-    
     max_activation = np.max(dheadings[thresh_ind:])
-    argmax_act = np.argmax(dheadings[thresh_ind:])
-    print(f"argmax of activation: {argmax_act+thresh_ind}")
+    #argmax_act = np.argmax(dheadings[thresh_ind:])
+    #print(f"argmax of activation: {argmax_act+thresh_ind}")
     thresh_value = max_activation*thresh
-    '''
-    plt.figure(1)
-    plt.plot(dheadings[thresh_ind:])
-    plt.title("dheadings absolute value")
-    plt.figure(2)
-    plt.plot(np.diff(headings_unwrapped)[thresh_ind:])
-    plt.title("dheadings straight up")
-    plt.show()
-    '''
+    #plt.figure(1)
+    #plt.plot(dheadings[thresh_ind:])
+    #plt.axhline(y=thresh_value, color='r', linestyle='--', linewidth=2)
+    #plt.title("dheadings absolute value")
+    #plt.show()
     if max_activation <= 0.0001: # if the max is very small (this is equivalent to about 1 degree of change over 18 time steps) then ensure no points are flagged
         thresh_value = 10
     above = dheadings[thresh_ind:] >= thresh_value
-    print(f"number above: {sum(above)}")
+    #print(f"number above: {sum(above)}")
     if test:
         print(f"THRESH VALUE: {thresh_value}")
         print(f"heading: {headings}")
         print(f"direction unwrapped: {headings_unwrapped}")
         print(f"ddirection: {dheadings}")
         print(f"above: {above}")
-
+    print(f"above: {above}")
     jump_ends = []
     jump_starts = []
     in_jump = False
@@ -251,6 +244,8 @@ def get_bifurcation_angle(xPos, yPos, headings, thresh=0.25, maxtime=5000,test=F
 
     # FINDING THE THEORETICAL ANGLES FROM THE BIFURCATION REGIONS
     #theoretical_angles = []
+    print(f"jump starts: {jump_starts}")
+    print(f"jump ends: {jump_ends}")
     true_starts = []
     true_ends = []
     prev_angle = np.atan2(yPos[jump_starts[0]]-y0,xPos[jump_starts[0]]-x0)
@@ -286,8 +281,13 @@ def get_bifurcation_angle(xPos, yPos, headings, thresh=0.25, maxtime=5000,test=F
         prev_angle = next_angle
     #print(f"jump starts: {true_true_starts}")
     #print(f"jump ends: {true_true_ends}")
-        
-    true_indices = np.concat([true_true_starts,true_true_ends])
+    print(f"true true starts: {true_true_starts}")
+    print(f"true true ends: {true_true_ends}")
+    true_indices = []
+    for index in range(len(true_true_ends)):
+        mean_index = (true_true_ends[index]+true_true_starts[index])/2
+        true_indices.append(int(round(mean_index)))
+    print(f"true indices: {true_indices}")
 
     return true_indices, theoretical_angles
 
