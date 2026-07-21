@@ -38,9 +38,9 @@ def solve_curve_start(x0,y0, x1,y1, x2,y2, dec_len):
     end_d2 = np.sqrt(end_d2_sq)
     end_val = (end_d1_sq+end_d2_sq-hyp)/(2*end_d1*end_d2)
     end_angle = np.arccos(end_val)
-    tolerance =  np.abs(end_angle-aprox_angle)
+    #tolerance =  np.abs(end_angle-aprox_angle)
 
-    return start_points[0], start_points[1], dec_factor, tolerance, aprox_angle  # (x1, y1)
+    return start_points[0], start_points[1], dec_factor, aprox_angle  # (x1, y1)
     
 def coords_setup(xpts,ypts,line_len,dec_len):
     # redo this 
@@ -49,7 +49,7 @@ def coords_setup(xpts,ypts,line_len,dec_len):
     y0 = ypts[0]
     x_traj = []
     y_traj = []
-    tolerances = []
+    direction_diffs = []
     theor_angles = []
     for i in range(len(xpts)-2):
         x1 = xpts[i+1]
@@ -64,11 +64,11 @@ def coords_setup(xpts,ypts,line_len,dec_len):
                 a2 += 2*np.pi
             else:
                 a2 -= 2*np.pi
+        direction_diffs.append(np.abs(a2-a1))
         # check if dec_len is 1, if it is don't do all this
         #print(f"after update: a1: {a1}, a2: {a2}")
         if dec_len[i] > 1:
             x1_gr,y1_gr,dec_factor1, tolerance, flat_angle = solve_curve_start(x0,y0,x1,y1,x2,y2,dec_len[i])
-            tolerances.append(tolerance)
             theor_angles.append(flat_angle)
             x_gr_prebif = np.linspace(x0,x1_gr,num=line_len[i])
             y_gr_prebif = np.linspace(y0,y1_gr,num=line_len[i])
@@ -85,7 +85,6 @@ def coords_setup(xpts,ypts,line_len,dec_len):
             x0 = x_gradualfirst[-1]
             y0 = y_gradualfirst[-1]
         else:
-            tolerances.append(0)
             theor_angles.append(get_estimated_angle(a1,a2))
             x_straight_through = np.linspace(x0,x1,num=line_len[i])
             y_straight_through = np.linspace(y0,y1,num=line_len[i])
@@ -118,7 +117,7 @@ def coords_setup(xpts,ypts,line_len,dec_len):
                 head_angle += 2*np.pi
             headings[index+1] = head_angle
     
-    return [final_x_traj,final_y_traj,headings], tolerances, theor_angles
+    return [final_x_traj,final_y_traj,headings], direction_diffs, theor_angles
 
 class ToleranceTesting(unittest.TestCase):
     '''
@@ -127,6 +126,9 @@ class ToleranceTesting(unittest.TestCase):
     the idea is that our get_bifurcation_angle function should detect the start and end points of the turn, and either return the angle at one of them, or a 'better' angle in between
     in these simple cases the bifurcation angles at the start and end point should be the same
     '''
+    # need to fix underlying logic of this - no longer is tolerance really a big part of the function
+    # but the idea of testing performance in all quadrants IS important, so while I will have to rework the name of the function
+    # and the tests themselves, I think I will keep this function in a changed form
     def test_allquadrants(self):
         rng = np.random.default_rng()
         a1 = rng.uniform(0, np.pi / 2)
@@ -167,6 +169,8 @@ class ToleranceTesting(unittest.TestCase):
         for r in range(64):
             x = xpts_arr[r,:]
             y = ypts_arr[r,:]
+            # TO CHANGE: from COORDS_SETUP (which we will have to change), calculate the directional differences, 
+            # and use that to determine how many bifurcations there should be (maybe merge this idea in with Thresholds? it is similar)
             gradual_coords, tolerances, theor_angle = coords_setup(x,y,line_lens,dec_lens)
             ind, angle = get_bifurcation_angle(gradual_coords[0],gradual_coords[1],gradual_coords[2],0.01)
             print(f"theoretical angles: {theor_angle}")
@@ -179,18 +183,10 @@ class ToleranceTesting(unittest.TestCase):
             #plt.show()
             if len(angle) > 0:
                 within_tol1 = np.abs(theor_angle[0]-angle[0]) <= tolerances[0]
-                if not within_tol1:
-                    plt.figure(1)
-                    plt.scatter(gradual_coords[0],gradual_coords[1],c='red',s=1)
-                    plt.show()
                 self.assertEqual(True, within_tol1)
             if len(angle) > 1:
                 within_tol2 = np.abs(theor_angle[1]-angle[1]) <= tolerances[1]
                 print(f"WITHIN: 1: {within_tol1}, 2: {within_tol2}")
-                if not within_tol2:
-                    plt.figure(1)
-                    plt.scatter(gradual_coords[0],gradual_coords[1],c='red',s=1)
-                    plt.show()
                 self.assertEqual(True, within_tol2)
 
 
@@ -198,7 +194,8 @@ class Dimensions(unittest.TestCase):
     '''
     dimensions tests
     '''
-    def test_dimensions(self):
+    # TO do: add testing for headings
+    def test_dimensions(self): 
         '''
         Testing to ensure the dimensions of xPos and yPos line up
         '''
@@ -217,6 +214,7 @@ class Thresholds(unittest.TestCase):
     '''
     Testing the threshold for what proportion of ddirection is needed to be considered above the threshold
     '''
+    # We don't need the threshold parameter itself anymore, but we do need the test for direction_thresh, which we can adapt this to be used for
 
     def test_boundary_single(self):
         '''
@@ -334,7 +332,7 @@ class MovementThresholds(unittest.TestCase):
         Testing cases when the agent immediately moves and moves rapidly
         '''
         frantic_coords, frantic_tol, frantic_angles = coords_setup([50,51,70],[50,60,80],np.array([1,10,100]),np.array([1]))
-        ind_frantic, angles_frantic = get_bifurcation_angle(frantic_coords[0],frantic_coords[1],frantic_coords[2],0.25,5000,True)
+        ind_frantic, angles_frantic = get_bifurcation_angle(frantic_coords[0],frantic_coords[1],frantic_coords[2],0.25,5000)
         print(f"ind_frantic: {ind_frantic}, angles_frantic: {angles_frantic}")
         self.assertEqual(1,len(ind_frantic))
         self.assertEqual(1,len(angles_frantic))

@@ -133,7 +133,7 @@ def get_bump_type(activity,maxtime=5000):
         phase = 2
     return phase
 
-def get_bifurcation_angle(xPos, yPos, headings, thresh=0.25, maxtime=5000,test=False):
+def get_bifurcation_angle(xPos, yPos, headings, direction_thresh = np.pi/18, maxtime=5000,test=False):
     '''
     A function that takes the xpositions, ypositions, and headings from a trajectory, to determine the bifurcation points, using a threshold to determine if a turn is too insignificant to be counted. 
     Here a bifurcation is assumed to be a region of indices, from the index where the agent begins to turn to where it stops turning, 
@@ -180,7 +180,7 @@ def get_bifurcation_angle(xPos, yPos, headings, thresh=0.25, maxtime=5000,test=F
         dist_from_start = np.sqrt((xPos[ind_upper-1]-x0)**2+(yPos[ind_upper-1]-y0)**2)
         if dist_from_start > movement_thresh:
             dists_sq  = (xPos[thresh_ind:ind_upper]-x0)**2 + (yPos[thresh_ind:ind_upper]-y0)**2
-            mask = dists_sq > movement_thresh
+            mask = dists_sq > movement_thresh**2
             for i in range(len(mask)):
                 if mask[i]:
                     thresh_ind += i
@@ -195,42 +195,21 @@ def get_bifurcation_angle(xPos, yPos, headings, thresh=0.25, maxtime=5000,test=F
     print(f"thresh_ind: {thresh_ind}")
 
     # DDIRECTION SETUP
-    '''
-    xdiff = np.diff(xPos)
-    ydiff = np.diff(yPos)
-    direction = np.atan2(ydiff,xdiff)
-    for index,item in enumerate(direction): 
-        if item <= 0.0000001:
-            if np.abs(ydiff[index]) <= 0.0000001 and np.abs(xdiff[index] <= 0.0000001):
-                direction[index] = direction[index-1]
-    
-    direction_unwrapped = np.unwrap(direction)
-    ddirection = np.abs(np.diff(direction_unwrapped))
-    '''
     headings_unwrapped = np.unwrap(headings)
     dheadings = np.abs(np.diff(headings_unwrapped))
-    # FINDING BIFURCATION REGIONS STARTS AND ENDS
-    max_activation = np.max(dheadings[thresh_ind:])
-    #print(f"dheadings from thresh ind to end: {dheadings[thresh_ind:]}")
-    #argmax_act = np.argmax(dheadings[thresh_ind:])
-    #print(f"argmax of activation: {argmax_act+thresh_ind}")
-    thresh_value = max_activation*thresh
-    #plt.figure(1)
-    #plt.plot(dheadings[thresh_ind:])
-    #plt.axhline(y=thresh_value, color='r', linestyle='--', linewidth=2)
-    #plt.title("dheadings absolute value")
-    #plt.show()
-    if max_activation <= 0.0001: # if the max is very small (this is equivalent to about 1 degree of change over 18 time steps) then ensure no points are flagged
-        thresh_value = 10
+    thresh_value = np.pi/720 # approximately good value, may want to parametrize in the future
     above = dheadings[thresh_ind:] >= thresh_value
-    #print(f"number above: {sum(above)}")
     if test:
         print(f"THRESH VALUE: {thresh_value}")
         print(f"heading: {headings}")
-        #print(f"direction unwrapped: {headings_unwrapped}")
+        print(f"direction unwrapped: {headings_unwrapped}")
         print(f"ddirection: {dheadings}")
-        #print(f"above: {above}")
-    print(f"above: {above}")
+        print(f"above: {above}")
+        plt.figure(2)
+        plt.plot(dheadings[thresh_ind:])
+        plt.axhline(y=thresh_value, color='r', linestyle='--', linewidth=2)
+        plt.title("dheadings absolute value")
+        plt.show()
     jump_ends = []
     jump_starts = []
     in_jump = False
@@ -245,52 +224,58 @@ def get_bifurcation_angle(xPos, yPos, headings, thresh=0.25, maxtime=5000,test=F
     
 
     # FINDING THE THEORETICAL ANGLES FROM THE BIFURCATION REGIONS
-    #theoretical_angles = []
+    init_angle = np.atan2(yPos[jump_starts[0]]-y0,xPos[jump_starts[0]]-x0)
+    candidate_directions = [init_angle]
+    for ind, bif_end in enumerate(jump_ends):
+        next_angle = np.atan2(yPos[jump_starts[ind+1]]-yPos[bif_end],xPos[jump_starts[ind+1]]-xPos[bif_end])
+        candidate_directions.append(next_angle)
+
+    candidate_directions = np.unwrap(candidate_directions)
+    print(f"candidate directions: {candidate_directions}")
     print(f"jump starts: {jump_starts}")
     print(f"jump ends: {jump_ends}")
-    true_starts = []
-    true_ends = []
+    # while at least one of the directions is close
+    # forgot the in between point
+    # output the jump start and end
+    # calculate the angles using the method in the first loop with the start and ends
+    final_directions = False
+    while not final_directions:
+        # loop through each direction
+        # if they're close, don't append the points
+        new_directions = []
+        new_starts = []
+        new_ends = []
+        for index in range(0,len(candidate_directions)-1):
+            direction_diff = np.abs(candidate_directions[index]-candidate_directions[index+1])
+            if direction_diff > direction_thresh: # if directions are off, apppend this one
+                new_directions.append(candidate_directions[index])
+                new_starts.append(jump_starts[index])
+                new_ends.append(jump_ends[index])
+        candidate_directions = new_directions
+        jump_starts = new_starts
+        jump_ends = new_ends
+        if len(new_directions) == len(candidate_directions):
+            final_directions = True
+            
+
+    jump_starts.append(total_time-1)
+    theoretical_angles = []
     prev_angle = np.atan2(yPos[jump_starts[0]]-y0,xPos[jump_starts[0]]-x0)
-    #print("PASS 1:")
     for ind, bif_end in enumerate(jump_ends):
         next_angle = np.atan2(yPos[jump_starts[ind+1]]-yPos[bif_end],xPos[jump_starts[ind+1]]-xPos[bif_end])
         theoretical_angle = get_estimated_angle(prev_angle,next_angle)
-        print(f"theoretical angle: {theoretical_angle}")
-        #print(f"start: {jump_starts[ind]}, end: {jump_ends[ind]}, theoretical angle: {theoretical_angle}, prev angle: {prev_angle}, next angle: {next_angle}")
-        if theoretical_angle < 170/360*2*np.pi:
-            #theoretical_angles.append(theoretical_angle)
-            true_starts.append(jump_starts[ind])
-            true_ends.append(jump_ends[ind])
-            #print(f"angle accepted in pass 1")
-        #else:
-            #print("angle rejected in pass 1")
-        prev_angle = next_angle
-    true_starts.append(total_time-1)
-    theoretical_angles = []
-    true_true_starts = []
-    true_true_ends = []
-    prev_angle = np.atan2(yPos[true_starts[0]]-y0,xPos[true_starts[0]]-x0)
-    for ind, bif_end in enumerate(true_ends):
-        next_angle = np.atan2(yPos[true_starts[ind+1]]-yPos[bif_end],xPos[true_starts[ind+1]]-xPos[bif_end])
-        theoretical_angle = get_estimated_angle(prev_angle,next_angle)
-        #print(f"start: {true_starts[ind]}, end: {true_ends[ind]}, theoretical angle: {theoretical_angle}")
-        if theoretical_angle < 170/360*2*np.pi:
-            #print("angle accepted in pass 2")
-            theoretical_angles.append(theoretical_angle)
-            true_true_starts.append(true_starts[ind])
-            true_true_ends.append(true_ends[ind])
-        #else:
-            #print("angle rejected in pass 2")
+        print(f"prev angle: {prev_angle}, next angle: {next_angle}, theoretical angle: {theoretical_angle}")
+        theoretical_angles.append(theoretical_angle)
         prev_angle = next_angle
     #print(f"jump starts: {true_true_starts}")
     #print(f"jump ends: {true_true_ends}")
-    print(f"true true starts: {true_true_starts}")
-    print(f"true true ends: {true_true_ends}")
+    #print(f"true true starts: {true_true_starts}")
+    #print(f"true true ends: {true_true_ends}")
     true_indices = []
-    for index in range(len(true_true_ends)):
-        mean_index = (true_true_ends[index]+true_true_starts[index])/2
+    for index in range(len(jump_ends)):
+        mean_index = (jump_ends[index]+jump_starts[index])/2
         true_indices.append(int(round(mean_index)))
-    print(f"true indices: {true_indices}")
+    #print(f"true indices: {true_indices}")
 
     return true_indices, theoretical_angles
 
@@ -394,7 +379,7 @@ def plot_traj(xPos,yPos,targetsx,targetsy,sample_size,figure,plot_dec_point=Fals
             figure.plot(xPos[sample][start_ind:],yPos[sample][start_ind:],color='blue',alpha=0.5/sample_size)
             if plot_dec_point:
                 dec_time = dec_points[sample]
-                figure.scatter(xPos[sample][dec_time],yPos[sample][dec_time], color="green",alpha = 0.8,s=1)
+                figure.scatter(xPos[sample][dec_time],yPos[sample][dec_time], color="green",alpha = 0.8,s=5)
         figure.scatter(targetsx,targetsy,color='red',s=5)
     else:
         for sample in range(sample_size):
