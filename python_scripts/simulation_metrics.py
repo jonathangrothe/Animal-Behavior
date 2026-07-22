@@ -230,45 +230,58 @@ def get_bifurcation_angle(xPos, yPos, headings, direction_thresh = np.pi/18, max
     # then we calculate the theoretical angles and midpoints between the start and end of the bifurcation for all the start/end point pairs we actually flagged
     init_angle = np.atan2(yPos[jump_starts[0]]-y0,xPos[jump_starts[0]]-x0)
     candidate_directions = [init_angle]
+    theor_angles = []
     for ind, bif_end in enumerate(jump_ends):
         next_angle = np.atan2(yPos[jump_starts[ind+1]]-yPos[bif_end],xPos[jump_starts[ind+1]]-xPos[bif_end])
         candidate_directions.append(next_angle)
+        theor_angle = get_estimated_angle(init_angle,next_angle)
+        theor_angles.append(theor_angle)
+        init_angle = next_angle
 
-    candidate_directions = np.unwrap(candidate_directions)
-    #print(f"candidate directions: {candidate_directions}")
-    #print(f"jump starts: {jump_starts}")
-    #print(f"jump ends: {jump_ends}")
-    final_directions = False
-    while not final_directions:
-        new_directions = []
-        new_starts = []
-        new_ends = []
-        for index in range(0,len(candidate_directions)-1):
-            direction_diff = np.abs(candidate_directions[index]-candidate_directions[index+1])
-            if direction_diff > direction_thresh: # if directions are off, apppend this one
-                new_directions.append(candidate_directions[index])
-                new_starts.append(jump_starts[index])
-                new_ends.append(jump_ends[index])
-        candidate_directions = new_directions
-        jump_starts = new_starts
-        jump_ends = new_ends
-        if len(new_directions) == len(candidate_directions):
-            final_directions = True
-            
-    jump_starts.append(total_time-1)
-    theoretical_angles = []
-    prev_angle = np.atan2(yPos[jump_starts[0]]-y0,xPos[jump_starts[0]]-x0)
-    for ind, bif_end in enumerate(jump_ends):
-        next_angle = np.atan2(yPos[jump_starts[ind+1]]-yPos[bif_end],xPos[jump_starts[ind+1]]-xPos[bif_end])
-        theoretical_angle = get_estimated_angle(prev_angle,next_angle)
-        #print(f"prev angle: {prev_angle}, next angle: {next_angle}, theoretical angle: {theoretical_angle}")
-        theoretical_angles.append(theoretical_angle)
-        prev_angle = next_angle
-    true_indices = []
+    candidate_directions_unwrapped = np.unwrap(candidate_directions) # we need to be careful about this unwrapping versus not unwrapping
+    print(f"candidate directions: {candidate_directions}")
+    unwrapped_directions_update = candidate_directions_unwrapped.copy()
+    angles_update = theor_angles.copy()
+    updated = False
+    skips = []
+    for ind in range(len(unwrapped_directions_update)-1):
+        d0_unwrapped = unwrapped_directions_update[ind]
+        d1_unwrapped = unwrapped_directions_update[ind+1]
+        if updated: 
+            d1 = d1_unwrapped - 2*np.pi*np.floor((d1_unwrapped+np.pi)/(2*np.pi))
+            theor_angles[ind] = get_estimated_angle(new_d0,d1)
+        direction_diff = np.abs(d1_unwrapped-d0_unwrapped)
+        if direction_diff < direction_thresh:
+            adjustment = (1 if d1_unwrapped-d0_unwrapped > 0 else -1)*(np.pi/2-theor_angles[ind])/2
+            unwrapped_directions_update[ind] = -100
+            updated_d0 = d0_unwrapped + adjustment
+            unwrapped_directions_update[ind+1] = updated_d0
+            angles_update[ind] = -100
+            updated = True
+            new_d0 = updated_d0 - 2*np.pi*np.floor((updated_d0+np.pi)/(2*np.pi))
+            skips.append(ind)
+        else:
+            updated = False
+    true_angles = []
+    for item in angles_update:
+        if item != -100:
+            true_angles.append(item)
+    print(f"updated directions: {unwrapped_directions_update}")
+    print(f"initial angles: {theor_angles}")
+    print(f"updated angles: {angles_update}")
+    print(f"final angles: {true_angles}")
+    true_starts = []
+    true_ends = []
     for index in range(len(jump_ends)):
-        mean_index = (jump_ends[index]+jump_starts[index])/2
+        if index not in skips:
+            true_starts.append(jump_starts[index])
+            true_ends.append(jump_ends[index])
+
+    true_indices = []
+    for index in range(len(true_ends)):
+        mean_index = (true_ends[index]+true_starts[index])/2
         true_indices.append(int(round(mean_index)))
-    return true_indices, theoretical_angles
+    return true_indices, true_angles
 
 def find_bumps(activity): # function not currently in use, will keep it for now
     '''

@@ -82,9 +82,9 @@ base = {'N':N,
 
 plot_neurons = True
 plot_trajs = True
-sample_size = 1
-h0_list = [[0.212,0.212,0.212],[0.21,0.21,0.21],[0.212,0.212,0.212],[0.213,0.213,0.213]]
-sigma_list = [0.16,0.23,0.24,0.26]
+sample_size = 10
+h0_list = [[0.212,0.212,0.212],[0.213,0.213,0.213]]
+sigma_list = [0.16,0.26]
 change = {'sigma':sigma_list, 'h0':h0_list}
 target_list, time_list, activity_list, x_list, y_list, headings_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
 
@@ -119,7 +119,7 @@ for i in range(len(target_list)):
     phases.append(phase)
 
 n_plots = len(h0_list)
-ncols = 4
+ncols = 2
 nrows = 1
 fig = plt.figure(layout='constrained',figsize=(ncols*3.5,nrows*6))
 subfigs = fig.subfigures(2,1, wspace=0.1)

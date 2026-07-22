@@ -170,21 +170,29 @@ class ToleranceTesting(unittest.TestCase):
                 y = ypts_arr[r,:]
                 coords, directions, theor_angle = coords_setup(x,y,line_lens,dec_lens)
                 ind, angle = get_bifurcation_angle(coords[0],coords[1],coords[2],thresh)
-                print(f"coords: {coords}")
                 print(f"thresh: {thresh}, directions: {directions}, r: {r}, theor_angles: {theor_angle}, angles: {angle}")
                 b1_valid = True
                 diff1 = np.abs(directions[1]-directions[0])
-                if (diff1/(dec_lens[0]-1) < np.pi/720) or (diff1 < thresh):
+                if (diff1/(dec_lens[0]-1) < np.pi/720):
                     b1_valid = False
                     print(f"invalid: turning angle: {diff1/(dec_lens[0]-1)}")
+                if diff1 < thresh: 
+                    b1_valid = False
+                    print(f"invalid: diff1: {diff1}, thresh: {thresh}")
                 diff2 = np.abs(directions[2]-directions[1])
                 if not b1_valid: 
-                        diff2 = np.abs(directions[2]-(directions[0]+directions[1]))
+                    adjustment = (np.pi/2-theor_angle[0])/2
+                    if directions[1] - directions[0] > 0: 
+                        diff2 = np.abs(directions[2]-(directions[0]+adjustment))
+                    else:
+                        diff2 = np.abs(directions[2]-(directions[0]+adjustment))
                 b2_valid = True
-                if (diff2/(dec_lens[1]-1) < np.pi/720) or (diff2 < thresh):
+                if (diff2/(dec_lens[1]-1) < np.pi/720):
                     b2_valid = False
-                    # HERE WE NEED TO UPDATE THE ANGLES THE SAME WAY WE DO IN THE ACTUAL FUNCTION
                     print(f"invalid: turning angle: {diff2/(dec_lens[1]-1)}")
+                if diff2 < thresh: 
+                    b2_valid = False
+                    print(f"invald: diff2: {diff2}, thresh: {thresh}")
                 if b1_valid and b2_valid:
                     self.assertEqual(2,len(ind))
                     self.assertEqual(2,len(angle))
