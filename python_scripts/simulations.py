@@ -99,23 +99,22 @@ for i in range(len(target_list)):
     target = target_list[i]
     targx = 'n'
     targy = 'n'
+    indices = [0]
+    bifurcation_angles = [np.pi/2]
     if target != -1:
         targx = initialxt[target]
         targy = initialyt[target]
-    bif_start = time.perf_counter()
-    print(f"index before getting angle: {i}")
-    indices, bifurcation_angles = sim_met.get_bifurcation_angle(curr_xpos,curr_ypos,curr_headings,0.25,5000)
-    bif_end = time.perf_counter()
-    bif_time = bif_end - bif_start
-    print(f"bif time: {bif_time:.6f} seconds")
+        bif_start = time.perf_counter()   
+        indices, bifurcation_angles = sim_met.get_bifurcation_angle(curr_xpos,curr_ypos,curr_headings,0.25,5000)
+        bif_end = time.perf_counter()
+        bif_time = bif_end - bif_start
+        print(f"bif time: {bif_time:.6f} seconds")
     start_time = time.perf_counter()
     phase = sim_met.get_bump_type(curr_activity)
     end_time = time.perf_counter()
     bump_time = end_time-start_time
     print(f"time to get bump type: {bump_time:.6f} seconds")
     angles.append(bifurcation_angles)
-    if len(indices) == 0:
-        indices = [0]
     bif_indices.append(indices)
     phases.append(phase)
 

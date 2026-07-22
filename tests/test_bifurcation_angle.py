@@ -43,13 +43,13 @@ def solve_curve_start(x0,y0, x1,y1, x2,y2, dec_len):
     return start_points[0], start_points[1], dec_factor, aprox_angle  # (x1, y1)
     
 def coords_setup(xpts,ypts,line_len,dec_len):
-    # redo this 
     a1 = np.atan2(ypts[1]-ypts[0],xpts[1]-xpts[0])
     x0 = xpts[0]
     y0 = ypts[0]
     x_traj = []
     y_traj = []
-    direction_diffs = []
+    #direction_diffs = []
+    directions = [a1]
     theor_angles = []
     for i in range(len(xpts)-2):
         x1 = xpts[i+1]
@@ -57,18 +57,15 @@ def coords_setup(xpts,ypts,line_len,dec_len):
         x2 = xpts[i+2]
         y2 = ypts[i+2]
         a2 = np.atan2(y2-y1,x2-x1)
-        #print(f"before update: a1: {a1}, a2: {a2}")
+        directions.append(a2)
         if np.abs(a2-a1) > np.pi:
-            #print("entered")
             if a2 < a1:
                 a2 += 2*np.pi
             else:
                 a2 -= 2*np.pi
-        direction_diffs.append(np.abs(a2-a1))
-        # check if dec_len is 1, if it is don't do all this
-        #print(f"after update: a1: {a1}, a2: {a2}")
+        #direction_diffs.append(a2-a1)
         if dec_len[i] > 1:
-            x1_gr,y1_gr,dec_factor1, tolerance, flat_angle = solve_curve_start(x0,y0,x1,y1,x2,y2,dec_len[i])
+            x1_gr,y1_gr,dec_factor1, flat_angle = solve_curve_start(x0,y0,x1,y1,x2,y2,dec_len[i])
             theor_angles.append(flat_angle)
             x_gr_prebif = np.linspace(x0,x1_gr,num=line_len[i])
             y_gr_prebif = np.linspace(y0,y1_gr,num=line_len[i])
@@ -95,7 +92,6 @@ def coords_setup(xpts,ypts,line_len,dec_len):
 
         a1 = a2
         
-    # go from last point to end
     final_gradual_x = np.linspace(x0,xpts[-1],line_len[-1])
     final_gradual_y = np.linspace(y0,ypts[-1],line_len[-1])
     x_traj.append(final_gradual_x)
@@ -116,24 +112,25 @@ def coords_setup(xpts,ypts,line_len,dec_len):
             if head_angle < 0: 
                 head_angle += 2*np.pi
             headings[index+1] = head_angle
-    
-    return [final_x_traj,final_y_traj,headings], direction_diffs, theor_angles
+    headings = np.unwrap(headings)
+    return [final_x_traj,final_y_traj,headings], directions, theor_angles
 
 class ToleranceTesting(unittest.TestCase):
     '''
     testing some simple two bifurcation cases where the trajectory moves smoothly between three angles in a pattern of line, turn, line, turn, line
-    making sure that the measured bifurcation angle is within a certain value of the theoretical bifurcation angle based on the details of the curve
-    the idea is that our get_bifurcation_angle function should detect the start and end points of the turn, and either return the angle at one of them, or a 'better' angle in between
-    in these simple cases the bifurcation angles at the start and end point should be the same
+    testing to ensure that our cutoff for what counts as a bifurcation is consistent with how we think it should work
+    the idea is that our get_bifurcation_angle function should detect the start and end points of the turn, 
+    but if the start of this curve and the start of the next curve are directionally similar, then we shouldn't count this point as a bifurcation
     '''
-    # need to fix underlying logic of this - no longer is tolerance really a big part of the function
-    # but the idea of testing performance in all quadrants IS important, so while I will have to rework the name of the function
-    # and the tests themselves, I think I will keep this function in a changed form
     def test_allquadrants(self):
         rng = np.random.default_rng()
-        a1 = rng.uniform(0, np.pi / 2)
-        a2 = rng.uniform(0, np.pi / 2)
-        a3 = rng.uniform(0, np.pi / 2)   
+        #a1 = rng.uniform(0, np.pi/2)
+        #a2 = rng.uniform(0, np.pi/2)
+        #a3 = rng.uniform(0, np.pi/2)
+        a1 = 0.5226293957839758
+        a2 = 0.6539906102022741
+        a3 = 0.7616190005377972
+        print(f"a1: {a1}, a2: {a2}, a3: {a3}") 
         a1_list = []
         a2_list = []
         a3_list = []
@@ -166,29 +163,46 @@ class ToleranceTesting(unittest.TestCase):
                     ypts_arr[row,1] = y1
                     ypts_arr[row,2] = y2
                     ypts_arr[row,3] = y3
-        for r in range(64):
-            x = xpts_arr[r,:]
-            y = ypts_arr[r,:]
-            # TO CHANGE: from COORDS_SETUP (which we will have to change), calculate the directional differences, 
-            # and use that to determine how many bifurcations there should be (maybe merge this idea in with Thresholds? it is similar)
-            gradual_coords, tolerances, theor_angle = coords_setup(x,y,line_lens,dec_lens)
-            ind, angle = get_bifurcation_angle(gradual_coords[0],gradual_coords[1],gradual_coords[2],0.01)
-            print(f"theoretical angles: {theor_angle}")
-            print(f"angles: {angle}")
-            print(f"differences: {np.abs(np.subtract(theor_angle,angle))}")
-            print(f"tolerance for first bif: {tolerances[0]}, tolerance for second bif: {tolerances[1]}")
-            #plt.figure(1)
-            #plt.scatter(imm_coords[0],imm_coords[1],c='blue',s=1)
-            #plt.scatter(gradual_coords[0],gradual_coords[1],c='red',s=1)
-            #plt.show()
-            if len(angle) > 0:
-                within_tol1 = np.abs(theor_angle[0]-angle[0]) <= tolerances[0]
-                self.assertEqual(True, within_tol1)
-            if len(angle) > 1:
-                within_tol2 = np.abs(theor_angle[1]-angle[1]) <= tolerances[1]
-                print(f"WITHIN: 1: {within_tol1}, 2: {within_tol2}")
-                self.assertEqual(True, within_tol2)
-
+        direction_thresh = [np.pi/1000,np.pi/20,np.pi/10,np.pi/2,np.pi]
+        for thresh in direction_thresh: 
+            for r in range(64):
+                x = xpts_arr[r,:]
+                y = ypts_arr[r,:]
+                coords, directions, theor_angle = coords_setup(x,y,line_lens,dec_lens)
+                ind, angle = get_bifurcation_angle(coords[0],coords[1],coords[2],thresh)
+                print(f"coords: {coords}")
+                print(f"thresh: {thresh}, directions: {directions}, r: {r}, theor_angles: {theor_angle}, angles: {angle}")
+                b1_valid = True
+                diff1 = np.abs(directions[1]-directions[0])
+                if (diff1/(dec_lens[0]-1) < np.pi/720) or (diff1 < thresh):
+                    b1_valid = False
+                    print(f"invalid: turning angle: {diff1/(dec_lens[0]-1)}")
+                diff2 = np.abs(directions[2]-directions[1])
+                if not b1_valid: 
+                        diff2 = np.abs(directions[2]-(directions[0]+directions[1]))
+                b2_valid = True
+                if (diff2/(dec_lens[1]-1) < np.pi/720) or (diff2 < thresh):
+                    b2_valid = False
+                    # HERE WE NEED TO UPDATE THE ANGLES THE SAME WAY WE DO IN THE ACTUAL FUNCTION
+                    print(f"invalid: turning angle: {diff2/(dec_lens[1]-1)}")
+                if b1_valid and b2_valid:
+                    self.assertEqual(2,len(ind))
+                    self.assertEqual(2,len(angle))
+                    self.assertAlmostEqual(theor_angle[0],angle[0])
+                    self.assertAlmostEqual(theor_angle[1],angle[1])
+                if b1_valid and not b2_valid: 
+                    self.assertEqual(1,len(ind))
+                    self.assertEqual(1,len(angle))
+                    within_tol1 = np.abs(theor_angle[0]-angle[0]) <= diff2
+                    self.assertEqual(True,within_tol1)
+                if not b1_valid and b2_valid:
+                    self.assertEqual(1,len(ind))
+                    self.assertEqual(1,len(angle))
+                    within_tol2 = np.abs(theor_angle[1]-angle[0]) <= diff1
+                    self.assertEqual(True,within_tol2)
+                if not b1_valid and not b2_valid:
+                    self.assertEqual(0,len(ind))
+                    self.assertEqual(0,len(angle))
 
 class Dimensions(unittest.TestCase):
     '''

@@ -157,6 +157,8 @@ def get_bifurcation_angle(xPos, yPos, headings, direction_thresh = np.pi/18, max
         yPos = yPos.ravel()
     if xPos.size != yPos.size:
         raise ValueError("arrays for x position and y position are different sizes")
+    if headings.size != xPos.size:
+        raise ValueError("array for heading and arrays for position are different sizes")
     total_time = len(xPos)
     if maxtime <= total_time:
         total_time = maxtime
@@ -164,10 +166,9 @@ def get_bifurcation_angle(xPos, yPos, headings, direction_thresh = np.pi/18, max
         yPos = yPos[:total_time]
         headings = headings[:total_time]
     x0, y0 = xPos[0], yPos[0]
-    targetx, targety = xPos[-1], yPos[-1]
+    targetx, targety = xPos[-1], yPos[-1] # this implies we should only call the function if a target was reached...
 
-    # add checks for headings
-    # FINDING THE START
+    # FINDING THE START 
     dist_to_targ = np.sqrt((x0-targetx)**2+(y0-targety)**2)
     movement_thresh = dist_to_targ*0.05
     found_thresh = False
@@ -192,9 +193,9 @@ def get_bifurcation_angle(xPos, yPos, headings, direction_thresh = np.pi/18, max
                 thresh_ind = total_time-1
                 break     
     thresh_ind -= 1 #difference in length between xPos and dheading
-    print(f"thresh_ind: {thresh_ind}")
+    #print(f"thresh_ind: {thresh_ind}")
 
-    # DDIRECTION SETUP
+    # FINDING JUMP STARTS AND ENDS
     headings_unwrapped = np.unwrap(headings)
     dheadings = np.abs(np.diff(headings_unwrapped))
     thresh_value = np.pi/720 # approximately good value, may want to parametrize in the future
@@ -224,6 +225,9 @@ def get_bifurcation_angle(xPos, yPos, headings, direction_thresh = np.pi/18, max
     
 
     # FINDING THE THEORETICAL ANGLES FROM THE BIFURCATION REGIONS
+    # THREE STEP PROCESS: first we calculate the direction at the start of the bifurcation region
+    # then we iterate through these directions and if there is a bifurcation such that the next direction is close to the current direction, we ignore that bifurcation point
+    # then we calculate the theoretical angles and midpoints between the start and end of the bifurcation for all the start/end point pairs we actually flagged
     init_angle = np.atan2(yPos[jump_starts[0]]-y0,xPos[jump_starts[0]]-x0)
     candidate_directions = [init_angle]
     for ind, bif_end in enumerate(jump_ends):
@@ -231,17 +235,11 @@ def get_bifurcation_angle(xPos, yPos, headings, direction_thresh = np.pi/18, max
         candidate_directions.append(next_angle)
 
     candidate_directions = np.unwrap(candidate_directions)
-    print(f"candidate directions: {candidate_directions}")
-    print(f"jump starts: {jump_starts}")
-    print(f"jump ends: {jump_ends}")
-    # while at least one of the directions is close
-    # forgot the in between point
-    # output the jump start and end
-    # calculate the angles using the method in the first loop with the start and ends
+    #print(f"candidate directions: {candidate_directions}")
+    #print(f"jump starts: {jump_starts}")
+    #print(f"jump ends: {jump_ends}")
     final_directions = False
     while not final_directions:
-        # loop through each direction
-        # if they're close, don't append the points
         new_directions = []
         new_starts = []
         new_ends = []
@@ -257,26 +255,19 @@ def get_bifurcation_angle(xPos, yPos, headings, direction_thresh = np.pi/18, max
         if len(new_directions) == len(candidate_directions):
             final_directions = True
             
-
     jump_starts.append(total_time-1)
     theoretical_angles = []
     prev_angle = np.atan2(yPos[jump_starts[0]]-y0,xPos[jump_starts[0]]-x0)
     for ind, bif_end in enumerate(jump_ends):
         next_angle = np.atan2(yPos[jump_starts[ind+1]]-yPos[bif_end],xPos[jump_starts[ind+1]]-xPos[bif_end])
         theoretical_angle = get_estimated_angle(prev_angle,next_angle)
-        print(f"prev angle: {prev_angle}, next angle: {next_angle}, theoretical angle: {theoretical_angle}")
+        #print(f"prev angle: {prev_angle}, next angle: {next_angle}, theoretical angle: {theoretical_angle}")
         theoretical_angles.append(theoretical_angle)
         prev_angle = next_angle
-    #print(f"jump starts: {true_true_starts}")
-    #print(f"jump ends: {true_true_ends}")
-    #print(f"true true starts: {true_true_starts}")
-    #print(f"true true ends: {true_true_ends}")
     true_indices = []
     for index in range(len(jump_ends)):
         mean_index = (jump_ends[index]+jump_starts[index])/2
         true_indices.append(int(round(mean_index)))
-    #print(f"true indices: {true_indices}")
-
     return true_indices, theoretical_angles
 
 def find_bumps(activity): # function not currently in use, will keep it for now
