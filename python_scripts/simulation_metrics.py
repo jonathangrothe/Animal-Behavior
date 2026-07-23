@@ -239,26 +239,34 @@ def get_bifurcation_angle(xPos, yPos, headings, direction_thresh = np.pi/18, max
         init_angle = next_angle
 
     candidate_directions_unwrapped = np.unwrap(candidate_directions) # we need to be careful about this unwrapping versus not unwrapping
-    print(f"candidate directions: {candidate_directions}")
-    unwrapped_directions_update = candidate_directions_unwrapped.copy()
+    #unwrapped_directions_update = candidate_directions_unwrapped.copy()
+    directions_update = candidate_directions.copy()
     angles_update = theor_angles.copy()
     updated = False
     skips = []
-    for ind in range(len(unwrapped_directions_update)-1):
-        d0_unwrapped = unwrapped_directions_update[ind]
-        d1_unwrapped = unwrapped_directions_update[ind+1]
-        if updated: 
-            d1 = d1_unwrapped - 2*np.pi*np.floor((d1_unwrapped+np.pi)/(2*np.pi))
+    print(f"candidate directions: {candidate_directions}")
+    print(f"initial angles: {theor_angles}")
+    for ind in range(len(directions_update)-1):
+        #d0_unwrapped = unwrapped_directions_update[ind]
+        #d1_unwrapped = unwrapped_directions_update[ind+1]
+        d0 = directions_update[ind]
+        d1 = directions_update[ind+1]
+        if updated:
+            print(f"d1: {d1}")
             theor_angles[ind] = get_estimated_angle(new_d0,d1)
-        direction_diff = np.abs(d1_unwrapped-d0_unwrapped)
+        directions_unwrapped = np.unwrap([d0,d1])
+        d1_unwrapped = directions_unwrapped[1]
+        direction_diff = np.abs(d1_unwrapped-d0)
+        print(f"direction diff: {direction_diff}, d1 normal: {candidate_directions[ind+1]} d0 normal: {candidate_directions[ind]}, d1 unwrapped: {d1_unwrapped}, d0 unwrapped: {d0}")
         if direction_diff < direction_thresh:
-            adjustment = (1 if d1_unwrapped-d0_unwrapped > 0 else -1)*(np.pi/2-theor_angles[ind])/2
-            unwrapped_directions_update[ind] = -100
-            updated_d0 = d0_unwrapped + adjustment
-            unwrapped_directions_update[ind+1] = updated_d0
+            adjustment = (1 if d1_unwrapped-d0 > 0 else -1)*(np.pi-theor_angles[ind])/2
+            directions_update[ind] = -100
+            updated_d0 = d0 + adjustment
+            directions_update[ind+1] = updated_d0
             angles_update[ind] = -100
             updated = True
             new_d0 = updated_d0 - 2*np.pi*np.floor((updated_d0+np.pi)/(2*np.pi))
+            print(f"old d0: {d0}, new d0: {new_d0}")
             skips.append(ind)
         else:
             updated = False
@@ -266,10 +274,10 @@ def get_bifurcation_angle(xPos, yPos, headings, direction_thresh = np.pi/18, max
     for item in angles_update:
         if item != -100:
             true_angles.append(item)
-    print(f"updated directions: {unwrapped_directions_update}")
-    print(f"initial angles: {theor_angles}")
-    print(f"updated angles: {angles_update}")
-    print(f"final angles: {true_angles}")
+
+    
+    #print(f"updated angles: {angles_update}")
+    #print(f"final angles: {true_angles}")
     true_starts = []
     true_ends = []
     for index in range(len(jump_ends)):

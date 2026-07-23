@@ -171,21 +171,23 @@ class ToleranceTesting(unittest.TestCase):
                 coords, directions, theor_angle = coords_setup(x,y,line_lens,dec_lens)
                 ind, angle = get_bifurcation_angle(coords[0],coords[1],coords[2],thresh)
                 print(f"thresh: {thresh}, directions: {directions}, r: {r}, theor_angles: {theor_angle}, angles: {angle}")
+                directions_unwrapped = np.unwrap(directions)
                 b1_valid = True
-                diff1 = np.abs(directions[1]-directions[0])
+                diff1 = np.abs(directions_unwrapped[1]-directions_unwrapped[0])
                 if (diff1/(dec_lens[0]-1) < np.pi/720):
                     b1_valid = False
                     print(f"invalid: turning angle: {diff1/(dec_lens[0]-1)}")
                 if diff1 < thresh: 
                     b1_valid = False
                     print(f"invalid: diff1: {diff1}, thresh: {thresh}")
-                diff2 = np.abs(directions[2]-directions[1])
+                diff2 = np.abs(directions_unwrapped[2]-directions_unwrapped[1])
                 if not b1_valid: 
-                    adjustment = (np.pi/2-theor_angle[0])/2
-                    if directions[1] - directions[0] > 0: 
-                        diff2 = np.abs(directions[2]-(directions[0]+adjustment))
-                    else:
-                        diff2 = np.abs(directions[2]-(directions[0]+adjustment))
+                    adjustment = (1 if directions_unwrapped[1]-directions_unwrapped[0] > 0 else -1)*(np.pi-theor_angle[0])/2
+                    print(f"adjustment: {adjustment}, theor angle: {theor_angle[0]}")
+                    # we need to unwrap it again here before we take the new adjustment
+                    diff2_adjusted_unwrapped = np.unwrap([directions_unwrapped[2],(directions_unwrapped[0]+adjustment)])
+                    diff2 = np.abs(diff2_adjusted_unwrapped[1]-diff2_adjusted_unwrapped[0])
+
                 b2_valid = True
                 if (diff2/(dec_lens[1]-1) < np.pi/720):
                     b2_valid = False
@@ -193,6 +195,7 @@ class ToleranceTesting(unittest.TestCase):
                 if diff2 < thresh: 
                     b2_valid = False
                     print(f"invald: diff2: {diff2}, thresh: {thresh}")
+                print(f"diff1: {diff1}, diff2: {diff2}")
                 if b1_valid and b2_valid:
                     self.assertEqual(2,len(ind))
                     self.assertEqual(2,len(angle))
