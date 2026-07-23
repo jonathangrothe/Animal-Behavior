@@ -7,10 +7,12 @@ from helper_functions.helpers import get_estimated_angle
 
 def solve_curve_start(x0,y0, x1,y1, x2,y2, dec_len):
     # helper function for setup, solves for where the curve should start to cut corners
-    # 
+    
     a1 = np.atan2(y1-y0,x1-x0)
     a2 = np.atan2(y2-y1,x2-x1)
-    aprox_angle = get_estimated_angle(a1,a2)
+    aprox_angle = get_estimated_angle(a1,a2) 
+    # here we can calculate the delta x and delta y easily. 
+    # then we can use those to return the angles ? 
     dec_factor = aprox_angle*0.2/np.pi 
 
     if np.abs(a2 - a1) > np.pi:
@@ -30,15 +32,6 @@ def solve_curve_start(x0,y0, x1,y1, x2,y2, dec_len):
     t, s = np.linalg.solve(np.column_stack([u1, -u2]), (p2 - p0) - D)
     start_points = p0 + t*u1
     finish_points = start_points + D
-    
-    hyp = (x2-x0)**2+(y2-y0)**2
-    end_d1_sq = (finish_points[0]-x0)**2+(finish_points[1]-y0)**2
-    end_d2_sq = (x2-finish_points[0])**2+(y2-finish_points[1])**2
-    end_d1 = np.sqrt(end_d1_sq)
-    end_d2 = np.sqrt(end_d2_sq)
-    end_val = (end_d1_sq+end_d2_sq-hyp)/(2*end_d1*end_d2)
-    end_angle = np.arccos(end_val)
-    #tolerance =  np.abs(end_angle-aprox_angle)
 
     return start_points[0], start_points[1], dec_factor, aprox_angle  # (x1, y1)
     
@@ -51,6 +44,8 @@ def coords_setup(xpts,ypts,line_len,dec_len):
     #direction_diffs = []
     directions = [a1]
     theor_angles = []
+    theor_start_corners = []
+    theor_end_corners = []
     for i in range(len(xpts)-2):
         x1 = xpts[i+1]
         y1 = ypts[i+1]
@@ -63,10 +58,18 @@ def coords_setup(xpts,ypts,line_len,dec_len):
                 a2 += 2*np.pi
             else:
                 a2 -= 2*np.pi
-        #direction_diffs.append(a2-a1)
         if dec_len[i] > 1:
             x1_gr,y1_gr,dec_factor1, flat_angle = solve_curve_start(x0,y0,x1,y1,x2,y2,dec_len[i])
+            # our equation using x1 and y1 is getting that the angles are the same, meaning there is no difference in the distance from p0 to p1 and p1 to p2. 
+            # this shouldn't be the case, because we should have a set distance that is p0 to curve start and curve end to p2, with p1 falling somewhere in between that
+            # Look into how this occurred next time
+            hyp = np.sqrt((x2-x0)**2+(y2-y0)**2) 
+            d1 = np.sqrt((x2-x1)**2+(y2-y1)**2)
+            start_corner = np.asin((d1*np.sin(flat_angle))/hyp)
+            end_corner = np.pi-flat_angle-start_corner
             theor_angles.append(flat_angle)
+            theor_start_corners.append(start_corner)
+            theor_end_corners.append(end_corner)
             x_gr_prebif = np.linspace(x0,x1_gr,num=line_len[i])
             y_gr_prebif = np.linspace(y0,y1_gr,num=line_len[i])
             x_traj.append(x_gr_prebif)
@@ -82,7 +85,11 @@ def coords_setup(xpts,ypts,line_len,dec_len):
             x0 = x_gradualfirst[-1]
             y0 = y_gradualfirst[-1]
         else:
-            theor_angles.append(get_estimated_angle(a1,a2))
+            theor_angle_imm = get_estimated_angle(a1,a2)
+            theor_angles.append(theor_angle_imm)
+            even_split = (np.pi-theor_angle_imm)/2
+            theor_start_corners.append(even_split)
+            theor_end_corners.append(even_split)
             x_straight_through = np.linspace(x0,x1,num=line_len[i])
             y_straight_through = np.linspace(y0,y1,num=line_len[i])
             x_traj.append(x_straight_through)
@@ -113,7 +120,10 @@ def coords_setup(xpts,ypts,line_len,dec_len):
                 head_angle += 2*np.pi
             headings[index+1] = head_angle
     headings = np.unwrap(headings)
-    return [final_x_traj,final_y_traj,headings], directions, theor_angles
+    print(f"coords setup start corners: {theor_start_corners}")
+    print(f"coords setup angles: {theor_angles}")
+    print(f"coords setup end corners: {theor_end_corners}")
+    return [final_x_traj,final_y_traj,headings], directions, [theor_angles,theor_start_corners,theor_end_corners]
 
 class ToleranceTesting(unittest.TestCase):
     '''
@@ -122,14 +132,15 @@ class ToleranceTesting(unittest.TestCase):
     the idea is that our get_bifurcation_angle function should detect the start and end points of the turn, 
     but if the start of this curve and the start of the next curve are directionally similar, then we shouldn't count this point as a bifurcation
     '''
+
     def test_allquadrants(self):
         rng = np.random.default_rng()
-        #a1 = rng.uniform(0, np.pi/2)
-        #a2 = rng.uniform(0, np.pi/2)
-        #a3 = rng.uniform(0, np.pi/2)
-        a1 = 0.5226293957839758
-        a2 = 0.6539906102022741
-        a3 = 0.7616190005377972
+        a1 = rng.uniform(0, np.pi/2)
+        a2 = rng.uniform(0, np.pi/2)
+        a3 = rng.uniform(0, np.pi/2)
+        #a1 = 0.6168565150857789
+        #a2 = 0.6562161812272431
+        #a3 = 0.3213862088423116
         print(f"a1: {a1}, a2: {a2}, a3: {a3}") 
         a1_list = []
         a2_list = []
@@ -164,52 +175,48 @@ class ToleranceTesting(unittest.TestCase):
                     ypts_arr[row,2] = y2
                     ypts_arr[row,3] = y3
         direction_thresh = [np.pi/1000,np.pi/20,np.pi/10,np.pi/2,np.pi]
-        for thresh in direction_thresh: 
+        for thresh in direction_thresh:  # problem: somehow our update is not equivalent to skipping the first point due to not being in the threshold
             for r in range(64):
                 x = xpts_arr[r,:]
                 y = ypts_arr[r,:]
                 coords, directions, theor_angle = coords_setup(x,y,line_lens,dec_lens)
                 ind, angle = get_bifurcation_angle(coords[0],coords[1],coords[2],thresh)
-                print(f"thresh: {thresh}, directions: {directions}, r: {r}, theor_angles: {theor_angle}, angles: {angle}")
+                #print(f"thresh: {thresh}, directions: {directions}, r: {r}, theor_angles: {theor_angle}, angles: {angle}")
                 directions_unwrapped = np.unwrap(directions)
                 b1_valid = True
                 diff1 = np.abs(directions_unwrapped[1]-directions_unwrapped[0])
                 if (diff1/(dec_lens[0]-1) < np.pi/720):
                     b1_valid = False
-                    print(f"invalid: turning angle: {diff1/(dec_lens[0]-1)}")
                 if diff1 < thresh: 
                     b1_valid = False
-                    print(f"invalid: diff1: {diff1}, thresh: {thresh}")
                 diff2 = np.abs(directions_unwrapped[2]-directions_unwrapped[1])
                 if not b1_valid: 
-                    adjustment = (1 if directions_unwrapped[1]-directions_unwrapped[0] > 0 else -1)*(np.pi-theor_angle[0])/2
-                    print(f"adjustment: {adjustment}, theor angle: {theor_angle[0]}")
-                    # we need to unwrap it again here before we take the new adjustment
+                    adjustment = (1 if directions_unwrapped[1]-directions_unwrapped[0] > 0 else -1)*(np.pi-theor_angle[0][0])/2
+                    #print(f"theor angle: {theor_angle[0]}, original direction: {directions_unwrapped[0]}, sign: {np.sign(adjustment)}")
+                    #print(f"adjusted angle: {directions_unwrapped[0]+adjustment}")
                     diff2_adjusted_unwrapped = np.unwrap([directions_unwrapped[2],(directions_unwrapped[0]+adjustment)])
                     diff2 = np.abs(diff2_adjusted_unwrapped[1]-diff2_adjusted_unwrapped[0])
+                    #print(f"new diff: {diff2}")
 
                 b2_valid = True
                 if (diff2/(dec_lens[1]-1) < np.pi/720):
                     b2_valid = False
-                    print(f"invalid: turning angle: {diff2/(dec_lens[1]-1)}")
                 if diff2 < thresh: 
                     b2_valid = False
-                    print(f"invald: diff2: {diff2}, thresh: {thresh}")
-                print(f"diff1: {diff1}, diff2: {diff2}")
                 if b1_valid and b2_valid:
                     self.assertEqual(2,len(ind))
                     self.assertEqual(2,len(angle))
-                    self.assertAlmostEqual(theor_angle[0],angle[0])
-                    self.assertAlmostEqual(theor_angle[1],angle[1])
+                    self.assertAlmostEqual(theor_angle[0][0],angle[0])
+                    self.assertAlmostEqual(theor_angle[0][1],angle[1])
                 if b1_valid and not b2_valid: 
                     self.assertEqual(1,len(ind))
                     self.assertEqual(1,len(angle))
-                    within_tol1 = np.abs(theor_angle[0]-angle[0]) <= diff2
+                    within_tol1 = np.abs(theor_angle[0][0]-angle[0]) <= diff2
                     self.assertEqual(True,within_tol1)
                 if not b1_valid and b2_valid:
                     self.assertEqual(1,len(ind))
                     self.assertEqual(1,len(angle))
-                    within_tol2 = np.abs(theor_angle[1]-angle[0]) <= diff1
+                    within_tol2 = np.abs(theor_angle[0][1]-angle[0]) <= diff1
                     self.assertEqual(True,within_tol2)
                 if not b1_valid and not b2_valid:
                     self.assertEqual(0,len(ind))
