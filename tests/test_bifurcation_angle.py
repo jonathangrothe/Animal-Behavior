@@ -197,7 +197,7 @@ class ToleranceTesting(unittest.TestCase):
                         ypts_arr[row,2] = y2
                         ypts_arr[row,3] = y3
             direction_thresh = [np.pi/1000,np.pi/20,np.pi/10,np.pi/2,np.pi]
-            for thresh in direction_thresh:  # problem: somehow our update is not equivalent to skipping the first point due to not being in the threshold
+            for thresh in direction_thresh:
                 for r in range(64):
                     x = xpts_arr[r,:]
                     y = ypts_arr[r,:]
@@ -207,17 +207,14 @@ class ToleranceTesting(unittest.TestCase):
                     directions_unwrapped = np.unwrap(directions)
                     b1_turn_valid = True
                     b2_turn_valid = True
-                    #print(f"directions: {directions}")
                     diff1 = np.abs(directions_unwrapped[1]-directions_unwrapped[0])
                     new_d1 = directions_unwrapped[0]
                     new_d2 = directions_unwrapped[1]
-                    #print(f"diff1 ratio: {diff1/(dec_lens[0]-1)}")
                     if (diff1/(dec_lens[0]-1) < np.pi/720):
                         b1_turn_valid = False 
                         adjustment = (1 if directions_unwrapped[1]-directions_unwrapped[0] > 0 else -1)*theor_angle[1][0]
                         new_d1 = new_d1 + adjustment
                     diff2 = np.abs(directions_unwrapped[2]-directions_unwrapped[1])
-                    #print(f"diff2 ratio: {diff2/(dec_lens[1]-1)}")
                     if (diff2/(dec_lens[1]-1) < np.pi/720):
                         b2_turn_valid = False
                         adjustment = (1 if directions_unwrapped[2]-directions_unwrapped[1] > 0 else -1)*theor_angle[1][1]
@@ -228,10 +225,6 @@ class ToleranceTesting(unittest.TestCase):
                         directions_unwrapped = np.unwrap([directions_unwrapped[0],new_d2])
                     if not b1_turn_valid and not b2_turn_valid:
                         directions_unwrapped = [0]
-
-                    # first step: check to see if turns are detectable
-                    # second step: check to see if angles are valid
-                    # now we've got either 3, 2 or 1 directions. So we should loop through them and 
                     b1_delta_valid = True
                     b2_delta_valid = True
                     if b1_turn_valid and b2_turn_valid:
@@ -257,7 +250,6 @@ class ToleranceTesting(unittest.TestCase):
                                 b1_delta_valid = False
                     b1_valid = b1_delta_valid and b1_turn_valid
                     b2_valid = b2_delta_valid and b2_turn_valid
-                    # if its not valid because of the threshold, then the original angle is ok, if its not valid because of the lack of enough of a turn, then we need to correct
                     if b1_valid and b2_valid:
                         self.assertEqual(2,len(ind))
                         self.assertEqual(2,len(angle))
@@ -311,7 +303,6 @@ class Thresholds(unittest.TestCase):
     '''
     Testing the threshold for what proportion of ddirection is needed to be considered above the threshold
     '''
-    # We don't need the threshold parameter itself anymore, but we do need the test for direction_thresh, which we can adapt this to be used for
 
     def test_boundary_single(self):
         '''
@@ -404,8 +395,7 @@ class Thresholds(unittest.TestCase):
                 self.assertEqual(0,len(angles_gradual))
 
 
-
-class MovementThresholds(unittest.TestCase): # NEEDS UPDATES
+class MovementThresholds(unittest.TestCase):
     '''
     Testing the threshold for beginning movement
     '''
@@ -413,14 +403,25 @@ class MovementThresholds(unittest.TestCase): # NEEDS UPDATES
         '''
         Testing cases when the movement doesn't start until late, if its still turning at the end then we won't count that as a bifurcation
         '''
-        static_coords, static_tol, static_angles = coords_setup([50,50.99,80],[50,50,80],np.array([100,2]),np.array([1]))
+        static_coords, static_directions, static_angles = coords_setup([50,50.99,80],[50,50,80],np.array([100,2]),np.array([1]))
+        late_coords, late_directions, late_angles = coords_setup([50,50.99,80],[50,50,80],np.array([100,3]),np.array([1]))
+        eleven_jump_coords, eleven_jump_directions, eleven_jump_angles = coords_setup([50,50.99,80,80],[50,50,80,85],np.array([100,12,2]),np.array([1,1]))
+        print(f"static angles: {static_angles}, late_angles: {late_angles}, eleven_jump_angles: {eleven_jump_angles}")
+
+        self.assertAlmostEqual(static_directions[0],late_directions[0])
+        self.assertAlmostEqual(static_directions[0],eleven_jump_directions[0])
+        self.assertAlmostEqual(static_directions[1],late_directions[1])
+        self.assertAlmostEqual(static_directions[1],eleven_jump_directions[1])
+        self.assertAlmostEqual(static_angles[0][0],late_angles[0][0])
+        self.assertAlmostEqual(static_angles[0][0],eleven_jump_angles[0][0])
+
         ind_static, angles_static = get_bifurcation_angle(static_coords[0],static_coords[1],static_coords[2])
-
-        late_coords, late_tol, late_angles = coords_setup([50,50.99,80],[50,50,80],np.array([100,3]),np.array([1]))
         ind_late, angles_late = get_bifurcation_angle(late_coords[0],late_coords[1],late_coords[2])
-
-        eleven_jump_coords, eleven_jump_tol, eleven_jump_angles = coords_setup([50,50.99,80,80],[50,50,80,85],np.array([100,12,2]),np.array([1,1]))
         ind_eleven_jump, angles_eleven_jump = get_bifurcation_angle(eleven_jump_coords[0],eleven_jump_coords[1],eleven_jump_coords[2])
+
+        print(f"ind static: {ind_static}, angles_static: {angles_static}")
+        print(f"ind late: {ind_late}, angles_late: {angles_late}")
+        print(f"ind 11: {ind_eleven_jump}, angles 11: {angles_eleven_jump}")
 
         self.assertEqual(0,len(ind_static))
         self.assertEqual(0,len(angles_static))
@@ -428,22 +429,12 @@ class MovementThresholds(unittest.TestCase): # NEEDS UPDATES
         self.assertEqual(1,len(ind_late))
         self.assertEqual(1,len(angles_late))
         self.assertEqual(100,ind_late[0])
+        self.assertAlmostEqual(late_angles[0],angles_late[0])
 
         self.assertEqual(1,len(ind_eleven_jump))
         self.assertEqual(1,len(angles_eleven_jump))
         self.assertEqual(100,ind_eleven_jump[0])
-
-    
-    def test_immediate_movement(self): # question - do we want to flag rapid movement and return nothing if movement is too rapid? 
-        '''
-        Testing cases when the agent immediately moves and moves rapidly
-        '''
-        frantic_coords, frantic_tol, frantic_angles = coords_setup([50,51,70],[50,60,80],np.array([1,10,100]),np.array([1]))
-        ind_frantic, angles_frantic = get_bifurcation_angle(frantic_coords[0],frantic_coords[1],frantic_coords[2],0.25,5000)
-        print(f"ind_frantic: {ind_frantic}, angles_frantic: {angles_frantic}")
-        self.assertEqual(1,len(ind_frantic))
-        self.assertEqual(1,len(angles_frantic))
-        #self.assertAlmostEqual(np.pi,angles_frantic[0])
+        self.assertAlmostEqual(eleven_jump_angles[0],angles_eleven_jump[0])
       
         
 
@@ -468,56 +459,11 @@ class MaxTime(unittest.TestCase): #NEEDS UPDATES
         self.assertEqual(1,len(angles_reaches))
         self.assertEqual(0,len(ind_timecrunch))
         self.assertEqual(0,len(angles_timecrunch))
-
-#class Gap(unittest.TestCase): # USE COORDS SETUP (if we even decide to keep this element)
-    #def test_small_gap(self):
-        '''
-        Testing for when the min_gap is small 
-        
-        xPos_mini_0gap = np.concat([np.array([50]*5),[52,61,65]])
-        yPos_mini_0gap = np.concat([np.linspace(50,60,num=5),[63,67,65]])
-        xPos_mini_0gap_2 = np.concat([np.array([50]*5),[52,61,63,65]])
-        yPos_mini_0gap_2 = np.concat([np.linspace(50,60,num=5),[63,67,66,65]])
-        xPos_mini_1gap = np.concat([np.array([50]*5),[55,60,65]])
-        yPos_mini_1gap = np.concat([np.linspace(50,60,num=5),[63,67,65]])
-
-        ind_mini0, angles_mini0 = get_bifurcation_angle(xPos_mini_0gap,yPos_mini_0gap,0.25,25,5000,True)
-        ind_mini0_2, angles_mini0_2 = get_bifurcation_angle(xPos_mini_0gap_2, yPos_mini_0gap_2,0.25,4,5000,True)
-        ind_mini1, angles_mini1 = get_bifurcation_angle(xPos_mini_1gap,yPos_mini_1gap,0.25,25,5000,True)
-
-        self.assertEqual(2,len(ind_mini0))
-        self.assertEqual(1,len(angles_mini0))
-        self.assertAlmostEqual(np.pi,angles_mini0[0])
-        self.assertEqual(3,len(ind_mini0_2))
-        self.assertEqual(6,ind_mini0_2[1])
-        self.assertEqual(1,len(angles_mini0_2))
-        self.assertEqual(3,len(ind_mini1))
-        self.assertEqual(4,ind_mini1[1])
-        '''
-
-    #def test_med_gap(self):
-        '''
-        Testing for when the min_gap is somewhere in between 1 and 30 (max)
-        '''
-        #xPos_med_14gap = np.concat([])
-        #yPos_med_14gap = np.concat([])
-        #xPos_med_15gap = np.concat([])
-        #yPos_med_15gap = np.concat([])
-
-    #def test_large_gap(self):
-        '''
-        Testing for when the min_gap is 30
-        '''
-        #xPos_max_29gap = np.concat([])
-        #yPos_max_29gap = np.concat([])
-        #xPos_max_30gap = np.concat([])
-        #yPos_max_30gap = np.concat([])
     
 
 class UnexpectedMovement(unittest.TestCase):
     '''
-        Testing movement that is unexpected: 
-        elliptical movement and then a decision, going past the targets and then choosing one, reaching a target by making jagged decisions (ie: sinusoidal towards a target but with sharp bends)
+    Testing unexpected movement
     '''
     #def test_spiral(self):
 
@@ -526,54 +472,3 @@ class UnexpectedMovement(unittest.TestCase):
     #def test_jagged(self):
 
     #def test_smooth(self):
-
-class ExpectedSixty(unittest.TestCase): # USE COORDS SETUP
-    def test_expected60(self):
-        '''
-        Testing 'normal' 60 degrees between targets cases
-        '''
-        # add at least one or two actual sims worth of data
-        # add some double bifurcations
-        targetx = 50-(15*np.sqrt(3))
-        targetx_reflected = 50+(15*np.sqrt(3))
-        targety = 65
-        coords_1, tol_1, angles_1 = coords_setup([50,45,targetx],[50,64,targety],np.array([40,40]),np.array([2]))
-        coords_1_gr, tol_1_gr, angles_1_gr = coords_setup([50,45,targetx],[50,64,targety],np.array([40,40]),np.array([10]))
-        coords_1_ref, tol_1_ref, angles_1_ref = coords_setup([50,55,targetx_reflected],[50,64,targety],np.array([40,40]),np.array([2]))
-        coords_1_ref_gr, tol_1_ref_gr, angles_1_ref_gr = coords_setup([50,55,targetx_reflected],[50,64,targety],np.array([40,40]),np.array([10]))
-
-        ind_1, angle_1 = get_bifurcation_angle(coords_1[0],coords_1[1],coords_1[2])
-        ind_1_gr, angle_1_gr = get_bifurcation_angle(coords_1_gr[0],coords_1_gr[1],coords_1_gr[2])
-        ind_1_ref, angle_1_ref = get_bifurcation_angle(coords_1_ref[0],coords_1_ref[1],coords_1_ref[2])
-        ind_1_ref_gr, angle_1_ref_gr = get_bifurcation_angle(coords_1_ref_gr[0],coords_1_ref_gr[1],coords_1_ref_gr[2])
-
-        within_tol = np.abs(angles_1_gr[0]-angle_1_gr[0]) <= tol_1_gr[0]
-        within_tol_ref = np.abs(angles_1_ref_gr[0]-angle_1_ref_gr[0]) <+ tol_1_ref_gr[0]
-
-        self.assertEqual(1,len(ind_1))
-        self.assertEqual(41,ind_1[0])
-        self.assertEqual(1,len(angle_1))
-        self.assertAlmostEqual(angles_1,angle_1)
-        self.assertEqual(1,len(ind_1_gr))
-        self.assertEqual(45,ind_1_gr[0])
-        self.assertEqual(1,len(angle_1_gr))
-        self.assertEqual(True,within_tol)
-        self.assertEqual(1,len(ind_1_ref))
-        self.assertEqual(41,ind_1_ref[0])
-        self.assertAlmostEqual(angles_1_ref,angle_1_ref)
-        self.assertEqual(1,len(angle_1_ref))
-        self.assertEqual(1,len(ind_1_ref_gr))
-        self.assertEqual(45,ind_1_ref_gr[0])
-        self.assertEqual(1,len(angle_1_ref_gr))   
-        self.assertEqual(True,within_tol_ref)     
-class ExpectedNinety(unittest.TestCase):
-    #def test_expected90():
-        '''
-        Testing 'normal' 90 degrees between targets cases
-        '''
-
-class ExpectedOneTwenty(unittest.TestCase):
-    #def test_expected120():
-        '''
-        Testing 'nomral' 120 degrees between targets cases
-        '''

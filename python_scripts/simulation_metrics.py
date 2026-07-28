@@ -234,15 +234,13 @@ def get_bifurcation_angle(xPos, yPos, headings, direction_thresh = np.pi/18, max
     theor_angles = []
     theor_start_corners = []
     theor_end_corners = []
-    for ind, bif_start in enumerate(jump_starts[:-1]): # basically if the jump region is only one point, then don't worry about corners ? 
-        start_x = xPos[bif_start]
-        start_y = yPos[bif_start]
-        end_x = xPos[jump_ends[ind]]
-        end_y = yPos[jump_ends[ind]]
+    for ind, bif_end in enumerate(jump_ends): # basically if the jump region is only one point, then don't worry about corners ? 
+        start_x = xPos[jump_starts[ind]]
+        start_y = yPos[jump_starts[ind]]    
+        end_x = xPos[bif_end]
+        end_y = yPos[bif_end]
         next_start_x = xPos[jump_starts[ind+1]]
         next_start_y = yPos[jump_starts[ind+1]]
-        #m1 = (start_y-prev_end_y)/(start_x-prev_end_x)
-        #m2 = (next_start_y-end_y)/(next_start_x-end_x)
         next_angle = np.atan2(next_start_y-end_y,next_start_x-end_x)
         candidate_directions.append(next_angle)
         theor_angle = get_estimated_angle(init_angle,next_angle)
@@ -256,8 +254,6 @@ def get_bifurcation_angle(xPos, yPos, headings, direction_thresh = np.pi/18, max
         theor_x = start_x + t*np.cos(init_angle)
         theor_y = start_y + t*np.sin(init_angle)
 
-        #theor_x = (m1*start_x-start_y-m2*end_x+end_y)/(m1-m2)
-        #theor_y = m1*(theor_x-start_x)+start_y
         d2 = np.sqrt((next_start_x-theor_x)**2+(next_start_y-theor_y)**2)
         hyp = np.sqrt((prev_end_y-next_start_y)**2+(prev_end_x-next_start_x)**2)
         start_corner = np.asin((d2*np.sin(theor_angle))/hyp)
