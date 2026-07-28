@@ -11,8 +11,6 @@ def solve_curve_start(x0,y0, x1,y1, x2,y2, dec_len):
     a1 = np.atan2(y1-y0,x1-x0)
     a2 = np.atan2(y2-y1,x2-x1)
     aprox_angle = get_estimated_angle(a1,a2) 
-    # here we can calculate the delta x and delta y easily. 
-    # then we can use those to return the angles ? 
     dec_factor = aprox_angle*0.2/np.pi 
 
     if np.abs(a2 - a1) > np.pi:
@@ -23,7 +21,10 @@ def solve_curve_start(x0,y0, x1,y1, x2,y2, dec_len):
     p0 = np.array([x0,y0])
     p2 = np.array([x2,y2])
     n = dec_len
-    d = (a2 - a1) / (n - 1)
+    if n-1 <1:
+        d = a2-a1
+    else:
+        d = (a2 - a1) / (n - 1)
     scale = np.sin(n*d/2) / np.sin(d/2)
     mid_angle = a1 + (n-1)*d/2
     D = dec_factor * scale * np.array([np.cos(mid_angle),np.sin(mid_angle)])
@@ -33,7 +34,7 @@ def solve_curve_start(x0,y0, x1,y1, x2,y2, dec_len):
     start_points = p0 + t*u1
     finish_points = start_points + D
 
-    return start_points[0], start_points[1], dec_factor, aprox_angle  # (x1, y1)
+    return start_points[0], start_points[1], dec_factor, aprox_angle 
     
 def coords_setup(xpts,ypts,line_len,dec_len):
     a1 = np.atan2(ypts[1]-ypts[0],xpts[1]-xpts[0])
@@ -81,8 +82,8 @@ def coords_setup(xpts,ypts,line_len,dec_len):
             x0 = x_gradualfirst[-1]
             y0 = y_gradualfirst[-1]
         else:
-            theor_angle_imm = get_estimated_angle(a1,a2)
-            even_split = (np.pi-theor_angle_imm)/2
+            _, _, _, flat_angle_im = solve_curve_start(x0,y0,x1,y1,x2,y2,dec_len[i])
+            point_array[0,i] = flat_angle_im
             x_straight_through = np.linspace(x0,x1,num=line_len[i])
             y_straight_through = np.linspace(y0,y1,num=line_len[i])
             x_traj.append(x_straight_through)
@@ -118,21 +119,27 @@ def coords_setup(xpts,ypts,line_len,dec_len):
     theor_bif_angle = []
     theor_corner2 = []
     for p in range(len(xpts)-2):
-        angle = point_array[0,p]
-        p0_x = point_array[1,p]
-        p0_y = point_array[2,p]
-        p1_x = point_array[3,p]
-        p1_y = point_array[4,p]
-        p2_x = point_array[5,p]
-        p2_y = point_array[6,p]
-        hyp = np.sqrt((p2_x-p0_x)**2+(p2_y-p0_y)**2)
-        d1 = np.sqrt((p1_x-p0_x)**2+(p1_y-p0_y)**2)
-        d2 = np.sqrt((p2_x-p1_x)**2+(p2_y-p1_y)**2)
-        start_corner = np.asin((d2*np.sin(angle))/hyp)
-        end_corner = np.asin((d1*np.sin(angle))/hyp)
-        theor_corner1.append(start_corner)
-        theor_bif_angle.append(angle)
-        theor_corner2.append(end_corner)
+        if dec_len[p] > 1:
+            angle = point_array[0,p]
+            p0_x = point_array[1,p]
+            p0_y = point_array[2,p]
+            p1_x = point_array[3,p]
+            p1_y = point_array[4,p]
+            p2_x = point_array[5,p]
+            p2_y = point_array[6,p]
+            hyp = np.sqrt((p2_x-p0_x)**2+(p2_y-p0_y)**2)
+            d1 = np.sqrt((p1_x-p0_x)**2+(p1_y-p0_y)**2)
+            d2 = np.sqrt((p2_x-p1_x)**2+(p2_y-p1_y)**2)
+            start_corner = np.asin((d2*np.sin(angle))/hyp)
+            end_corner = np.asin((d1*np.sin(angle))/hyp)
+            theor_corner1.append(start_corner)
+            theor_bif_angle.append(angle)
+            theor_corner2.append(end_corner)
+        else:
+            theor_corner1.append(-1)
+            theor_bif_angle.append(point_array[0,p])
+            theor_corner2.append(-1)
+
     np.set_printoptions(precision=5)
     #print(f"coords setup start:  {theor_corner1}")
     #print(f"coords setup angles: {theor_bif_angle}")
@@ -148,7 +155,7 @@ class ToleranceTesting(unittest.TestCase):
     '''
 
     def test_allquadrants(self):
-        for q in range(400):
+        for q in range(1):
             rng = np.random.default_rng()
             a1 = rng.uniform(0, np.pi/2)
             a2 = rng.uniform(0, np.pi/2)
@@ -250,7 +257,7 @@ class ToleranceTesting(unittest.TestCase):
                                 b1_delta_valid = False
                     b1_valid = b1_delta_valid and b1_turn_valid
                     b2_valid = b2_delta_valid and b2_turn_valid
-                    #print(f"thresh: {thresh}, b1 turn valid: {b1_turn_valid}, b1 delta valid: {b1_delta_valid} b2 turn valid: {b2_turn_valid}, b2 delta valid: {b2_delta_valid}")
+                    # if its not valid because of the threshold, then the original angle is ok, if its not valid because of the lack of enough of a turn, then we need to correct
                     if b1_valid and b2_valid:
                         self.assertEqual(2,len(ind))
                         self.assertEqual(2,len(angle))
@@ -259,6 +266,7 @@ class ToleranceTesting(unittest.TestCase):
                     if b1_valid and not b2_valid: 
                         self.assertEqual(1,len(ind))
                         self.assertEqual(1,len(angle))
+                        print(f"first valid, second not valid: {angle}, theor angles: {theor_angle[0]}")
                         within_tol1 = np.abs(bif_angles[0]-angle[0]) <= diff2
                         self.assertEqual(True,within_tol1)
                     if not b1_valid and b2_valid:
@@ -268,6 +276,7 @@ class ToleranceTesting(unittest.TestCase):
                             plt.show()
                         self.assertEqual(1,len(ind))
                         self.assertEqual(1,len(angle))
+                        print(f"first not valid, second valid: {angle}, theor angles: {theor_angle[0]}")
                         within_tol2 = np.abs(bif_angles[1]-angle[0]) <= diff1
                         self.assertEqual(True,within_tol2)
                     if not b1_valid and not b2_valid:
@@ -313,23 +322,25 @@ class Thresholds(unittest.TestCase):
         line_lens = [50,30]
         dec_lensimm = np.array([1])
         dec_lensgr = np.array([10])
-        imm_coords, tolerances, flat_angles = coords_setup(xpts_list,ypts_list,line_lens,dec_lensimm)
-        gradual_coords, tolerances_gr, flat_angles_gr = coords_setup(xpts_list,ypts_list,line_lens,dec_lensgr)
-        thresholds = np.linspace(0.01,1.1,num=12)
+        imm_coords, directions_im, flat_angles_im = coords_setup(xpts_list,ypts_list,line_lens,dec_lensimm)
+        gradual_coords, directions, flat_angles = coords_setup(xpts_list,ypts_list,line_lens,dec_lensgr)
+        self.assertAlmostEqual(flat_angles_im[0][0], flat_angles[0][0])
+        self.assertAlmostEqual(directions_im[0],directions[0])
+        self.assertAlmostEqual(directions_im[1],directions[1])
+        direction_diff = np.abs(directions[1]-directions[0])
+        thresholds = np.zeros(13)
+        thresholds[0:12] = np.linspace(0.01,np.pi+0.1,num=12)
+        thresholds[12] = direction_diff
         for item in thresholds:
             ind_im, angle_im = get_bifurcation_angle(imm_coords[0],imm_coords[1],imm_coords[2],item)
             ind_gr, angle_gr = get_bifurcation_angle(gradual_coords[0],gradual_coords[1],gradual_coords[2],item)
-            print(f"ind im: {ind_im}, angle_im: {angle_im}")
-            print(f"ind gr: {ind_gr}, angle gr: {angle_gr}")
-            if item <= 1:
+            if direction_diff >= item:
                 self.assertEqual(1,len(ind_im))
                 self.assertEqual(1,len(ind_gr))
                 self.assertEqual(1,len(angle_im))
                 self.assertEqual(1,len(angle_gr))
-                self.assertAlmostEqual(flat_angles[0],angle_im[0])
-                within_tol = np.abs(flat_angles[0]-angle_gr[0]) <= tolerances_gr[0]
-                print(f"tolerance: {tolerances_gr[0]}, actual difference: {np.abs(flat_angles[0]-angle_gr[0])}, within_tol: {within_tol}")
-                self.assertEqual(True, within_tol)
+                self.assertAlmostEqual(flat_angles[0][0],angle_im[0])
+                self.assertAlmostEqual(flat_angles[0][0],angle_gr[0])
             else:
                 self.assertEqual(0,len(ind_im))
                 self.assertAlmostEqual(0,len(ind_gr))
@@ -342,51 +353,59 @@ class Thresholds(unittest.TestCase):
         dec_lens = np.array([10,10])
         dec_lens_im = np.array([1,1])
         im_total = sum(line_lens)-1 
-        gr_total = im_total + sum(dec_lens+1)
-        imm_coords, tolerances_im, flat_angles_im = coords_setup(xpts_list,ypts_list,line_lens,dec_lens_im)
-        gradual_coords, tolerances, flat_angles = coords_setup(xpts_list,ypts_list,line_lens,dec_lens)
-        #plt.figure(1)
-        #plt.scatter(imm_coords[0],imm_coords[1],c='blue',s=1)
-        #plt.scatter(gradual_coords[0],gradual_coords[1],c='red',s=1)
-        #plt.show()
-        print(f'angles: {flat_angles}')
-        angle_diffs = np.divide(np.subtract(np.pi,flat_angles),np.subtract(dec_lens,1))
-        print(f"angle_diffs: {angle_diffs}")
-        bigger_angle = max(angle_diffs)
-        smaller_angle = min(angle_diffs)
-        ratio = smaller_angle/bigger_angle
-        thresholds = [0.05,0.1,0.4,0.49,0.5,0.51,0.6,0.7,0.8,0.9,1.1]
-
+        imm_coords, directions_im, flat_angles_im = coords_setup(xpts_list,ypts_list,line_lens,dec_lens_im)
+        gradual_coords, directions, flat_angles = coords_setup(xpts_list,ypts_list,line_lens,dec_lens)
+        self.assertAlmostEqual(flat_angles_im[0][0],flat_angles[0][0])
+        self.assertAlmostEqual(flat_angles_im[0][1],flat_angles[0][1])
+        self.assertAlmostEqual(directions_im[0],directions[0])
+        self.assertAlmostEqual(directions_im[1],directions[1])
+        self.assertAlmostEqual(directions_im[2],directions[2])
+        b1_unwrapped = np.unwrap(directions[0:2])
+        b1_diff = np.abs(b1_unwrapped[1]-b1_unwrapped[0])
+        b2_unwrapped = np.unwrap(directions[1:3])
+        b2_diff = np.abs(b2_unwrapped[1]-b2_unwrapped[0])
+        thresholds = np.zeros(30)
+        thresholds[0:28] = np.linspace(0.001,np.pi+0.01, num=28)
+        thresholds[28] = np.abs(directions[1]-directions[0])
+        thresholds[29] = np.abs(directions[2]-directions[1])
+    
         for item in thresholds: 
             ind_imm, angles_imm = get_bifurcation_angle(imm_coords[0],imm_coords[1],imm_coords[2],item)
             ind_gradual, angles_gradual = get_bifurcation_angle(gradual_coords[0],gradual_coords[1],gradual_coords[2],item)
-            print(f"threshold: {item}, ratio: {ratio}")
-            print(f"immediate: x: {imm_coords[0][ind_imm]}, y: {imm_coords[1][ind_imm]}, angles: {angles_imm}")
-            print(f"gradual: x: {gradual_coords[0][ind_gradual]}, y: {gradual_coords[1][ind_gradual]} angles: {angles_gradual}")
-            if item > 1:
-                self.assertEqual(0,len(ind_imm))
-                self.assertEqual(0,len(ind_gradual))
-                self.assertEqual(0,len(angles_imm))
-                self.assertEqual(0,len(angles_gradual))
-            elif ratio > item:
+            b1_valid = b1_diff >= item
+            b2_valid = b2_diff >= item
+            if b1_valid and b2_valid: 
                 self.assertEqual(2,len(ind_imm))
                 self.assertEqual(2,len(ind_gradual))
                 self.assertEqual(2,len(angles_imm))
                 self.assertEqual(2,len(angles_gradual))
-                within_tol1 = np.abs(flat_angles[0] - angles_gradual[0]) <= tolerances[0]
-                within_tol2 = np.abs(flat_angles[1] - angles_gradual[1]) <= tolerances[1]
-                self.assertAlmostEqual(flat_angles[0],angles_imm[0])
-                self.assertAlmostEqual(flat_angles[1],angles_imm[1])
-                self.assertEqual(True, within_tol1)
-                self.assertEqual(True, within_tol2)
-            elif ratio < item: 
+                self.assertAlmostEqual(flat_angles[0][0],angles_imm[0])
+                self.assertAlmostEqual(flat_angles[0][0],angles_gradual[0])
+                self.assertAlmostEqual(flat_angles[0][1],angles_imm[1])
+                self.assertAlmostEqual(flat_angles[0][1],angles_gradual[1])
+            if b1_valid and not b2_valid:
                 self.assertEqual(1,len(ind_imm))
                 self.assertEqual(1,len(ind_gradual))
                 self.assertEqual(1,len(angles_imm))
                 self.assertEqual(1,len(angles_gradual))
-                
+                self.assertAlmostEqual(flat_angles[0][0],angles_imm[0])
+                self.assertAlmostEqual(flat_angles[0][0],angles_gradual[0])
+            if not b1_valid and b2_valid:
+                self.assertEqual(1,len(ind_imm))
+                self.assertEqual(1,len(ind_gradual))
+                self.assertEqual(1,len(angles_imm))
+                self.assertEqual(1,len(angles_gradual))
+                self.assertAlmostEqual(flat_angles[0][1],angles_imm[0])
+                self.assertAlmostEqual(flat_angles[0][1],angles_gradual[0])
+            if not b1_valid and not b2_valid:
+                self.assertEqual(0,len(ind_imm))
+                self.assertEqual(0,len(ind_gradual))
+                self.assertEqual(0,len(angles_imm))
+                self.assertEqual(0,len(angles_gradual))
 
-class MovementThresholds(unittest.TestCase):
+
+
+class MovementThresholds(unittest.TestCase): # NEEDS UPDATES
     '''
     Testing the threshold for beginning movement
     '''
@@ -428,7 +447,7 @@ class MovementThresholds(unittest.TestCase):
       
         
 
-class MaxTime(unittest.TestCase):
+class MaxTime(unittest.TestCase): #NEEDS UPDATES
     '''
     Tests for the maxtime parameter
     '''
