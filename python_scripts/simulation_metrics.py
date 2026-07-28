@@ -193,7 +193,6 @@ def get_bifurcation_angle(xPos, yPos, headings, direction_thresh = np.pi/18, max
                 thresh_ind = total_time-1
                 break     
     thresh_ind -= 1 #difference in length between xPos and dheading
-    #print(f"thresh_ind: {thresh_ind}")
 
     # FINDING JUMP STARTS AND ENDS
     headings_unwrapped = np.unwrap(headings)
@@ -216,14 +215,14 @@ def get_bifurcation_angle(xPos, yPos, headings, direction_thresh = np.pi/18, max
     in_jump = False
     for i, val in enumerate(above):
         if val and not in_jump: 
-            jump_starts.append(i + thresh_ind)
+            jump_starts.append(i + thresh_ind - 1)
             in_jump = True
         elif not val and in_jump:
-            jump_ends.append(i + thresh_ind - 1)
+            jump_ends.append(i + thresh_ind)
             in_jump = False
     jump_starts.append(total_time-1)
     
-
+    #print(f"jump starts xpos: {xPos[jump_starts]}")
     # FINDING THE THEORETICAL ANGLES FROM THE BIFURCATION REGIONS
     # THREE STEP PROCESS: first we calculate the direction at the start of the bifurcation region
     # then we iterate through these directions and if there is a bifurcation such that the next direction is close to the current direction, we ignore that bifurcation point
@@ -235,12 +234,11 @@ def get_bifurcation_angle(xPos, yPos, headings, direction_thresh = np.pi/18, max
     theor_angles = []
     theor_start_corners = []
     theor_end_corners = []
-    # when we calculate all the theoretical angles here, we also need to calculate the other angles in the triangle (start corner angle, bif angle, and end corner angle)
-    for ind, bif_end in enumerate(jump_ends):
-        start_x = xPos[jump_starts[ind]]
-        start_y = yPos[jump_starts[ind]]
-        end_x = xPos[bif_end]
-        end_y = yPos[bif_end]
+    for ind, bif_start in enumerate(jump_starts[:-1]):
+        start_x = xPos[bif_start]
+        start_y = yPos[bif_start]
+        end_x = xPos[jump_ends[ind]]
+        end_y = yPos[jump_ends[ind]]
         next_start_x = xPos[jump_starts[ind+1]]
         next_start_y = yPos[jump_starts[ind+1]]
         m1 = (start_y-prev_end_y)/(start_x-prev_end_x)
@@ -251,11 +249,9 @@ def get_bifurcation_angle(xPos, yPos, headings, direction_thresh = np.pi/18, max
         theor_angles.append(theor_angle)
         theor_x = (m1*start_x-start_y-m2*end_x+end_y)/(m1-m2)
         theor_y = m1*(theor_x-start_x)+start_y
-        dist_end_next_start = np.sqrt((next_start_y-end_y)**2+(next_start_x-end_x)**2)
-        dist_end_theor_pt = np.sqrt((end_y-theor_y)**2+(end_x-theor_x)**2)
-        total_dist = dist_end_next_start + dist_end_theor_pt
+        d2 = np.sqrt((next_start_x-theor_x)**2+(next_start_y-theor_y)**2)
         hyp = np.sqrt((prev_end_y-next_start_y)**2+(prev_end_x-next_start_x)**2)
-        start_corner = np.asin((total_dist*np.sin(theor_angle))/hyp)
+        start_corner = np.asin((d2*np.sin(theor_angle))/hyp)
         end_corner = np.pi-theor_angle-start_corner
         theor_start_corners.append(start_corner)
         theor_end_corners.append(end_corner)
@@ -263,23 +259,27 @@ def get_bifurcation_angle(xPos, yPos, headings, direction_thresh = np.pi/18, max
         m1 = m2
         prev_end_x = end_x
         prev_end_y = end_y
-    print(f"function start corners: {theor_start_corners}")
-    print(f"function angles: {theor_angles}")
-    print(f"function end corners: {theor_end_corners}")
+    np.set_printoptions(precision=5)
+    #print(f"function start:      {theor_start_corners}")
+    #print(f"function angles:     {theor_angles}")
+    #print(f"function end:        {theor_end_corners}")
     directions_update = candidate_directions.copy()
     angles_update = theor_angles.copy()
     updated = False
     skips = []
+    #print(f"directions_update: {directions_update}")
     for ind in range(len(directions_update)-1):
         d0 = directions_update[ind]
         d1 = directions_update[ind+1]
         if updated:
-            theor_angles[ind] = get_estimated_angle(new_d0,d1)
+            d0 = new_d0
+            theor_angles[ind] = get_estimated_angle(d0,d1)
         directions_unwrapped = np.unwrap([d0,d1])
         d1_unwrapped = directions_unwrapped[1]
         direction_diff = np.abs(d1_unwrapped-d0)
+        #print(f"function diff at {ind}: {direction_diff}")
         if direction_diff < direction_thresh:
-            adjustment = (1 if d1_unwrapped-d0 > 0 else -1)*(np.pi-theor_angles[ind])/2
+            adjustment = (1 if d1_unwrapped-d0 > 0 else -1)*theor_start_corners[ind]
             directions_update[ind] = -100
             updated_d0 = d0 + adjustment
             directions_update[ind+1] = updated_d0

@@ -41,12 +41,10 @@ def coords_setup(xpts,ypts,line_len,dec_len):
     y0 = ypts[0]
     x_traj = []
     y_traj = []
-    #direction_diffs = []
     directions = [a1]
-    theor_angles = []
-    theor_start_corners = []
-    theor_end_corners = []
-    for i in range(len(xpts)-2):
+    n_bifs = len(xpts)-2
+    point_array = np.zeros((7,n_bifs))
+    for i in range(n_bifs):
         x1 = xpts[i+1]
         y1 = ypts[i+1]
         x2 = xpts[i+2]
@@ -60,16 +58,14 @@ def coords_setup(xpts,ypts,line_len,dec_len):
                 a2 -= 2*np.pi
         if dec_len[i] > 1:
             x1_gr,y1_gr,dec_factor1, flat_angle = solve_curve_start(x0,y0,x1,y1,x2,y2,dec_len[i])
-            # our equation using x1 and y1 is getting that the angles are the same, meaning there is no difference in the distance from p0 to p1 and p1 to p2. 
-            # this shouldn't be the case, because we should have a set distance that is p0 to curve start and curve end to p2, with p1 falling somewhere in between that
-            # Look into how this occurred next time
-            hyp = np.sqrt((x2-x0)**2+(y2-y0)**2) 
-            d1 = np.sqrt((x2-x1)**2+(y2-y1)**2)
-            start_corner = np.asin((d1*np.sin(flat_angle))/hyp)
-            end_corner = np.pi-flat_angle-start_corner
-            theor_angles.append(flat_angle)
-            theor_start_corners.append(start_corner)
-            theor_end_corners.append(end_corner)
+            point_array[0,i] = flat_angle
+            point_array[1,i] = x0
+            point_array[2,i] = y0
+            point_array[3,i] = x1
+            point_array[4,i] = y1
+            if i > 0:
+                point_array[5,i-1] = x1_gr
+                point_array[6,i-1] = y1_gr
             x_gr_prebif = np.linspace(x0,x1_gr,num=line_len[i])
             y_gr_prebif = np.linspace(y0,y1_gr,num=line_len[i])
             x_traj.append(x_gr_prebif)
@@ -86,10 +82,7 @@ def coords_setup(xpts,ypts,line_len,dec_len):
             y0 = y_gradualfirst[-1]
         else:
             theor_angle_imm = get_estimated_angle(a1,a2)
-            theor_angles.append(theor_angle_imm)
             even_split = (np.pi-theor_angle_imm)/2
-            theor_start_corners.append(even_split)
-            theor_end_corners.append(even_split)
             x_straight_through = np.linspace(x0,x1,num=line_len[i])
             y_straight_through = np.linspace(y0,y1,num=line_len[i])
             x_traj.append(x_straight_through)
@@ -98,13 +91,14 @@ def coords_setup(xpts,ypts,line_len,dec_len):
             y0 = y1
 
         a1 = a2
-        
     final_gradual_x = np.linspace(x0,xpts[-1],line_len[-1])
     final_gradual_y = np.linspace(y0,ypts[-1],line_len[-1])
     x_traj.append(final_gradual_x)
     y_traj.append(final_gradual_y)
     final_x_traj = np.concat(x_traj)
     final_y_traj = np.concat(y_traj)
+    point_array[5,n_bifs-1] = xpts[-1]
+    point_array[6,n_bifs-1] = ypts[-1]
     
     total_time = len(final_x_traj)
     x_diff = np.diff(final_x_traj)
@@ -120,10 +114,30 @@ def coords_setup(xpts,ypts,line_len,dec_len):
                 head_angle += 2*np.pi
             headings[index+1] = head_angle
     headings = np.unwrap(headings)
-    print(f"coords setup start corners: {theor_start_corners}")
-    print(f"coords setup angles: {theor_angles}")
-    print(f"coords setup end corners: {theor_end_corners}")
-    return [final_x_traj,final_y_traj,headings], directions, [theor_angles,theor_start_corners,theor_end_corners]
+    theor_corner1 = []
+    theor_bif_angle = []
+    theor_corner2 = []
+    for p in range(len(xpts)-2):
+        angle = point_array[0,p]
+        p0_x = point_array[1,p]
+        p0_y = point_array[2,p]
+        p1_x = point_array[3,p]
+        p1_y = point_array[4,p]
+        p2_x = point_array[5,p]
+        p2_y = point_array[6,p]
+        hyp = np.sqrt((p2_x-p0_x)**2+(p2_y-p0_y)**2)
+        d1 = np.sqrt((p1_x-p0_x)**2+(p1_y-p0_y)**2)
+        d2 = np.sqrt((p2_x-p1_x)**2+(p2_y-p1_y)**2)
+        start_corner = np.asin((d2*np.sin(angle))/hyp)
+        end_corner = np.asin((d1*np.sin(angle))/hyp)
+        theor_corner1.append(start_corner)
+        theor_bif_angle.append(angle)
+        theor_corner2.append(end_corner)
+    np.set_printoptions(precision=5)
+    #print(f"coords setup start:  {theor_corner1}")
+    #print(f"coords setup angles: {theor_bif_angle}")
+    #print(f"coords setup end:    {theor_corner2}")
+    return [final_x_traj,final_y_traj,headings], directions, [theor_bif_angle,theor_corner1,theor_corner2]
 
 class ToleranceTesting(unittest.TestCase):
     '''
@@ -134,93 +148,135 @@ class ToleranceTesting(unittest.TestCase):
     '''
 
     def test_allquadrants(self):
-        rng = np.random.default_rng()
-        a1 = rng.uniform(0, np.pi/2)
-        a2 = rng.uniform(0, np.pi/2)
-        a3 = rng.uniform(0, np.pi/2)
-        #a1 = 0.6168565150857789
-        #a2 = 0.6562161812272431
-        #a3 = 0.3213862088423116
-        print(f"a1: {a1}, a2: {a2}, a3: {a3}") 
-        a1_list = []
-        a2_list = []
-        a3_list = []
-        xpts_arr = np.zeros((64,4))
-        ypts_arr = np.zeros((64,4))
-        x0 = 50
-        y0 = 50
-        xpts_arr[:,0] = x0
-        ypts_arr[:,0] = y0
-        dist = 10
-        line_lens = [30,30,30]
-        dec_lens = [30,30]
-        for i in range(4):
-            a1_list.append(a1+(np.pi/2)*i)
-            a2_list.append(a2+(np.pi/2)*i)
-            a3_list.append(a3+(np.pi/2)*i)
-        for ind1,item1 in enumerate(a1_list):
-            for ind2,item2 in enumerate(a2_list): 
-                for ind3,item3 in enumerate(a3_list):
-                    x1 = x0 + dist*np.cos(item1)
-                    y1 = y0 + dist*np.sin(item1)
-                    x2 = x1 + dist*np.cos(item2)
-                    y2 = y1 + dist*np.sin(item2)
-                    x3 = x2 + dist*np.cos(item3)
-                    y3 = y2 + dist*np.sin(item3)
-                    row = 16*ind1+4*ind2+ind3
-                    xpts_arr[row,1] = x1
-                    xpts_arr[row,2] = x2
-                    xpts_arr[row,3] = x3
-                    ypts_arr[row,1] = y1
-                    ypts_arr[row,2] = y2
-                    ypts_arr[row,3] = y3
-        direction_thresh = [np.pi/1000,np.pi/20,np.pi/10,np.pi/2,np.pi]
-        for thresh in direction_thresh:  # problem: somehow our update is not equivalent to skipping the first point due to not being in the threshold
-            for r in range(64):
-                x = xpts_arr[r,:]
-                y = ypts_arr[r,:]
-                coords, directions, theor_angle = coords_setup(x,y,line_lens,dec_lens)
-                ind, angle = get_bifurcation_angle(coords[0],coords[1],coords[2],thresh)
-                #print(f"thresh: {thresh}, directions: {directions}, r: {r}, theor_angles: {theor_angle}, angles: {angle}")
-                directions_unwrapped = np.unwrap(directions)
-                b1_valid = True
-                diff1 = np.abs(directions_unwrapped[1]-directions_unwrapped[0])
-                if (diff1/(dec_lens[0]-1) < np.pi/720):
-                    b1_valid = False
-                if diff1 < thresh: 
-                    b1_valid = False
-                diff2 = np.abs(directions_unwrapped[2]-directions_unwrapped[1])
-                if not b1_valid: 
-                    adjustment = (1 if directions_unwrapped[1]-directions_unwrapped[0] > 0 else -1)*(np.pi-theor_angle[0][0])/2
-                    #print(f"theor angle: {theor_angle[0]}, original direction: {directions_unwrapped[0]}, sign: {np.sign(adjustment)}")
-                    #print(f"adjusted angle: {directions_unwrapped[0]+adjustment}")
-                    diff2_adjusted_unwrapped = np.unwrap([directions_unwrapped[2],(directions_unwrapped[0]+adjustment)])
-                    diff2 = np.abs(diff2_adjusted_unwrapped[1]-diff2_adjusted_unwrapped[0])
-                    #print(f"new diff: {diff2}")
+        for q in range(400):
+            rng = np.random.default_rng()
+            a1 = rng.uniform(0, np.pi/2)
+            a2 = rng.uniform(0, np.pi/2)
+            a3 = rng.uniform(0, np.pi/2)
+            #a1 = 0.09391558286929175
+            #a2 = 1.556727091428781
+            #a3 = 0.1469366738858174
+            print(f"a1: {a1}, a2: {a2}, a3: {a3}") 
+            a1_list = []
+            a2_list = []
+            a3_list = []
+            xpts_arr = np.zeros((64,4))
+            ypts_arr = np.zeros((64,4))
+            x0 = 50
+            y0 = 50
+            xpts_arr[:,0] = x0
+            ypts_arr[:,0] = y0
+            dist = 10
+            line_lens = [30,30,30]
+            dec_lens = [30,30]
+            for i in range(4):
+                a1_list.append(a1+(np.pi/2)*i)
+                a2_list.append(a2+(np.pi/2)*i)
+                a3_list.append(a3+(np.pi/2)*i)
+            for ind1,item1 in enumerate(a1_list):
+                for ind2,item2 in enumerate(a2_list): 
+                    for ind3,item3 in enumerate(a3_list):
+                        x1 = x0 + dist*np.cos(item1)
+                        y1 = y0 + dist*np.sin(item1)
+                        x2 = x1 + dist*np.cos(item2)
+                        y2 = y1 + dist*np.sin(item2)
+                        x3 = x2 + dist*np.cos(item3)
+                        y3 = y2 + dist*np.sin(item3)
+                        row = 16*ind1+4*ind2+ind3
+                        xpts_arr[row,1] = x1
+                        xpts_arr[row,2] = x2
+                        xpts_arr[row,3] = x3
+                        ypts_arr[row,1] = y1
+                        ypts_arr[row,2] = y2
+                        ypts_arr[row,3] = y3
+            direction_thresh = [np.pi/1000,np.pi/20,np.pi/10,np.pi/2,np.pi]
+            for thresh in direction_thresh:  # problem: somehow our update is not equivalent to skipping the first point due to not being in the threshold
+                for r in range(64):
+                    x = xpts_arr[r,:]
+                    y = ypts_arr[r,:]
+                    coords, directions, theor_angle = coords_setup(x,y,line_lens,dec_lens)
+                    ind, angle = get_bifurcation_angle(coords[0],coords[1],coords[2],thresh)
+                    bif_angles = theor_angle[0]
+                    directions_unwrapped = np.unwrap(directions)
+                    b1_turn_valid = True
+                    b2_turn_valid = True
+                    #print(f"directions: {directions}")
+                    diff1 = np.abs(directions_unwrapped[1]-directions_unwrapped[0])
+                    new_d1 = directions_unwrapped[0]
+                    new_d2 = directions_unwrapped[1]
+                    #print(f"diff1 ratio: {diff1/(dec_lens[0]-1)}")
+                    if (diff1/(dec_lens[0]-1) < np.pi/720):
+                        b1_turn_valid = False 
+                        adjustment = (1 if directions_unwrapped[1]-directions_unwrapped[0] > 0 else -1)*theor_angle[1][0]
+                        new_d1 = new_d1 + adjustment
+                    diff2 = np.abs(directions_unwrapped[2]-directions_unwrapped[1])
+                    #print(f"diff2 ratio: {diff2/(dec_lens[1]-1)}")
+                    if (diff2/(dec_lens[1]-1) < np.pi/720):
+                        b2_turn_valid = False
+                        adjustment = (1 if directions_unwrapped[2]-directions_unwrapped[1] > 0 else -1)*theor_angle[1][1]
+                        new_d2 = new_d2 + adjustment
+                    if not b1_turn_valid and b2_turn_valid:
+                        directions_unwrapped = np.unwrap([new_d1,directions_unwrapped[2]])
+                    if b1_turn_valid and not b2_turn_valid:
+                        directions_unwrapped = np.unwrap([directions_unwrapped[0],new_d2])
+                    if not b1_turn_valid and not b2_turn_valid:
+                        directions_unwrapped = [0]
 
-                b2_valid = True
-                if (diff2/(dec_lens[1]-1) < np.pi/720):
-                    b2_valid = False
-                if diff2 < thresh: 
-                    b2_valid = False
-                if b1_valid and b2_valid:
-                    self.assertEqual(2,len(ind))
-                    self.assertEqual(2,len(angle))
-                    self.assertAlmostEqual(theor_angle[0][0],angle[0])
-                    self.assertAlmostEqual(theor_angle[0][1],angle[1])
-                if b1_valid and not b2_valid: 
-                    self.assertEqual(1,len(ind))
-                    self.assertEqual(1,len(angle))
-                    within_tol1 = np.abs(theor_angle[0][0]-angle[0]) <= diff2
-                    self.assertEqual(True,within_tol1)
-                if not b1_valid and b2_valid:
-                    self.assertEqual(1,len(ind))
-                    self.assertEqual(1,len(angle))
-                    within_tol2 = np.abs(theor_angle[0][1]-angle[0]) <= diff1
-                    self.assertEqual(True,within_tol2)
-                if not b1_valid and not b2_valid:
-                    self.assertEqual(0,len(ind))
-                    self.assertEqual(0,len(angle))
+                    # first step: check to see if turns are detectable
+                    # second step: check to see if angles are valid
+                    # now we've got either 3, 2 or 1 directions. So we should loop through them and 
+                    b1_delta_valid = True
+                    b2_delta_valid = True
+                    if b1_turn_valid and b2_turn_valid:
+                        diff1 = np.abs(directions_unwrapped[1]-directions_unwrapped[0])
+                        if diff1 < thresh:
+                            b1_delta_valid = False
+                            adjustment = adjustment = (1 if directions_unwrapped[1]-directions_unwrapped[0] > 0 else -1)*theor_angle[1][0]
+                            new_d1 = directions_unwrapped[0] + adjustment
+                            directions_unwrapped = np.unwrap([new_d1,directions_unwrapped[2]])
+                        diff2 = np.abs(directions_unwrapped[-1]-directions_unwrapped[-2])
+                        if diff2 < thresh:
+                            b2_delta_valid = False
+                            if b1_delta_valid and b1_turn_valid:
+                                adjustment = adjustment = (1 if directions_unwrapped[-1]-directions_unwrapped[-2] > 0 else -1)*theor_angle[1][1]
+                                new_d2 = directions_unwrapped[1] + adjustment
+                                directions_unwrapped = np.unwrap([directions_unwrapped[0],new_d2])
+                    elif b1_turn_valid or b2_turn_valid:
+                        diff = np.abs(directions_unwrapped[1]-directions_unwrapped[0])
+                        if diff < thresh:
+                            if not b1_turn_valid:
+                                b2_delta_valid = False
+                            else:
+                                b1_delta_valid = False
+                    b1_valid = b1_delta_valid and b1_turn_valid
+                    b2_valid = b2_delta_valid and b2_turn_valid
+                    #print(f"thresh: {thresh}, b1 turn valid: {b1_turn_valid}, b1 delta valid: {b1_delta_valid} b2 turn valid: {b2_turn_valid}, b2 delta valid: {b2_delta_valid}")
+                    if b1_valid and b2_valid:
+                        self.assertEqual(2,len(ind))
+                        self.assertEqual(2,len(angle))
+                        self.assertAlmostEqual(bif_angles[0],angle[0])
+                        self.assertAlmostEqual(bif_angles[1],angle[1])
+                    if b1_valid and not b2_valid: 
+                        self.assertEqual(1,len(ind))
+                        self.assertEqual(1,len(angle))
+                        within_tol1 = np.abs(bif_angles[0]-angle[0]) <= diff2
+                        self.assertEqual(True,within_tol1)
+                    if not b1_valid and b2_valid:
+                        if len(ind) != 1:
+                            plt.figure(1)
+                            plt.plot(x,y)
+                            plt.show()
+                        self.assertEqual(1,len(ind))
+                        self.assertEqual(1,len(angle))
+                        within_tol2 = np.abs(bif_angles[1]-angle[0]) <= diff1
+                        self.assertEqual(True,within_tol2)
+                    if not b1_valid and not b2_valid:
+                        if len(ind) != 0:
+                            plt.figure(1)
+                            plt.plot(x,y)
+                            plt.show()
+                        self.assertEqual(0,len(ind))
+                        self.assertEqual(0,len(angle))
 
 class Dimensions(unittest.TestCase):
     '''
