@@ -238,10 +238,6 @@ for sigma_index in range(n_sigma):
             reach = 0 
         elif nreach == 0:
             reach = -1
-        # for each threshold:
-        # access all the samples
-        # aggregate all the samples
-        # put them into the right spot on the grid 
         for m in range(n_thresh):
             dir1_sim = dir_angle1_arr[m,s*sample_size:(s+1)*sample_size]
             dir2_sim = dir_angle2_arr[m,s*sample_size:(s+1)*sample_size]
@@ -287,7 +283,6 @@ angle_df = pd.DataFrame(angle_grid,columns=h0_range,index=base_sigma)
 angle_2_df = pd.DataFrame(angle_2_grid,columns=h0_range,index=base_sigma)
 angle_len_df = pd.DataFrame(angle_len_grid,columns=h0_range,index=base_sigma)
 
-# 
 p0_arr = np.zeros((n_sigma,n_h0))
 p1_arr = np.zeros((n_sigma,n_h0))
 p2_arr = np.zeros((n_sigma,n_h0))
@@ -321,11 +316,6 @@ boundaries_phase = np.arange(5) - 0.5
 norm_phase = mcolors.BoundaryNorm(boundaries_phase,cmap2.N)
 categories_tar = ['fails', 'both', 'reaches']
 categories_phase = ['0 bumps', '1 bump', '2 bumps','3 bumps']
-
-subfigs_pr, axs_pr = plt.subplots(nrows=1,ncols=3,figsize=(17.25,8),num=4)
-p_t0 = axs_pr[0].imshow(p0_arr, cmap = bwr_r, origin='lower',extent=[h0_range[0], h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
-p_t1 = axs_pr[1].imshow(p1_arr, cmap = bwr_r, origin='lower',extent=[h0_range[0], h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
-p_t2 = axs_pr[2].imshow(p2_arr, cmap = bwr_r, origin='lower',extent=[h0_range[0], h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
 
 im1 = axs_metric[0].imshow(target_df, cmap=cmap1,origin='lower',extent=[h0_range[0], h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
 im2 = axs_metric[1].imshow(phase_df,cmap=cmap2,origin='lower',extent=[h0_range[0], h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
@@ -395,6 +385,11 @@ cbar_deltalen.set_label('number of bifurcations')
 
 subfigs_dir.suptitle("Direction threshold analysis for angle 1, angle 2, and number of bifurcations")
 subfigs_delta.suptitle("Delta threshold analysis for angle 1, angle 2, and number of bifurcations")
+
+subfigs_pr, axs_pr = plt.subplots(nrows=1,ncols=3,figsize=(17.25,8),num=4)
+p_t0 = axs_pr[0].imshow(p0_arr, cmap = bwr_r, origin='lower',extent=[h0_range[0], h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
+p_t1 = axs_pr[1].imshow(p1_arr, cmap = bwr_r, origin='lower',extent=[h0_range[0], h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
+p_t2 = axs_pr[2].imshow(p2_arr, cmap = bwr_r, origin='lower',extent=[h0_range[0], h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
 
 end_time = time.perf_counter()
 execution_time = end_time - start_time

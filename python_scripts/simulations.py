@@ -15,7 +15,7 @@ for a in range(nagents):
     initialx[a] = 50
     initialy[a] = 50
 initialxt = [50-15*np.sqrt(3),50,50+15*np.sqrt(3)]
-initialyt = [65,80,65]
+initialyt = [35,80,35]
 
 T = 5000
 periodicflag = 0
@@ -82,12 +82,13 @@ base = {'N':N,
 
 plot_neurons = True
 plot_trajs = True
-sample_size = 10
-h0_list = [[0.24,0.24,0.24],[0.24,0.24,0.24],[0.24,0.24,0.24],[0.24,0.24,0.24]]
-sigma_list = [0.14,0.145,0.15,0.155]
+sample_size = 50
+h0_list = [[0.215,0.215,0.215],[0.2151,0.215,0.215],[0.215,0.215,0.215],[0.2151,0.215,0.215],[0.215,0.215,0.215],[0.2151,0.215,0.215]]
+sigma_list = [0.14,0.14,0.145,0.145,0.15,0.15]
 change = {'sigma':sigma_list, 'h0':h0_list}
 target_list, time_list, activity_list, x_list, y_list, headings_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
-
+p_target, se_target = sim_met.get_success_rate(target_list, sample_size, ntargets)
+print(f"p target: {p_target}, se target: {se_target}")
 phases = []
 angles = []
 bif_indices = []
@@ -108,19 +109,19 @@ for i in range(len(target_list)):
         indices, bifurcation_angles = sim_met.get_bifurcation_angle(curr_xpos,curr_ypos,curr_headings)
         bif_end = time.perf_counter()
         bif_time = bif_end - bif_start
-        print(f"bif time: {bif_time:.6f} seconds")
+        #print(f"bif time: {bif_time:.6f} seconds")
     start_time = time.perf_counter()
     phase = sim_met.get_bump_type(curr_activity)
     end_time = time.perf_counter()
     bump_time = end_time-start_time
-    print(f"time to get bump type: {bump_time:.6f} seconds")
+    #print(f"time to get bump type: {bump_time:.6f} seconds")
     angles.append(bifurcation_angles)
     bif_indices.append(indices)
     phases.append(phase)
 
 n_plots = len(h0_list)
-ncols = 4
-nrows = 1
+ncols = 3
+nrows = 2
 fig = plt.figure(layout='constrained',figsize=(ncols*3.5,nrows*6))
 subfigs = fig.subfigures(2,1, wspace=0.1)
 axs0 = subfigs[0].subplots(nrows,ncols)
@@ -148,12 +149,12 @@ for s in range(n_plots):
     n2 = sim_phases.count(2)
     n3 = sim_phases.count(3)
     n4 = sim_phases.count(4)
-    print(f"Plot: {s}")
-    print(f"outcome: 0: {n0}, 1: {n1}, 2: {n2}, 3: {n3}, other: {n4}")
-    print(f"overall: {np.argmax([n0,n1,n2,n3,n4])}")
-    print(f"target list: {target_list[s*sample_size:(s+1)*sample_size]}")
-    print(f"angles: {sim_angles}")
-    print(f"indices: {sim_indices}")
+    #print(f"Plot: {s}")
+    #print(f"outcome: 0: {n0}, 1: {n1}, 2: {n2}, 3: {n3}, other: {n4}")
+    #print(f"overall: {np.argmax([n0,n1,n2,n3,n4])}")
+    #print(f"target list: {target_list[s*sample_size:(s+1)*sample_size]}")
+    #print(f"angles: {sim_angles}")
+    #print(f"indices: {sim_indices}")
 
 
 plt.show()

@@ -1,5 +1,6 @@
 # file which contains a function for running the simulation many times (with the option to alter the settings each time)
 # and returns data on 'success' and trajectories
+import time
 import numpy as np
 from . import simulate_ringattractor as sim_ra
 from . import simulation_metrics as sim_met
@@ -44,8 +45,8 @@ def sample_sims(bp,changing_params,n_samples,include_trajs,include_activity):
         for param in changing_params.keys():
             bp[param] = changing_params[param][index]
             print(f"param: {param}, value: {changing_params[param][index]}")
+        start_one_setting = time.perf_counter()
         for sample in range(n_samples):
-                #print(f"sample: {sample}")
                 headings, xPos, yPos, targetsx, targetsy, activity = sim_ra.simulate_ring_attractor(bp['N'],bp['L'],bp['T'],bp['ntargets'],bp['nagents'],bp['allocentricFlag'],
                                                                                  bp['periodicFlag'],bp['rEgo'],bp['rEgoTarget'],bp['Egonumber'],bp['distf'],
                                                                                  bp['adistf'],bp['J'],bp['beta'],bp['h0'],bp['h_b'],bp['dt'],bp['v0'],bp['v0t'],
@@ -66,8 +67,11 @@ def sample_sims(bp,changing_params,n_samples,include_trajs,include_activity):
 
                 if include_activity:
                     activity_list.append(activity[:,0,:])
+        end_one_setting = time.perf_counter()
+        print(f"time for one setting: {end_one_setting-start_one_setting}")
 
     return target_list, time_list, activity_list, x_list, y_list, headings_list
+    
 
 
 def boundary_search(bp,base_min,base_max,sample_size,min_search,param,boundary_prob):
