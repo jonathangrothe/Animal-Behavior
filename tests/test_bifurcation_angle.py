@@ -343,7 +343,6 @@ class Thresholds(unittest.TestCase):
         line_lens = [20,20,20]
         dec_lens = np.array([10,10])
         dec_lens_im = np.array([1,1])
-        im_total = sum(line_lens)-1 
         imm_coords, directions_im, flat_angles_im = coords_setup(xpts_list,ypts_list,line_lens,dec_lens_im)
         gradual_coords, directions, flat_angles = coords_setup(xpts_list,ypts_list,line_lens,dec_lens)
         self.assertAlmostEqual(flat_angles_im[0][0],flat_angles[0][0])
@@ -393,6 +392,19 @@ class Thresholds(unittest.TestCase):
                 self.assertEqual(0,len(ind_gradual))
                 self.assertEqual(0,len(angles_imm))
                 self.assertEqual(0,len(angles_gradual))
+
+class TurningThreshold(unittest.TestCase):
+    '''
+    Testing the delta thresh parameter, which controls how much of a turn in a single time step is flagged as a potential bifurcation
+    '''
+    def test_one_turn(self):
+        xpts_list = [50,70,90]
+        ypts_list = [50,70,70]
+        line_lens = [20,20]
+        dec_lens = np.array([10])
+        gradual_coords, directions, flat_angles = coords_setup(xpts_list,ypts_list,line_lens,dec_lens)
+        expected_turn = (directions[1]-directions[0])/dec_lens[0]
+        
 
 
 class MovementThresholds(unittest.TestCase):

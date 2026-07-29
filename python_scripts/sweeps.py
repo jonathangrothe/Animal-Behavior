@@ -3,9 +3,8 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
-import simulation_metrics as sim_met
-import repeated_sims
-
+from . import simulation_metrics as sim_met
+from . import repeated_sims
 
 start_time = time.perf_counter()
 
@@ -85,14 +84,14 @@ base = {'N':N,
 
 include_pos = True
 include_neurons = True
-sample_size = 10
+sample_size = 5
 sigma_start = 0.14
 sigma_finish = 0.26
-n_sigma = 49
+n_sigma = 2
 base_sigma = np.linspace(sigma_start,sigma_finish,num=n_sigma)
 h0_start = 0.19
 h0_finish = 0.24
-n_h0 = 101
+n_h0 = 3
 h0_range= np.linspace(h0_start,h0_finish,num=n_h0)
 print(f"sigma diff: {base_sigma[1]-base_sigma[0]}, h0 diff: {h0_range[1]-h0_range[0]}")
 h0_list = []
@@ -100,24 +99,25 @@ for item in h0_range:
     h0_list.append([item,item,item])
 
 target_grid = []
+p_targets_grid = []
 phase_grid = []
 time_grid = []
 angle_grid = []
 angle_2_grid = []
 angle_len_grid = []
 
-n_thresh = 8
-act_thresh_a1_arr = np.zeros((n_sigma*n_thresh,n_h0))
-act_thresh_a2_arr = np.zeros((n_sigma*n_thresh,n_h0))
-act_thresh_len_arr = np.zeros((n_sigma*n_thresh,n_h0))
+n_thresh = 10
+dir_thresh_a1_arr = np.zeros((n_sigma*n_thresh,n_h0))
+dir_thresh_a2_arr = np.zeros((n_sigma*n_thresh,n_h0))
+dir_thresh_len_arr = np.zeros((n_sigma*n_thresh,n_h0))
 
-mov_thresh_a1_arr = np.zeros((n_sigma*n_thresh,n_h0))
-mov_thresh_a2_arr = np.zeros((n_sigma*n_thresh,n_h0))
-mov_thresh_len_arr = np.zeros((n_sigma*n_thresh,n_h0))
+delta_thresh_a1_arr = np.zeros((n_sigma*n_thresh,n_h0))
+delta_thresh_a2_arr = np.zeros((n_sigma*n_thresh,n_h0))
+delta_thresh_len_arr = np.zeros((n_sigma*n_thresh,n_h0))
 
-act_thresholds = np.linspace(0.1,0.5,num=n_thresh)
-mov_thresholds = np.linspace(1,8,num=n_thresh)
-mov_thresholds_sq = mov_thresholds**2 
+direction_thresholds = np.linspace(0.01,np.pi/15,num=n_thresh)
+delta_thresholds = np.linspace(np.pi/1000,np.pi/300,num=n_thresh)
+
 
 
 for sigma_index in range(n_sigma):
@@ -131,18 +131,19 @@ for sigma_index in range(n_sigma):
     print(f"Sampling time: {sampling_time:.6f} seconds")
     analysis_time = time.perf_counter()
     p_target, se_target = sim_met.get_success_rate(target_list, sample_size, ntargets)
+    p_targets_grid.append(p_target)
     target_reached = [0 if (x == 0) or (x == 2) else x for x in target_list]
     total_sims = len(target_list)
     phases = []
     angles = []
     angles2 = []
     angle_len = []
-    act_angle1_arr = np.zeros((n_thresh,total_sims))
-    act_angle2_arr = np.zeros((n_thresh,total_sims))
-    act_anglelen_arr = np.zeros((n_thresh,total_sims))
-    mov_angle1_arr = np.zeros((n_thresh,total_sims))
-    mov_angle2_arr = np.zeros((n_thresh,total_sims))
-    mov_anglelen_arr = np.zeros((n_thresh,total_sims))
+    dir_angle1_arr = np.zeros((n_thresh,total_sims))
+    dir_angle2_arr = np.zeros((n_thresh,total_sims))
+    dir_anglelen_arr = np.zeros((n_thresh,total_sims))
+    delta_angle1_arr = np.zeros((n_thresh,total_sims))
+    delta_angle2_arr = np.zeros((n_thresh,total_sims))
+    delta_anglelen_arr = np.zeros((n_thresh,total_sims))
 
     for i in range(total_sims):
         curr_activity = activity_list[i]
@@ -151,61 +152,68 @@ for sigma_index in range(n_sigma):
         curr_ypos = y_list[i:(i+1)][0]
         phase = sim_met.get_bump_type(curr_activity)
         phases.append(phase)
-        sim_indices, sim_angle = sim_met.get_bifurcation_angle(curr_xpos,curr_ypos,curr_headings,0.25,25)
-        sim_len = len(sim_angle)
-        if sim_len > 0:
-            angles.append(sim_angle[0])
-            if sim_angle[0] == np.pi and sim_len == 1:
-                angle_len.append(0)
+        if target_list[i] != -1:
+            sim_indices, sim_angle = sim_met.get_bifurcation_angle(curr_xpos,curr_ypos,curr_headings)
+            sim_len = len(sim_angle)
+            if sim_len > 5:
+                sim_len = 5
+            angle_len.append(sim_len)
+            if sim_len > 0:
+                angles.append(sim_angle[0])
             else:
-                angle_len.append(sim_len)
+                angle_len.append(0)
+                angles.append(np.pi)
+            if sim_len > 1:
+                angles2.append(sim_angle[1])
+            else:
+                angles2.append(np.pi)
         else:
             angle_len.append(0)
             angles.append(np.pi)
-        if sim_len > 1:
-            angles2.append(sim_angle[1])
-        else:
             angles2.append(np.pi)
 
-        # for each threshold: 
-        # get angle1, angle2, len(angle)
-        for indexa, athresh in enumerate(act_thresholds):
-            athresh_indices, athresh_angles = sim_met.get_bifurcation_angle(curr_xpos, curr_ypos,curr_headings, athresh,25)
-            athresh_len = len(athresh_angles)
-            if athresh_len > 0:
-                act_angle1_arr[indexa,i] = athresh_angles[0]
-                if athresh_angles[0] == np.pi and athresh_len == 1:
-                    act_anglelen_arr[indexa,i] = 0
+        # for each distance threshold get the angles and len IF IT REACHED A TARGET
+        if target_list[i] != -1:
+            for indexdir, dirthresh in enumerate(direction_thresholds):
+                dir_thresh_indices, dir_thresh_angles = sim_met.get_bifurcation_angle(curr_xpos, curr_ypos,curr_headings,dirthresh)
+                dir_thresh_len = len(dir_thresh_angles)
+                if dir_thresh_len > 5: 
+                    dir_thresh_len = 5
+                if dir_thresh_len > 0:
+                    dir_angle1_arr[indexdir,i] = dir_thresh_angles[0]
+                    dir_anglelen_arr[indexdir,i] = dir_thresh_len
                 else:
-                    act_anglelen_arr[indexa,i] = athresh_len
-            else:
-                act_anglelen_arr[indexa,i] = 0
-                act_angle1_arr[indexa,i] = np.pi
-            if athresh_len > 1:
-                act_angle2_arr[indexa,i] = athresh_angles[1]
-            else:
-                act_angle2_arr[indexa,i] = np.pi
-
-        # for each distance threshold:
-        # get angle1, angle2, len(angle)
-        for indexm, mthresh in enumerate(mov_thresholds_sq):
-            mthresh_indices, mthresh_angles = sim_met.get_bifurcation_angle(curr_xpos, curr_ypos,curr_headings,0.25,mthresh)
-            mthresh_len = len(mthresh_angles)
-            if mthresh_len > 0:
-                mov_angle1_arr[indexm,i] = mthresh_angles[0]
-                if mthresh_angles[0] == np.pi and mthresh_len == 1:
-                    mov_anglelen_arr[indexm,i] = 0
+                    dir_anglelen_arr[indexdir,i] = 0
+                    dir_angle1_arr[indexdir,i] = np.pi
+                if dir_thresh_len > 1:
+                    dir_angle2_arr[indexdir,i] = dir_thresh_angles[1]
                 else:
-                    mov_anglelen_arr[indexm,i] = mthresh_len
-            else:
-                mov_anglelen_arr[indexm,i] = 0
-                mov_angle1_arr[indexm,i] = np.pi
-            if mthresh_len > 1:
-                mov_angle2_arr[indexm,i] = mthresh_angles[1]
-            else:
-                mov_angle2_arr[indexm,i] = np.pi
+                    dir_angle2_arr[indexdir,i] = np.pi
 
-        
+            for indexdelta, deltathresh in enumerate(delta_thresholds):
+                delta_thresh_indices, delta_thresh_angles = sim_met.get_bifurcation_angle(curr_xpos, curr_ypos,curr_headings,deltathresh)
+                delta_thresh_len = len(delta_thresh_angles)
+                if delta_thresh_len > 5:
+                    delta_thresh_len = 5
+                if delta_thresh_len > 0:
+                    delta_angle1_arr[indexdelta,i] = delta_thresh_angles[0]
+                    delta_anglelen_arr[indexdelta,i] = delta_thresh_len
+                else:
+                    delta_anglelen_arr[indexdelta,i] = 0
+                    delta_angle1_arr[indexdelta,i] = np.pi
+                if delta_thresh_len > 1:
+                    delta_angle2_arr[indexdelta,i] = delta_thresh_angles[1]
+                else:
+                    delta_angle2_arr[indexdelta,i] = np.pi
+        else:
+            dir_anglelen_arr[:,i] = 0
+            dir_angle1_arr[:,i] = np.pi
+            dir_angle2_arr[:,i] = np.pi
+            delta_anglelen_arr[:,i] = 0
+            delta_angle1_arr[:,i] = np.pi
+            delta_angle2_arr[:,i] = np.pi
+
+
     grid_phases = []
     grid_targets = []
     grid_times = []
@@ -234,21 +242,21 @@ for sigma_index in range(n_sigma):
         # access all the samples
         # aggregate all the samples
         # put them into the right spot on the grid 
-        for a in range(n_thresh):
-            a1_sim = act_angle1_arr[a,s*sample_size:(s+1)*sample_size]
-            a2_sim = act_angle2_arr[a,s*sample_size:(s+1)*sample_size]
-            alen_sim = act_anglelen_arr[a,s*sample_size:(s+1)*sample_size]
-            act_thresh_a1_arr[a*n_sigma+sigma_index,s] = np.mean(a1_sim)
-            act_thresh_a2_arr[a*n_sigma+sigma_index,s] = np.mean(a2_sim)
-            act_thresh_len_arr[a*n_sigma+sigma_index,s] = np.mean(alen_sim)
-        
         for m in range(n_thresh):
-            m1_sim = mov_angle1_arr[m,s*sample_size:(s+1)*sample_size]
-            m2_sim = mov_angle2_arr[m,s*sample_size:(s+1)*sample_size]
-            mlen_sim = act_anglelen_arr[m,s*sample_size:(s+1)*sample_size]
-            mov_thresh_a1_arr[m*n_sigma+sigma_index,s] = np.mean(m1_sim)
-            mov_thresh_a2_arr[m*n_sigma+sigma_index,s] = np.mean(m2_sim)
-            mov_thresh_len_arr[m*n_sigma+sigma_index,s] = np.mean(mlen_sim)
+            dir1_sim = dir_angle1_arr[m,s*sample_size:(s+1)*sample_size]
+            dir2_sim = dir_angle2_arr[m,s*sample_size:(s+1)*sample_size]
+            dirlen_sim = dir_anglelen_arr[m,s*sample_size:(s+1)*sample_size]
+            dir_thresh_a1_arr[m*n_sigma+sigma_index,s] = np.mean(dir1_sim)
+            dir_thresh_a2_arr[m*n_sigma+sigma_index,s] = np.mean(dir2_sim)
+            dir_thresh_len_arr[m*n_sigma+sigma_index,s] = np.mean(dirlen_sim)
+
+            for p in range(n_thresh):
+                delta1_sim = delta_angle1_arr[p,s*sample_size:(s+1)*sample_size]
+                delta2_sim = delta_angle2_arr[p,s*sample_size:(s+1)*sample_size]
+                deltalen_sim = delta_anglelen_arr[p,s*sample_size:(s+1)*sample_size]
+                delta_thresh_a1_arr[p*n_sigma+sigma_index,s] = np.mean(delta1_sim)
+                delta_thresh_a2_arr[p*n_sigma+sigma_index,s] = np.mean(delta2_sim)
+                delta_thresh_len_arr[p*n_sigma+sigma_index,s] = np.mean(deltalen_sim)
 
 
         grid_phases.append(np.argmax([n0,n1,n2,n3,nOther]))
@@ -279,6 +287,21 @@ angle_df = pd.DataFrame(angle_grid,columns=h0_range,index=base_sigma)
 angle_2_df = pd.DataFrame(angle_2_grid,columns=h0_range,index=base_sigma)
 angle_len_df = pd.DataFrame(angle_len_grid,columns=h0_range,index=base_sigma)
 
+# 
+p0_arr = np.zeros((n_sigma,n_h0))
+p1_arr = np.zeros((n_sigma,n_h0))
+p2_arr = np.zeros((n_sigma,n_h0))
+for r, row in enumerate(p_targets_grid):
+    for c, entry in enumerate(row):
+        p0_arr[r][c] = entry[0]
+        p1_arr[r][c] = entry[1]
+        p2_arr[r][c] = entry[2]
+
+print(f"p0 array: {p0_arr}")
+print(f"p1 array: {p1_arr}")
+print(f"p2 array: {p2_arr}")
+
+
 
 subfigs_metric, axs_metric = plt.subplots(nrows=2,ncols=3, figsize = (17.25,8),num=1)
 axs_metric = axs_metric.flatten()
@@ -298,6 +321,11 @@ boundaries_phase = np.arange(5) - 0.5
 norm_phase = mcolors.BoundaryNorm(boundaries_phase,cmap2.N)
 categories_tar = ['fails', 'both', 'reaches']
 categories_phase = ['0 bumps', '1 bump', '2 bumps','3 bumps']
+
+subfigs_pr, axs_pr = plt.subplots(nrows=1,ncols=3,figsize=(17.25,8),num=4)
+p_t0 = axs_pr[0].imshow(p0_arr, cmap = bwr_r, origin='lower',extent=[h0_range[0], h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
+p_t1 = axs_pr[1].imshow(p1_arr, cmap = bwr_r, origin='lower',extent=[h0_range[0], h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
+p_t2 = axs_pr[2].imshow(p2_arr, cmap = bwr_r, origin='lower',extent=[h0_range[0], h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
 
 im1 = axs_metric[0].imshow(target_df, cmap=cmap1,origin='lower',extent=[h0_range[0], h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
 im2 = axs_metric[1].imshow(phase_df,cmap=cmap2,origin='lower',extent=[h0_range[0], h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
@@ -323,46 +351,50 @@ cbar6.set_label('number of bifurcations')
 subfigs_metric.suptitle(f"Heatmaps for π/3 between targets, average of {sample_size} samples")
 width_ratio = [1]*n_thresh
 width_ratio.append(0.08)
-subfigs_act, axs_act = plt.subplots(nrows=3,ncols=n_thresh+1,figsize=(18,6),gridspec_kw={'width_ratios': width_ratio},num=2)
-axs_act = axs_act.flatten()
-subfigs_mov, axs_mov = plt.subplots(nrows=3,ncols=n_thresh+1,figsize=(18,6),gridspec_kw={'width_ratios': width_ratio},num=3)
-axs_mov = axs_mov.flatten()
+subfigs_dir, axs_dir = plt.subplots(nrows=3,ncols=n_thresh+1,figsize=(18,6),gridspec_kw={'width_ratios': width_ratio},num=2)
+subfigs_delta, axs_delta = plt.subplots(nrows=3,ncols=n_thresh+1,figsize=(18,6),gridspec_kw={'width_ratios': width_ratio},num=3)
+axs_dir = axs_dir.flatten()
+axs_delta = axs_delta.flatten()
 
 for t in range(n_thresh):
-    axs_act[t].imshow(act_thresh_a1_arr[t*n_sigma:(t+1)*n_sigma,:],cmap=cmap4,norm=shared_norm,origin='lower',extent=[h0_range[0], h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
-    axs_act[t+n_thresh+1].imshow(act_thresh_a2_arr[t*n_sigma:(t+1)*n_sigma,:],cmap=cmap4,norm=shared_norm,origin='lower',extent=[h0_range[0], h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
-    axs_act[t+2*(n_thresh+1)].imshow(act_thresh_len_arr[t*n_sigma:(t+1)*n_sigma,:],cmap=cmap5,norm=shared_len_norm,origin='lower',extent=[h0_range[0], h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
-    axs_mov[t].imshow(mov_thresh_a1_arr[t*n_sigma:(t+1)*n_sigma,:],cmap=cmap4,norm=shared_norm,origin='lower',extent=[h0_range[0], h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
-    axs_mov[t+n_thresh+1].imshow(mov_thresh_a2_arr[t*n_sigma:(t+1)*n_sigma,:],cmap=cmap4,norm=shared_norm,origin='lower',extent=[h0_range[0], h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
-    axs_mov[t+2*(n_thresh+1)].imshow(mov_thresh_len_arr[t*n_sigma:(t+1)*n_sigma,:],cmap=cmap5,norm=shared_len_norm,origin='lower',extent=[h0_range[0], h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
-    axs_act[t].set_xticks([])
-    axs_act[t].set_yticks([])
-    axs_act[t+n_thresh+1].set_xticks([])
-    axs_act[t+n_thresh+1].set_yticks([])
-    axs_act[t+2*(n_thresh+1)].set_xticks([])
-    axs_act[t+2*(n_thresh+1)].set_yticks([])
-    axs_mov[t].set_xticks([])
-    axs_mov[t].set_yticks([])
-    axs_mov[t+n_thresh+1].set_xticks([])
-    axs_mov[t+n_thresh+1].set_yticks([])
-    axs_mov[t+2*(n_thresh+1)].set_xticks([])
-    axs_mov[t+2*(n_thresh+1)].set_yticks([])
-cbar_a1 = subfigs_act.colorbar(axs_act[n_thresh-1].images[0], cax=axs_act[n_thresh],aspect=20)
-cbar_a1.set_label('angle of first bifurcation')
-cbar_a2 = subfigs_act.colorbar(axs_act[2*n_thresh].images[0], cax=axs_act[2*n_thresh+1],aspect=30)
-cbar_a2.set_label('angle of second bifurcation')
-cbar_alen = subfigs_act.colorbar(axs_act[3*(n_thresh)+1].images[0], cax=axs_act[3*n_thresh+2],shrink=0.5)
-cbar_alen.set_label('number of bifurcations')
+    axs_dir[t].imshow(dir_thresh_a1_arr[t*n_sigma:(t+1)*n_sigma,:],cmap=cmap4,norm=shared_norm,origin='lower',extent=[h0_range[0], h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
+    axs_dir[t+n_thresh+1].imshow(dir_thresh_a2_arr[t*n_sigma:(t+1)*n_sigma,:],cmap=cmap4,norm=shared_norm,origin='lower',extent=[h0_range[0], h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
+    axs_dir[t+2*(n_thresh+1)].imshow(dir_thresh_len_arr[t*n_sigma:(t+1)*n_sigma,:],cmap=cmap5,norm=shared_len_norm,origin='lower',extent=[h0_range[0], h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
+    axs_dir[t].set_xticks([])
+    axs_dir[t].set_yticks([])
+    axs_dir[t+n_thresh+1].set_xticks([])
+    axs_dir[t+n_thresh+1].set_yticks([])
+    axs_dir[t+2*(n_thresh+1)].set_xticks([])
+    axs_dir[t+2*(n_thresh+1)].set_yticks([])
+    axs_dir[t].set_title(f"{direction_thresholds[t]:.4f}")
 
-cbar_m1 = subfigs_mov.colorbar(axs_mov[n_thresh-1].images[0], cax=axs_mov[n_thresh])
-cbar_m1.set_label('angle of first bifurcation')
-cbar_m2 = subfigs_mov.colorbar(axs_mov[2*n_thresh].images[0], cax=axs_mov[2*n_thresh+1])
-cbar_m2.set_label('angle of second bifurcation')
-cbar_mlen = subfigs_mov.colorbar(axs_mov[3*n_thresh+1].images[0], cax=axs_mov[3*n_thresh+2])
-cbar_mlen.set_label('number of bifurcations')
+    axs_delta[t].imshow(delta_thresh_a1_arr[t*n_sigma:(t+1)*n_sigma,:],cmap=cmap4,norm=shared_norm,origin='lower',extent=[h0_range[0], h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
+    axs_delta[t+n_thresh+1].imshow(delta_thresh_a2_arr[t*n_sigma:(t+1)*n_sigma,:],cmap=cmap4,norm=shared_norm,origin='lower',extent=[h0_range[0], h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
+    axs_delta[t+2*(n_thresh+1)].imshow(delta_thresh_len_arr[t*n_sigma:(t+1)*n_sigma,:],cmap=cmap5,norm=shared_len_norm,origin='lower',extent=[h0_range[0], h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
+    axs_delta[t].set_xticks([])
+    axs_delta[t].set_yticks([])
+    axs_delta[t+n_thresh+1].set_xticks([])
+    axs_delta[t+n_thresh+1].set_yticks([])
+    axs_delta[t+2*(n_thresh+1)].set_xticks([])
+    axs_delta[t+2*(n_thresh+1)].set_yticks([])
+    axs_delta[t].set_title(f"threshold: {delta_thresholds[t]:.4f}")
 
-subfigs_act.suptitle("Activity threshold analysis for angle 1, angle 2, and number of bifurcations")
-subfigs_mov.suptitle("Distance threshold analysis for angle 1, angle 2, and number of bifurcations")
+cbar_dir1 = subfigs_dir.colorbar(axs_dir[n_thresh-1].images[0], cax=axs_dir[n_thresh])
+cbar_dir1.set_label('angle of first bifurcation')
+cbar_dir2 = subfigs_dir.colorbar(axs_dir[2*n_thresh].images[0], cax=axs_dir[2*n_thresh+1])
+cbar_dir2.set_label('angle of second bifurcation')
+cbar_dirlen = subfigs_dir.colorbar(axs_dir[3*n_thresh+1].images[0], cax=axs_dir[3*n_thresh+2])
+cbar_dirlen.set_label('number of bifurcations')
+
+cbar_delta1 = subfigs_delta.colorbar(axs_delta[n_thresh-1].images[0], cax=axs_delta[n_thresh])
+cbar_delta1.set_label('angle of first bifurcation')
+cbar_delta2 = subfigs_delta.colorbar(axs_delta[2*n_thresh].images[0], cax=axs_delta[2*n_thresh+1])
+cbar_delta2.set_label('angle of second bifurcation')
+cbar_deltalen = subfigs_delta.colorbar(axs_delta[3*n_thresh+1].images[0], cax=axs_delta[3*n_thresh+2])
+cbar_deltalen.set_label('number of bifurcations')
+
+subfigs_dir.suptitle("Direction threshold analysis for angle 1, angle 2, and number of bifurcations")
+subfigs_delta.suptitle("Delta threshold analysis for angle 1, angle 2, and number of bifurcations")
 
 end_time = time.perf_counter()
 execution_time = end_time - start_time
@@ -375,7 +407,10 @@ print(f"Execution time: {execution_time:.6f} seconds")
 #print(angle_2_df)
 #print(angle_len_df)
 
+#print(dir_anglelen_arr)
+#print(delta_anglelen_arr)
+
 subfigs_metric.tight_layout()
-subfigs_act.tight_layout()
-subfigs_mov.tight_layout()
+subfigs_dir.tight_layout()
+subfigs_delta.tight_layout()
 plt.show()

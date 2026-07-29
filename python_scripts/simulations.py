@@ -14,8 +14,8 @@ initialy = np.zeros(nagents)
 for a in range(nagents):
     initialx[a] = 50
     initialy[a] = 50
-initialxt = [35,50,65]
-initialyt = [50+15*np.sqrt(3),80,50+15*np.sqrt(3)]
+initialxt = [50-15*np.sqrt(3),50,50+15*np.sqrt(3)]
+initialyt = [65,80,65]
 
 T = 5000
 periodicflag = 0
@@ -83,8 +83,8 @@ base = {'N':N,
 plot_neurons = True
 plot_trajs = True
 sample_size = 10
-h0_list = [[0.212,0.212,0.212],[0.213,0.213,0.213]]
-sigma_list = [0.16,0.26]
+h0_list = [[0.24,0.24,0.24],[0.24,0.24,0.24],[0.24,0.24,0.24],[0.24,0.24,0.24]]
+sigma_list = [0.14,0.145,0.15,0.155]
 change = {'sigma':sigma_list, 'h0':h0_list}
 target_list, time_list, activity_list, x_list, y_list, headings_list  = repeated_sims.sample_sims(base,change,sample_size,include_trajs=plot_trajs,include_activity=plot_neurons)
 
@@ -105,7 +105,7 @@ for i in range(len(target_list)):
         targx = initialxt[target]
         targy = initialyt[target]
         bif_start = time.perf_counter()   
-        indices, bifurcation_angles = sim_met.get_bifurcation_angle(curr_xpos,curr_ypos,curr_headings,0.25,5000)
+        indices, bifurcation_angles = sim_met.get_bifurcation_angle(curr_xpos,curr_ypos,curr_headings)
         bif_end = time.perf_counter()
         bif_time = bif_end - bif_start
         print(f"bif time: {bif_time:.6f} seconds")
@@ -119,7 +119,7 @@ for i in range(len(target_list)):
     phases.append(phase)
 
 n_plots = len(h0_list)
-ncols = 2
+ncols = 4
 nrows = 1
 fig = plt.figure(layout='constrained',figsize=(ncols*3.5,nrows*6))
 subfigs = fig.subfigures(2,1, wspace=0.1)

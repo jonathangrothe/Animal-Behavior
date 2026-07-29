@@ -133,7 +133,7 @@ def get_bump_type(activity,maxtime=5000):
         phase = 2
     return phase
 
-def get_bifurcation_angle(xPos, yPos, headings, direction_thresh = np.pi/18, maxtime=5000,test=False):
+def get_bifurcation_angle(xPos, yPos, headings, direction_thresh = np.pi/18, delta_thresh = np.pi/720, maxtime=5000,test=False):
     '''
     A function that takes the xpositions, ypositions, and headings from a trajectory, to determine the bifurcation points, using a threshold to determine if a turn is too insignificant to be counted. 
     Here a bifurcation is assumed to be a region of indices, from the index where the agent begins to turn to where it stops turning, 
@@ -197,7 +197,7 @@ def get_bifurcation_angle(xPos, yPos, headings, direction_thresh = np.pi/18, max
     # FINDING JUMP STARTS AND ENDS
     headings_unwrapped = np.unwrap(headings)
     dheadings = np.abs(np.diff(headings_unwrapped))
-    thresh_value = np.pi/720 # approximately good value, may want to parametrize in the future
+    thresh_value = delta_thresh
     above = dheadings[thresh_ind:] >= thresh_value
     if test:
         print(f"THRESH VALUE: {thresh_value}")
@@ -221,7 +221,6 @@ def get_bifurcation_angle(xPos, yPos, headings, direction_thresh = np.pi/18, max
             jump_ends.append(i + thresh_ind)
             in_jump = False
     jump_starts.append(total_time-1)
-    
     #print(f"jump starts xpos: {xPos[jump_starts]}")
     # FINDING THE THEORETICAL ANGLES FROM THE BIFURCATION REGIONS
     # THREE STEP PROCESS: first we calculate the direction at the start of the bifurcation region
