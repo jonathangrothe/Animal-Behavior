@@ -308,6 +308,6 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
             
         if plot == True:
             plt.show(block = False)
-
+    plt.show()
     return headings, xPos, yPos, targetXPos, targetYPos, uArray
 

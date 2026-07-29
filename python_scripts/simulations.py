@@ -1,9 +1,11 @@
 import time
+import math
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 from . import simulation_metrics as sim_met
 from . import repeated_sims
+from . import simulate_ringattractor as sim_ra
 
 
 L = 100
@@ -50,6 +52,49 @@ h_b = 0.2
 sigma = 0.25 
 beta = 100 
 
+# --- trying out the non stopping situation ---
+for s in range(10):
+    xpoints = []
+    ypoints = []
+    dists = []
+    angles = []
+    rng = np.random.default_rng()
+    while len(xpoints) < 10:
+        new_x = rng.uniform(20,80)
+        new_y = rng.uniform(40,100)
+        for p in range(len(xpoints)):
+            dist = math.dist((new_x,new_y),(xpoints[p],ypoints[p]))
+            if dist < 5:
+                break
+
+        dists.append(math.dist((50,0),(new_x,new_y)))
+        xpoints.append(new_x)
+        ypoints.append(new_y)
+        angle = np.atan2(new_y,new_x-50)
+        print(f"angle to new point: {angle}")
+    h0s_random = [0.25]*10
+    print("ONE SET OF POINTS")
+    print(f"mean x: {np.mean(xpoints)}, std x: {np.std(xpoints)}")
+    print(f"mean y: {np.mean(ypoints)}, std y: {np.std(ypoints)}")
+    mean_dists = np.mean(dists)
+    weighted_xsum = 0
+    weighted_ysum = 0
+    for ind,dist in enumerate(dists): 
+        weight = dist/mean_dists
+        weighted_xsum += weight*xpoints[ind]
+        weighted_ysum += weight*ypoints[ind]
+    weightedx = weighted_xsum/10
+    weightedy = weighted_ysum/10
+    print(f"weighted mean x: {weightedx}")
+    print(f"weighted mean y: {weightedy}")
+            
+    headings, xPos, yPos, targetXPos, targetYPos, uArray = sim_ra.simulate_ring_attractor(N,L,T,10,nagents,allocentricFlag,periodicflag,
+                                                                                        rEgo,rEgoTarget,Egonumber,distf,adistf,J,beta,h0s_random,h_b,dt,
+                                                                                        v0,v0t,sigma,hColl,rColl,[50],[0],xpoints,ypoints,True,False)
+    print(f"final x: {xPos[0][-1]}, final y: {yPos[0][-1]}")
+    plt.figure(2)
+    plt.imshow(uArray[:,0,:],aspect='auto')
+    plt.show()
 # -------- Running the simulation --------
 
 base = {'N':N,
