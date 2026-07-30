@@ -77,6 +77,7 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
         xPos[a,0] = initialx[a]
         yPos[a,0] = initialy[a]
         headings[a,0] = 2*math.pi*np.random.rand() 
+        print(f"initial headings: {headings[a,0]}")
         if allocentricFlag == 0:
             alpharing[a,:] = np.mod(alpharing[a,:]+headings[a,0], 2*np.pi)
     if v0t.any():
@@ -308,6 +309,5 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
             
         if plot == True:
             plt.show(block = False)
-    plt.show()
     return headings, xPos, yPos, targetXPos, targetYPos, uArray
 

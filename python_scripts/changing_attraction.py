@@ -82,9 +82,9 @@ base = {'N':N,
         'sigma':sigma,
         'beta':beta}
 
-sample_size = 30
+sample_size = 50
 h0_base = 0.2125
-num_changes = 50
+num_changes = 100
 changing_h0 = np.linspace(0,0.005,num=num_changes)
 h0_list_0 = []
 h0_list_1 = []
@@ -114,9 +114,13 @@ for ind, geo_list in enumerate(geometry_list):
     axs_pr[ind].plot(changing_h0,p0_arr,color="#e72945",label= 'left')
     axs_pr[ind].plot(changing_h0,p1_arr,color="#1c12b4", label='center')
     axs_pr[ind].plot(changing_h0,p2_arr,color="#a7b0ae", label='right')
-    axs_pr[ind].set_ylabel("probability of reaching each target")
-    axs_pr[ind].legend()
-    axs_pr[ind].set_xlabel("difference in h0 from left target to others")
     axs_pr[ind].set_title(f"angle between targets: {geom:.4f}")
+    prob_df = pd.DataFrame({'left':p0_arr,'center':p1_arr,'right':p2_arr})
+    prob_df.to_csv(f'018sigma02h0_{ind}.csv', index=False)
+
 subfigs_pr.suptitle("probability of reaching target (left is getting better)")
+subfigs_pr.supylabel("probability of reaching each target")
+axs_pr[ind].legend()
+subfigs_pr.supxlabel("difference in h0 from left target to others")
+
 plt.show()
