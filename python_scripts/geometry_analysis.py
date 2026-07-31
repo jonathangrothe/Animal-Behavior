@@ -1,5 +1,5 @@
 # goal for this: 
-# get an idea of the relationship between angle and sigma and distance and h0
+# get an idea of how it aggregates different points that are relatively close
 # start with a basic circle and then see how that generalizes
 
 import time
@@ -12,28 +12,16 @@ from . import repeated_sims
 from . import simulate_ringattractor as sim_ra
 
 start_time = time.perf_counter()
-r = 20
 L = 100 
-ntargets = 10
+ntargets = 2
 nagents = 1
 initialx = np.zeros(nagents)
 initialy = np.zeros(nagents)
 for a in range(nagents):
     initialx[a] = 50
     initialy[a] = 50
-initialxt = []
-initialyt = []
-evenly_spaced = np.linspace(0,2*np.pi,ntargets+1)
-indices_of_interest = [3,4,7,8]
-for n in range(ntargets):
-    x = 50 + r*np.cos(evenly_spaced[n])
-    y = 50 + r*np.sin(evenly_spaced[n])
-    if n in indices_of_interest:
-        initialxt.append(x)
-        initialyt.append(y)
-print(f"initialxt: {initialxt}")
-ntargets = len(initialxt)
-print(f"ntargets: {ntargets}")
+initialxt = [50,50]
+initialyt = [25,75]
 T = 5000
 periodicflag = 0
 rEgo = 0 
@@ -62,36 +50,32 @@ for i in range(N):
     J = np.squeeze(J)
 
 allocentricFlag = 1
-h0s = [0.25]*10
+h0s = [0.25,0.26]
 h_b = 0.2
-sigmas = np.linspace(0.29,0.33,num=10)
+sigma = 0.25
+h0s_better = np.linspace(0.251,0.27,num=30)
+h0s_test = []
+for h in h0s_better:
+    h0s_test.append([0.25,h])
 beta = 100
 
-for item in sigmas: 
-    headings, xPos, yPos, targetXPos, targetYPos, uArray = sim_ra.simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodicflag,
-                                                                                          rEgo,rEgoTarget,Egonumber,distf,adistf,J,beta,h0s,h_b,dt,
-                                                                                          v0,v0t,item,hColl,rColl,[50],[50],initialxt,initialyt,True,False)
-    # do the same get_bump_type logic to see how many bumps there are...
-    total_time = len(headings[0])
-    nbumps_eachstep= []
-    for i in range(total_time):
-        full_activity = uArray[:,0,i]
-        full_indices = [i for i, x in enumerate(full_activity) if x > 0]
-        nbumps = 0
-        if len(full_indices) > 0:
-            nbumps += 1
-            for index in range(len(full_indices)-1):
-                if full_indices[index+1]-full_indices[index] > 1:
-                    nbumps += 1
-            if full_indices[0] == 0 and full_indices[-1] == 99:
-                nbumps -= 1
-        nbumps_eachstep.append(nbumps)
-    print(f"sigma: {item}, mean bumps: {np.mean(nbumps_eachstep)}, sd bumps: {np.std(nbumps_eachstep)}")
-    plt.figure(2)
-    plt.imshow(uArray[:,0,:],aspect='auto')
-    plt.show()
+p_more_attractive = [] 
+for item in h0s_test:
+    sum_t1 = 0
+    sum_t0 = 0
+    sum_none = 0
+    for i in range(50):
+        headings, xPos, yPos, targetXPos, targetYPos, uArray = sim_ra.simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodicflag,
+                                                                                          rEgo,rEgoTarget,Egonumber,distf,adistf,J,beta,item,h_b,dt,
+                                                                                          v0,v0t,sigma,hColl,rColl,[50],[50],initialxt,initialyt,False,True)
+        target, time_reached = sim_met.get_destination_metrics(xPos,yPos,targetXPos,targetYPos)
+        if target == 1:
+            sum_t1 += 1
+        if target == 0:
+            sum_t0 += 1
+        if target == -1:
+            sum_none += 1
 
 
-# so, it does make sense, but it seems like aggregation occurs when sigma^2 > difference in neurons apart/100
-# lets see if that holds when we move one of the points back? - hypothesis: this will get messed up immediately when we move towards the other one
-        
+    
+      

@@ -49,7 +49,7 @@ for i in range(N):
 allocentricFlag = 1
 h0s = [0.25,0.25,0.25]
 h_b = 0.2
-sigma = 0.145
+sigma = 0.16
 beta = 100
 
 # -------- Running the simulation --------
@@ -116,7 +116,7 @@ for ind, geo_list in enumerate(geometry_list):
     axs_pr[ind].plot(changing_h0,p2_arr,color="#a7b0ae", label='right')
     axs_pr[ind].set_title(f"angle between targets: {geom:.4f}")
     prob_df = pd.DataFrame({'left':p0_arr,'center':p1_arr,'right':p2_arr})
-    prob_df.to_csv(f'018sigma02h0_{ind}.csv', index=False)
+    prob_df.to_csv(f'016sigma02125h0_{ind}.csv', index=False)
 
 subfigs_pr.suptitle("probability of reaching target (left is getting better)")
 subfigs_pr.supylabel("probability of reaching each target")
