@@ -49,7 +49,7 @@ for i in range(N):
 allocentricFlag = 1
 h0s = [0.25,0.25,0.25]
 h_b = 0.2
-sigma = 0.16
+sigma = 0.175
 beta = 100
 
 # -------- Running the simulation --------
@@ -91,8 +91,8 @@ h0_list_1 = []
 h0_list_2 = []
 for item in changing_h0:
     h0_list_0.append([item+h0_base,h0_base,h0_base])
-subfigs_pr, axs_pr = plt.subplots(nrows=1,ncols=4,figsize=(17.25,8),num=1)
-geometry_list = [[[50-15*np.sqrt(3),50,50+15*np.sqrt(3)],[35,80,35]],[[20,50,80],[50,80,50]],[[50-15*np.sqrt(3),50,50+15*np.sqrt(3)],[65,80,65]],[[35,50,65],[50+15*np.sqrt(3),80,50+15*np.sqrt(3)]]]
+subfigs_pr, axs_pr = plt.subplots(nrows=1,ncols=3,figsize=(12.9325,8),num=1)
+geometry_list = [[[50-15*np.sqrt(3),50,50+15*np.sqrt(3)],[35,80,35]],[[20,50,80],[50,80,50]],[[50-15*np.sqrt(3),50,50+15*np.sqrt(3)],[65,80,65]]]
 for ind, geo_list in enumerate(geometry_list):
     geom = 2*np.pi/3 - ind*np.pi/6
     base['initialxt'] = geo_list[0]
@@ -118,7 +118,7 @@ for ind, geo_list in enumerate(geometry_list):
     prob_df = pd.DataFrame({'left':p0_arr,'center':p1_arr,'right':p2_arr})
     prob_df.to_csv(f'016sigma02125h0_{ind}.csv', index=False)
 
-subfigs_pr.suptitle("probability of reaching target (left is getting better)")
+subfigs_pr.suptitle(f"probability of reaching target (left is getting better), sigma: {sigma}, h0: {h0_base}")
 subfigs_pr.supylabel("probability of reaching each target")
 axs_pr[ind].legend()
 subfigs_pr.supxlabel("difference in h0 from left target to others")

@@ -6,6 +6,7 @@ import matplotlib.colors as mcolors
 from . import simulation_metrics as sim_met
 from . import repeated_sims
 from . import simulate_ringattractor as sim_ra
+from helper_functions import helpers
 
 
 L = 100
@@ -16,8 +17,8 @@ initialy = np.zeros(nagents)
 for a in range(nagents):
     initialx[a] = 50
     initialy[a] = 50
-initialxt = [50-15*np.sqrt(3),50,50+15*np.sqrt(3)]
-initialyt = [35,80,35]
+initialxt = [35,50,65]
+initialyt = [50+15*np.sqrt(3),80,50+15*np.sqrt(3)]
 
 T = 5000
 periodicflag = 0
@@ -148,6 +149,7 @@ def run_sims(base,change,change_var,sample_size,traj,activity,ncol,nrow):
         axs0[s].set_title(f"sigma: {round(sigma_list[s],4)}, h0: {round(h0_list[s][0],4)}, beta: {beta}")
         axs0[s].set_aspect('equal', adjustable='box')
         target_list_sample = target_list[s*sample_size:(s+1)*sample_size]
+        print(f"sim: {s}, targets reached: {target_list_sample}")
         ind = s*sample_size
         sim_activity = activity_list[ind]
         col_min = np.min(sim_activity[:,40:])
@@ -187,11 +189,12 @@ base = {'N':N,
 plot_neurons = True
 plot_trajs = True
 sample_size = 5
-h0_list = [[0.2125,0.2125,0.2125],[0.2135,0.2125,0.2125],[0.2145,0.2125,0.2125],[0.2155,0.2125,0.2125]]
-sigma_list = [0.145,0.145,0.145,0.145]
+estimated_sigma = helpers.get_estimated_sigma([initialxt[0],initialyt[0]],[initialxt[1],initialyt[1]],[initialxt[2],initialyt[2]],0.225,0.207,0.207,100)
+h0_list = [[0.225,0.207,0.207],[0.225,0.207,0.207],[0.225,0.207,0.207],[0.225,0.207,0.207],[0.225,0.207,0.207],[0.225,0.207,0.207]]
+sigma_list = [estimated_sigma-0.03,estimated_sigma-0.02,estimated_sigma-0.01,estimated_sigma,estimated_sigma+0.01,estimated_sigma+0.02]
 change = {'sigma':sigma_list, 'h0':h0_list}
 
 
-run_sims(base,change,'h0',sample_size,plot_trajs,plot_neurons,4,1)
+run_sims(base,change,'h0',sample_size,plot_trajs,plot_neurons,3,2)
 #sim_random_points()
 plt.show()
