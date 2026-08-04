@@ -17,17 +17,17 @@ initialy = np.zeros(nagents)
 for a in range(nagents):
     initialx[a] = 50
     initialy[a] = 50
-initialxt = [35,50,65]
-initialyt = [50+15*np.sqrt(3),80,50+15*np.sqrt(3)]
+initialxt = [50-15*np.sqrt(3),50,50+15*np.sqrt(3)]
+initialyt = [35,80,35]
 
-T = 10000
+T = 5000
 periodicflag = 0
 rEgo = 0
 rEgoTarget = 0
 Egonumber = 1
 hColl = -10
 rColl = 0
-distf = 0
+distf = 1
 adistf = 1
 dt = 0.1
 v0 = 0.05
@@ -50,7 +50,7 @@ for i in range(N):
 allocentricFlag = 1
 h0s = [0.21903,0.21903,0.21904]
 h_b = 0.2
-sigma = 0.5
+sigma = 0.1
 beta = 100 
 
 # --- trying out the non stopping situation --- - turn this and the traditional simulations into functions so its easier to keep it organized
@@ -63,14 +63,14 @@ def sim_random_points():
         dists = []
         rng = np.random.default_rng()
         while len(xpoints) < 10:
-            new_x = rng.uniform(0,100)
-            new_y = rng.uniform(0,100)
+            new_x = rng.uniform(20,80)
+            new_y = rng.uniform(20,100)
             for p in range(len(xpoints)):
                 dist = math.dist((new_x,new_y),(xpoints[p],ypoints[p]))
                 if dist < 5:
                     break
 
-            dists.append(math.dist((50,50),(new_x,new_y)))
+            dists.append(math.dist((50,0),(new_x,new_y)))
             xpoints.append(new_x)
             ypoints.append(new_y)
             angle = np.atan2(new_y,new_x-50)
@@ -101,14 +101,14 @@ def sim_random_points():
         print(f"final x same: {xPos_same[0][-1]}, final y same: {yPos_same[0][-1]}")
         plt.figure(2)
         plt.imshow(uArray_same[:,0,:],aspect='auto')
-            
+        '''
         headings, xPos, yPos, targetXPos, targetYPos, uArray = sim_ra.simulate_ring_attractor(N,L,T,10,nagents,allocentricFlag,periodicflag,
                                                                                             rEgo,rEgoTarget,Egonumber,distf,adistf,J,beta,h0s_random,h_b,dt,
-                                                                                            v0,v0t,sigma,hColl,rColl,[50],[50],xpoints,ypoints,True,False)
+                                                                                            v0,v0t,sigma,hColl,rColl,[50],[50],xpoints,ypoints,False,False)
         print(f"final x: {xPos[0][-1]}, final y: {yPos[0][-1]}")
         plt.figure(3)
         plt.imshow(uArray[:,0,:],aspect='auto')
-
+        '''
         
         plt.show()
 
@@ -188,13 +188,13 @@ base = {'N':N,
 
 plot_neurons = True
 plot_trajs = True
-sample_size = 1
+sample_size = 5
 estimated_sigma = helpers.get_estimated_sigma([initialxt[0],initialyt[0]],[initialxt[1],initialyt[1]],[initialxt[2],initialyt[2]],0.225,0.207,0.207,100)
-h0_list = [[0.207,0.207,0.207],[0.212,0.207,0.207],[0.217,0.207,0.207],[0.222,0.207,0.207],[0.227,0.207,0.207],[0.232,0.207,0.207]]
-sigma_list = [0.1,0.1,0.1,0.1,0.1,0.1]
+h0_list = [[0.23,0.23,0.23],[0.26,0.26,0.26],[0.29,0.29,0.29],[0.32,0.32,0.32],[0.35,0.35,0.35],[0.38,0.38,0.38]]
+sigma_list = [0.2,0.2,0.2,0.2,0.2,0.2]
 change = {'sigma':sigma_list, 'h0':h0_list}
 
 
-run_sims(base,change,'h0',sample_size,plot_trajs,plot_neurons,3,2)
-#sim_random_points()
+#run_sims(base,change,'h0',sample_size,plot_trajs,plot_neurons,3,2)
+sim_random_points()
 plt.show()

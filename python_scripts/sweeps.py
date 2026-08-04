@@ -8,7 +8,7 @@ from . import repeated_sims
 
 start_time = time.perf_counter()
 
-L = 100 
+L = 100
 ntargets = 3
 nagents = 1
 initialx = np.zeros(nagents)
@@ -17,7 +17,7 @@ for a in range(nagents):
     initialx[a] = 50
     initialy[a] = 50
 initialxt = [50-15*np.sqrt(3),50,50+15*np.sqrt(3)]
-initialyt = [65,80,65]
+initialyt = [35,80,35]
 
 T = 5000
 periodicflag = 0
@@ -26,7 +26,7 @@ rEgoTarget = 0
 Egonumber = 1
 hColl = -10
 rColl = 0
-distf = 0
+distf = 1
 adistf = 1
 dt = 0.1
 v0 = 0.05
@@ -85,13 +85,13 @@ base = {'N':N,
 include_pos = True
 include_neurons = True
 sample_size = 5
-sigma_start = 0.14
-sigma_finish = 0.26
-n_sigma = 2
+sigma_start = 0.05
+sigma_finish = 0.75
+n_sigma = 30
 base_sigma = np.linspace(sigma_start,sigma_finish,num=n_sigma)
-h0_start = 0.19
-h0_finish = 0.24
-n_h0 = 3
+h0_start = 0.2
+h0_finish = 0.4
+n_h0 = 30
 h0_range= np.linspace(h0_start,h0_finish,num=n_h0)
 print(f"sigma diff: {base_sigma[1]-base_sigma[0]}, h0 diff: {h0_range[1]-h0_range[0]}")
 h0_list = []
@@ -338,7 +338,7 @@ cbar5.set_label('angle of second bifurcation')
 cbar6 = plt.colorbar(im6)
 cbar6.set_label('number of bifurcations')
 
-subfigs_metric.suptitle(f"Heatmaps for π/3 between targets, average of {sample_size} samples")
+subfigs_metric.suptitle(f"Heatmaps for 2π/3 between targets, average of {sample_size} samples")
 width_ratio = [1]*n_thresh
 width_ratio.append(0.08)
 subfigs_dir, axs_dir = plt.subplots(nrows=3,ncols=n_thresh+1,figsize=(18,6),gridspec_kw={'width_ratios': width_ratio},num=2)

@@ -92,7 +92,6 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
     if plot == True:
         plt.figure(1)
         plt.gca().set_aspect('equal', adjustable='box')
-    plotted = False
     for tstep in range(0,T):
 
         # -------- STEP A --------
@@ -198,21 +197,6 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
                 if newAngle < 0:
                     newAngle = newAngle + 2*np.pi
             headings[a,tstep+1] = newAngle
-
-            if 0 < newAngle < np.pi/6 and tstep > 300 and not plotted:
-                # we want to know the area under the curve, as well as the max/mins
-                print(f"tstep: {tstep}")
-                cur_iextern = Iextern[:,a]
-                ext_n = 0
-                sum_cur_iextern = sum(cur_iextern)
-                for n in range(N):
-                    ext_n += cur_iextern[n]/sum_cur_iextern * n
-                print(f"estimated neuron: {ext_n}")
-                print(f"estimated new neuron: {newAngle*100/2*np.pi}")
-                plt.figure(1)
-                plt.plot(Iextern[:,a])
-                plt.show()
-                plotted = True
             if allocentricFlag == 0:
                 alpharing[a,:] = np.mod(alpharing[a,:] - headings[a,tstep] + headings[a,tstep+1],2*np.pi)
             elif Egocentric[a] >= Egonumber:
