@@ -188,7 +188,7 @@ base = {'N':N,
 
 plot_neurons = True
 plot_trajs = True
-sample_size = 5
+sample_size = 1
 estimated_sigma = helpers.get_estimated_sigma([initialxt[0],initialyt[0]],[initialxt[1],initialyt[1]],[initialxt[2],initialyt[2]],0.225,0.207,0.207,100)
 h0_list = [[0.225,0.207,0.207],[0.225,0.207,0.207],[0.225,0.207,0.207],[0.225,0.207,0.207],[0.225,0.207,0.207],[0.225,0.207,0.207]]
 sigma_list = [estimated_sigma-0.03,estimated_sigma-0.02,estimated_sigma-0.01,estimated_sigma,estimated_sigma+0.01,estimated_sigma+0.02]

@@ -166,6 +166,8 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
                     dAng = abs(alpharing[a,i]-angleAB)
                     if dAng > np.pi:
                         dAng = 2*np.pi - dAng
+                    if tstep == 2000:
+                        print(f"target: {ttarg}, neuron: {i}, dang: {dAng}, angleAB: {angleAB}")
                     Iextern[i,a] = Iextern[i,a] + ampl*np.exp(-0.5*(dAng**2)/sigma**2)
 
         # -------- STEP B --------
@@ -176,6 +178,10 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
             dU = -uaOld + netRing - h_b + Iextern[:,a]
             uaNew = uaOld + dt * dU
             uArray[:,a,tstep+1] = uaNew
+            if tstep == 100:
+                print(f"faold: {faOld}")
+                print(f"net ring: {netRing}")
+                print(f"du: {dU}")
     
         # -------- STEP C --------
         for a in range(nagents):
