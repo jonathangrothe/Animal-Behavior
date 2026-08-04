@@ -20,7 +20,7 @@ for a in range(nagents):
 initialxt = [35,50,65]
 initialyt = [50+15*np.sqrt(3),80,50+15*np.sqrt(3)]
 
-T = 5000
+T = 10000
 periodicflag = 0
 rEgo = 0
 rEgoTarget = 0
@@ -145,8 +145,8 @@ def run_sims(base,change,change_var,sample_size,traj,activity,ncol,nrow):
     cmap = mcolors.LinearSegmentedColormap.from_list("GreyBlue", grey_to_blue)
 
     for s in range(n_plots):
-        sim_met.plot_traj(x_list[s*sample_size:(s+1)*sample_size],y_list[s*sample_size:(s+1)*sample_size],initialxt,initialyt,sample_size,axs0[s],True,bif_indices[s*sample_size:(s+1)*sample_size],0,0)
-        axs0[s].set_title(f"sigma: {round(sigma_list[s],4)}, h0: {round(h0_list[s][0],4)}, beta: {beta}")
+        sim_met.plot_traj(x_list[s*sample_size:(s+1)*sample_size],y_list[s*sample_size:(s+1)*sample_size],initialxt,initialyt,sample_size,axs0[s],False,[[100,1000,2000]],0)
+        axs0[s].set_title(f"sigma: {round(sigma_list[s],4)}, h0: {h0_list[s]}, beta: {beta}")
         axs0[s].set_aspect('equal', adjustable='box')
         target_list_sample = target_list[s*sample_size:(s+1)*sample_size]
         print(f"sim: {s}, targets reached: {target_list_sample}")
@@ -190,8 +190,8 @@ plot_neurons = True
 plot_trajs = True
 sample_size = 1
 estimated_sigma = helpers.get_estimated_sigma([initialxt[0],initialyt[0]],[initialxt[1],initialyt[1]],[initialxt[2],initialyt[2]],0.225,0.207,0.207,100)
-h0_list = [[0.225,0.207,0.207],[0.225,0.207,0.207],[0.225,0.207,0.207],[0.225,0.207,0.207],[0.225,0.207,0.207],[0.225,0.207,0.207]]
-sigma_list = [estimated_sigma-0.03,estimated_sigma-0.02,estimated_sigma-0.01,estimated_sigma,estimated_sigma+0.01,estimated_sigma+0.02]
+h0_list = [[0.207,0.207,0.207],[0.212,0.207,0.207],[0.217,0.207,0.207],[0.222,0.207,0.207],[0.227,0.207,0.207],[0.232,0.207,0.207]]
+sigma_list = [0.1,0.1,0.1,0.1,0.1,0.1]
 change = {'sigma':sigma_list, 'h0':h0_list}
 
 
