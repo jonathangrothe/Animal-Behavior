@@ -16,8 +16,8 @@ initialy = np.zeros(nagents)
 for a in range(nagents):
     initialx[a] = 50
     initialy[a] = 50
-initialxt = [20,50,80]
-initialyt = [50,80,50]
+initialxt = [50-15*np.sqrt(3),50,50+15*np.sqrt(3)]
+initialyt = [35,80,35]
 
 T = 5000
 periodicflag = 0
@@ -84,14 +84,14 @@ base = {'N':N,
 
 include_pos = True
 include_neurons = True
-sample_size = 5
-sigma_start = 0.05
-sigma_finish = 0.75
-n_sigma = 30
+sample_size = 10
+sigma_start = 0.16
+sigma_finish = 0.25
+n_sigma = 15
 base_sigma = np.linspace(sigma_start,sigma_finish,num=n_sigma)
-h0_start = 0.2
-h0_finish = 0.4
-n_h0 = 30
+h0_start = 0.275
+h0_finish = 0.32
+n_h0 = 15
 h0_range= np.linspace(h0_start,h0_finish,num=n_h0)
 print(f"sigma diff: {base_sigma[1]-base_sigma[0]}, h0 diff: {h0_range[1]-h0_range[0]}")
 h0_list = []
@@ -338,7 +338,7 @@ cbar5.set_label('angle of second bifurcation')
 cbar6 = plt.colorbar(im6)
 cbar6.set_label('number of bifurcations')
 
-subfigs_metric.suptitle(f"Heatmaps for π/2 between targets, average of {sample_size} samples")
+subfigs_metric.suptitle(f"Heatmaps for 2π/3 between targets, average of {sample_size} samples")
 width_ratio = [1]*n_thresh
 width_ratio.append(0.08)
 subfigs_dir, axs_dir = plt.subplots(nrows=3,ncols=n_thresh+1,figsize=(18,6),gridspec_kw={'width_ratios': width_ratio},num=2)
