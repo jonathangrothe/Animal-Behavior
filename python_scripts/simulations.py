@@ -50,65 +50,56 @@ for i in range(N):
 allocentricFlag = 1
 h0s = [0.21903,0.21903,0.21904]
 h_b = 0.2
-sigma = 0.1
+sigma = 0.05
 beta = 100 
 
 # --- trying out the non stopping situation --- - turn this and the traditional simulations into functions so its easier to keep it organized
 def sim_random_points(): 
+    # From playing around with this I know that it is often possible for the agent to travel between targets, 
+    # it would be nice if it would be possible to get a good guess for sigma/h0 that will allow it to move between targets given the geometry
+    # I hypothesize that this will be the most sensitive 'best' version of the model at detecting small differences
+    # (I will have to test this), because it clearly has the capacity to sustain/shift between bumps for individual points
+    # Q: will this be easier if we increase number of neurons ? (so that we don't aggregate two bumps within 2pi/100 degrees of each other) 
+
     # it would be a lot easier to gaurantee that they're all approximately different angles from the start point
     # eventually we will need to be able to calculate how points are aggregated
-    for s in range(10):
+    for s in range(3):
         xpoints = []
         ypoints = []
-        dists = []
+        angles = []
         rng = np.random.default_rng()
         while len(xpoints) < 10:
-            new_x = rng.uniform(20,80)
-            new_y = rng.uniform(20,100)
-            for p in range(len(xpoints)):
-                dist = math.dist((new_x,new_y),(xpoints[p],ypoints[p]))
-                if dist < 5:
+            angle = rng.uniform(-np.pi,np.pi)
+            dist = rng.uniform(5,45)
+            for a in angles:
+                angle_dist = np.abs(angle-a)
+                if angle_dist < np.pi/10:
+                    print("rejected")
                     break
 
-            dists.append(math.dist((50,0),(new_x,new_y)))
-            xpoints.append(new_x)
-            ypoints.append(new_y)
-            angle = np.atan2(new_y,new_x-50)
+            angles.append(angle)
+            print(f"angle: {angle}, x: {50+dist*np.cos(angle)}, y: {50+dist*np.sin(angle)}")
+            xpoints.append(50+dist*np.cos(angle))
+            ypoints.append(50+dist*np.sin(angle))
             print(f"angle to new point: {angle}")
-        dists_argmin = np.argmin(dists)
-        h0s_random = [0.25]*10
-        h0s_random[dists_argmin] = 0.35
         h0s_same = [0.25]*10
         print("ONE SET OF POINTS")
         print(f"mean x: {np.mean(xpoints)}, std x: {np.std(xpoints)}")
         print(f"mean y: {np.mean(ypoints)}, std y: {np.std(ypoints)}")
-        print(f"best point: {xpoints[dists_argmin],ypoints[dists_argmin]}")
-        mean_dists = np.mean(dists)
-        weighted_xsum = 0
-        weighted_ysum = 0
-        for ind,dist in enumerate(dists): 
-            weight = dist/mean_dists
-            weighted_xsum += weight*xpoints[ind]
-            weighted_ysum += weight*ypoints[ind]
-        weightedx = weighted_xsum/10
-        weightedy = weighted_ysum/10
-        print(f"weighted mean x: {weightedx}")
-        print(f"weighted mean y: {weightedy}")
 
         headings_same, xPos_same, yPos_same, targetXPos_same, targetYPos_same, uArray_same = sim_ra.simulate_ring_attractor(N,L,T,10,nagents,allocentricFlag,periodicflag,
                                                                                                             rEgo,rEgoTarget,Egonumber,distf,adistf,J,beta,h0s_same,h_b,dt,
                                                                                                             v0,v0t,sigma,hColl,rColl,[50],[50],xpoints,ypoints,True,False)
-        print(f"final x same: {xPos_same[0][-1]}, final y same: {yPos_same[0][-1]}")
+        print(f"final x low sigma: {xPos_same[0][-1]}, final y same: {yPos_same[0][-1]}")
         plt.figure(2)
         plt.imshow(uArray_same[:,0,:],aspect='auto')
-        '''
+        
         headings, xPos, yPos, targetXPos, targetYPos, uArray = sim_ra.simulate_ring_attractor(N,L,T,10,nagents,allocentricFlag,periodicflag,
-                                                                                            rEgo,rEgoTarget,Egonumber,distf,adistf,J,beta,h0s_random,h_b,dt,
-                                                                                            v0,v0t,sigma,hColl,rColl,[50],[50],xpoints,ypoints,False,False)
-        print(f"final x: {xPos[0][-1]}, final y: {yPos[0][-1]}")
+                                                                                            rEgo,rEgoTarget,Egonumber,distf,adistf,J,beta,h0s_same,h_b,dt,
+                                                                                            v0,v0t,sigma*2,hColl,rColl,[50],[50],xpoints,ypoints,True,False)
+        print(f"final x high sigma: {xPos[0][-1]}, final y: {yPos[0][-1]}")
         plt.figure(3)
         plt.imshow(uArray[:,0,:],aspect='auto')
-        '''
         
         plt.show()
 
