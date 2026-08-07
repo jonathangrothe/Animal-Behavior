@@ -99,3 +99,33 @@ def get_estimated_sigma(p0,p1,p2,h0,h1,h2,N):
     theor_sigma = np.sqrt((-0.5*(theor_ang_delta/2)**2)/j) # instead of just calculating it at the theor_ang_delta, we need to calculate it everywhere
     print(f"theoretical sigma: {theor_sigma}, difference from neuron and true angles: 1: {delta_ang1}, 2: {delta_ang2}")
     return theor_sigma
+
+
+# new function: goal: given the geometry and a target of interest, calculate the lowest possible angle between targets in the region it could feasibly traverse?
+# ie: if we have a target at pi and some number of targets such that if all are even the aggregate is pi/2, and we want it to move towards pi, then as we increase it will
+# theoretically travel from taking that 'default trajectory' towards eventually taking a direct path to our target at pi. What we need to conisder is not just the difference, but
+# how that difference will effect the agents initial trajectory, which will effect the target it reaches. 
+
+def trajectory_grid(xpoints,ypoints):
+    # this is for 100 x 100 where we do 20 20s with intervals of 5 units between points
+    angles = []
+    for p in range(441):
+        new_x = p % 21 * 5
+        new_y = p//21 * 5 
+        print(f"p: {p}, x: {new_x}, y: {new_y}")
+        new_x_sum = 0
+        new_y_sum = 0
+        for t in range(len(xpoints)):
+            x_diff = xpoints[t]- new_x
+            y_diff = ypoints[t] - new_y
+            new_dist = np.sqrt((x_diff)**2+(y_diff)**2)
+            new_weight = np.exp(-1*new_dist/100)
+            new_angle = np.atan2(y_diff,x_diff)
+            #print(f"xdiff: {x_diff}, ydiff: {y_diff}, new angle: {new_angle}")
+            #print(f"new weight: {new_weight} ")
+            new_x_sum += new_weight * np.cos(new_angle)
+            new_y_sum += new_weight * np.sin(new_angle)
+        new_overall_angle = np.atan2(new_y_sum,new_x_sum)
+        angles.append(new_overall_angle)
+        print(f"angle at {new_x,new_y}: {new_overall_angle}")
+    return(angles)

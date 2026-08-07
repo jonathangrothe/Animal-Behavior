@@ -37,7 +37,7 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
         initialx: a list of floats which contain the starting x positions of the agents
         initialy: a list of floats which contain the starting y positions of the agents
         intialxt: a list of floats which contain the starting x positions of the targets
-        initialyt: a list of floatas which contain the starting y positions of the targets
+        initialyt: a list of floats which contain the starting y positions of the targets
         plot: a boolean which controls whether or not to plot the trajectory every 100 tsteps
         stop: a boolean which controls whether or not to stop the simulation when the agent reaches a target (note: right now should be False if there is more than one agent)
         stopping_dist: a float which controls how close to a target the agent has to get to stop the simulation when stop is True
