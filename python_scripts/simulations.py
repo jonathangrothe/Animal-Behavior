@@ -16,7 +16,7 @@ initialx = np.zeros(nagents)
 initialy = np.zeros(nagents)
 for a in range(nagents):
     initialx[a] = 50
-    initialy[a] = 50
+    initialy[a] = 0
 initialxt = [35,50,65]
 initialyt = [50+15*np.sqrt(3),80,50+15*np.sqrt(3)]
 
@@ -65,14 +65,14 @@ def sim_random_points(base,sample_size):
     # eventually we will need to be able to calculate how points are aggregated
     angle_list = np.linspace(2*np.pi/3,np.pi/2,num=5)
     for s in range(1):
-        '''
+        
         xpoints = []
         ypoints = []
         angles = []
         dists = []
         rng = np.random.default_rng()
         while len(xpoints) < 10:
-            angle = rng.uniform(0,2*np.pi)
+            angle = rng.uniform(0,np.pi)
             dist = rng.uniform(5,45)
             for a in angles:
                 angle_unwrapped = np.unwrap([angle,a])
@@ -81,20 +81,25 @@ def sim_random_points(base,sample_size):
                     break
             dists.append(dist)
             angles.append(angle)
-            xpoints.append(50+dist*np.cos(angle))
-            ypoints.append(50+dist*np.sin(angle))
+            xpoints.append(initialx[0]+dist*np.cos(angle))
+            ypoints.append(initialy[0]+dist*np.sin(angle))
+        farthest = np.argmax(dists)
+        base_h0 = [0.25]*10
+        #base['h0'] = [0.25]*10
         '''
-        base['h0'] = [0.25]*3
         x_adj = 50 + 30 * np.cos(angle_list[s])
         y_adj = 50 + 30 * np.sin(angle_list[s])
         xpoints = [x_adj,50,65]
         ypoints = [y_adj,80,50+15*np.sqrt(3)]
+        '''
         base['initialxt'] = xpoints
         base['initialyt'] = ypoints
-        base['ntargets'] = 3
-        grid_angles = helpers.trajectory_grid(xpoints,ypoints,1,0)
-        grid_sep_angles = helpers.trajectory_grid(xpoints,ypoints,0,1) 
-        grid_combined_angles = helpers.trajectory_grid(xpoints,ypoints,0.5,0.5)
+        base['ntargets'] = 10
+        n_trajpoints = 51
+        traj_factor = L/(n_trajpoints-1)
+        grid_angles = helpers.trajectory_grid(xpoints,ypoints,n_trajpoints,0.8,0.2)
+        grid_sep_angles = helpers.trajectory_grid(xpoints,ypoints,n_trajpoints,0.2,0.8) 
+        grid_combined_angles = helpers.trajectory_grid(xpoints,ypoints,n_trajpoints,0.5,0.5)
         #print(f"angles of approximated trajectory: {approx_traj}")
         #fig = plt.figure(layout='constrained',figsize=(13,13),num=s*2+1)
         subfigs, ax1 = plt.subplots(nrows=4,ncols=4,layout='constrained',figsize=(13,13),num=s*4+1)
@@ -103,85 +108,87 @@ def sim_random_points(base,sample_size):
         fig3, ax3 = plt.subplots(figsize = (8,8),num=s*4+3)
         fig4, ax4 = plt.subplots(figsize = (8,8),num=s*4+4)
 
-        sigma_sim = []
-        for sig in range(8):
-            sigma_sim.append(0.03 + sig*0.05)
+        h0_list = []
+        diffs = np.linspace(0,4,num=8)
+        for diff in diffs:
+            new_h0s = base_h0.copy()
+            new_h0s[farthest] += diff
+            h0_list.append(new_h0s)
+            
 
-        change_random = {'sigma':sigma_sim}
+        change_random = {'h0':h0_list}
         print(f"base: {base}")
         target_list, time_list, activity_list, x_list, y_list, headings_list  = repeated_sims.sample_sims(base,change_random,sample_size,True, True)
-        for g in range(10201):
-            base_x = g % 101
-            base_y = g // 101
-            gr_x2 = base_x + 0.5*np.cos(grid_angles[g])
-            gr_y2 = base_y + 0.5*np.sin(grid_angles[g])
-            sep_gr_x2 = base_x + 0.5*np.cos(grid_sep_angles[g])
-            sep_gr_y2 = base_y + 0.5*np.sin(grid_sep_angles[g])
-            combi_gr_x2 = base_x + 0.5*np.cos(grid_combined_angles[g])
-            combi_gr_y2 = base_y + 0.5*np.sin(grid_combined_angles[g])
-            ax2.arrow(base_x,base_y,gr_x2-base_x,gr_y2-base_y,width=0.005,head_width=0.2,head_length=0.2,color='green')
-            ax3.arrow(base_x,base_y,sep_gr_x2-base_x,sep_gr_y2-base_y,width=0.005,head_width=0.2,head_length=0.2,color='green')
-            ax4.arrow(base_x,base_y,combi_gr_x2-base_x,combi_gr_y2-base_y,width=0.005,head_width=0.2,head_length=0.2,color='green')
+        for g in range(n_trajpoints**2):
+            base_x = g % n_trajpoints * traj_factor
+            base_y = g // n_trajpoints * traj_factor
+            gr_x2 = base_x + 0.5*np.cos(grid_angles[g]) * traj_factor
+            gr_y2 = base_y + 0.5*np.sin(grid_angles[g]) * traj_factor
+            sep_gr_x2 = base_x + 0.5*np.cos(grid_sep_angles[g]) * traj_factor
+            sep_gr_y2 = base_y + 0.5*np.sin(grid_sep_angles[g]) * traj_factor
+            combi_gr_x2 = base_x + 0.5*np.cos(grid_combined_angles[g]) * traj_factor
+            combi_gr_y2 = base_y + 0.5*np.sin(grid_combined_angles[g]) * traj_factor
+            ax2.arrow(base_x,base_y,gr_x2-base_x,gr_y2-base_y,width=0.005,head_width=0.4,head_length=0.2,color='green')
+            ax3.arrow(base_x,base_y,sep_gr_x2-base_x,sep_gr_y2-base_y,width=0.005,head_width=0.4,head_length=0.2,color='green')
+            ax4.arrow(base_x,base_y,combi_gr_x2-base_x,combi_gr_y2-base_y,width=0.005,head_width=0.4,head_length=0.2,color='green')
         
         # plotting expected (approximate) trajectory on top of the grid
-        xs = [50]
-        ys = [50]
-        xs_sep = [50]
-        ys_sep = [50]
-        xs_combi = [50]
-        ys_combi = [50]
-        start_x = 50
-        start_y = 50
-        start_x_sep = 50
-        start_y_sep = 50
-        start_x_combi = 50
-        start_y_combi = 50
-        for p in range(250):
-            closest_x = round(start_x)
-            closest_y = round(start_y)
-            ind = (closest_y+1) * 101 + closest_x+1
-            next_x = 0.2*np.cos(grid_angles[ind]) + start_x
-            next_y = 0.2*np.sin(grid_angles[ind]) + start_y 
-            #print(f"num: {p}, ind: {ind}, next x: {next_x}, next y: {next_y}")
+        xs = [initialx[0]]
+        ys = [initialy[0]]
+        xs_sep = [initialx[0]]
+        ys_sep = [initialy[0]]
+        xs_combi = [initialx[0]]
+        ys_combi = [initialy[0]]
+        start_x = initialx[0]
+        start_y = initialy[0]
+        start_x_sep = initialx[0]
+        start_y_sep = initialy[0]
+        start_x_combi = initialx[0]
+        start_y_combi = initialy[0]
+        for p in range(5000):
+            closest_x = round(start_x/traj_factor)
+            closest_y = round(start_y/traj_factor)
+            ind = (closest_y+1) * n_trajpoints + closest_x+1
+            next_x = 0.01*np.cos(grid_angles[ind]) + start_x
+            next_y = 0.01*np.sin(grid_angles[ind]) + start_y 
             xs.append(next_x)
             ys.append(next_y)
             start_x = next_x
             start_y = next_y
 
-            closest_x_sep = round(start_x_sep)
-            closest_y_sep = round(start_y_sep)
-            ind_sep = (closest_y_sep+1) * 101 + closest_x_sep+1
-            next_x_sep = 0.2*np.cos(grid_sep_angles[ind_sep]) + start_x_sep
-            next_y_sep = 0.2*np.sin(grid_sep_angles[ind_sep]) + start_y_sep 
-            #print(f"num: {p}, ind: {ind}, next x: {next_x}, next y: {next_y}")
+            closest_x_sep = round(start_x_sep/traj_factor)
+            closest_y_sep = round(start_y_sep/traj_factor)
+            ind_sep = (closest_y_sep+1) * n_trajpoints + closest_x_sep+1
+            next_x_sep = 0.01*np.cos(grid_sep_angles[ind_sep]) + start_x_sep
+            next_y_sep = 0.01*np.sin(grid_sep_angles[ind_sep]) + start_y_sep 
             xs_sep.append(next_x_sep)
             ys_sep.append(next_y_sep)
             start_x_sep = next_x_sep
             start_y_sep = next_y_sep
 
-            closest_x_combi = round(start_x_combi)
-            closest_y_combi = round(start_y_combi)
-            ind_combi = (closest_y_combi+1) * 101 + closest_x_combi+1
-            next_x_combi = 0.2*np.cos(grid_sep_angles[ind_combi]) + start_x_combi
-            next_y_combi = 0.2*np.sin(grid_sep_angles[ind_combi]) + start_y_combi
-            #print(f"num: {p}, ind: {ind}, next x: {next_x}, next y: {next_y}")
+            closest_x_combi = round(start_x_combi/traj_factor)
+            closest_y_combi = round(start_y_combi/traj_factor)
+            ind_combi = (closest_y_combi+1) * n_trajpoints + closest_x_combi+1
+            #print(f"x: {start_x_combi}, y: {start_y_combi}, closest x: {closest_x_combi}, closest y: {closest_y_combi}, ind: {ind_combi}, angle: {grid_combined_angles[ind_combi]}")
+            next_x_combi = 0.01*np.cos(grid_combined_angles[ind_combi]) + start_x_combi
+            next_y_combi = 0.01*np.sin(grid_combined_angles[ind_combi]) + start_y_combi
             xs_combi.append(next_x_combi)
             ys_combi.append(next_y_combi)
             start_x_combi = next_x_combi
             start_y_combi = next_y_combi
-
+        #print(f"diffs for combo: {np.array([np.diff(xs_combi),np.diff(ys_combi)])}")
         ax2.plot(xs,ys,c='red')
         ax3.plot(xs_sep,ys_sep,c='red')
         ax4.plot(xs_combi,ys_combi,c='red')
 
-        for sig in range(len(sigma_sim)):
+        for sig in range(len(h0_list)):
             #for pt in range(len(x_traj)-1):
                 #axs[0].plot([x_traj[pt], x_traj[pt+1]], [y_traj[pt], y_traj[pt+1]], color='green', linewidth=1, linestyle = '--')
             x_settings = x_list[sig*sample_size:(sig+1)*sample_size]
             y_settings = y_list[sig*sample_size:(sig+1)*sample_size]
             sim_met.plot_traj(x_settings,y_settings,xpoints,ypoints,sample_size,ax1[sig*2])
             ax1[sig*2].plot(xs,ys,c='red',linestyle='--')
-            ax1[sig*2].set_title(f"sigma: {sigma_sim[sig]}")
+            ax1[sig*2].set_title(f"diff: {diffs[sig]}")
             ind = sig*sample_size
             sim_activity = activity_list[ind]
             ax1[sig*2+1].imshow(sim_activity,aspect='auto')

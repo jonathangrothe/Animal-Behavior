@@ -106,39 +106,43 @@ def get_estimated_sigma(p0,p1,p2,h0,h1,h2,N):
 # theoretically travel from taking that 'default trajectory' towards eventually taking a direct path to our target at pi. What we need to conisder is not just the difference, but
 # how that difference will effect the agents initial trajectory, which will effect the target it reaches. 
 
-def trajectory_grid(xpoints,ypoints,agg=1,indi=0):
+def trajectory_grid(xpoints,ypoints,N,agg=1,indi=0):
     '''
     A function which produces a 101x101 grid of angles corresponding to the expected direction of the agent at each whole number point (in the 100x100 space)
     This is done by considering two situations: the complete aggregation situation and the nearest target situation and then combining them
     parameters:
         xpoints: the x positions of the targets
         ypoints: the y positions of the targets
+        N: the number of points per side
         agg: the proportion for the completely aggregated solution
         indi: the proportion for the nearest target solution
     '''
     
     angles = []
-    for p in range(10201):
-        new_x = p % 101
-        new_y = p//101  
+    factor = 100/(N-1)
+    ntarg = len(xpoints)
+    for p in range(N**2):
+        new_x = p % N * factor
+        new_y = p // N * factor
         #print(f"p: {p}, x: {new_x}, y: {new_y}")
         new_x_sum = 0
         new_y_sum = 0
         best_angle = 0
         best_dist = 100
-        for t in range(len(xpoints)):
+        for t in range(ntarg):
             x_diff = xpoints[t]- new_x
             y_diff = ypoints[t] - new_y
             new_dist = np.sqrt((x_diff)**2+(y_diff)**2)
-            new_weight = np.exp(-1*new_dist/100)
+            #new_weight = np.exp(-1*new_dist/100)
             new_angle = np.atan2(y_diff,x_diff)
-            new_x_sum += new_weight * np.cos(new_angle)
-            new_y_sum += new_weight * np.sin(new_angle)
+            new_x_sum += 1/ntarg * np.cos(new_angle)
+            new_y_sum += 1/ntarg * np.sin(new_angle)
             if new_dist < best_dist:
                 best_dist = new_dist
                 best_angle = new_angle
         agg_angle = np.atan2(new_y_sum,new_x_sum)
-        combined_angle = agg*agg_angle+indi*best_angle
+        angles_unwrapped = np.unwrap([agg_angle,best_angle])
+        combined_angle = agg*angles_unwrapped[0]+indi*angles_unwrapped[1]
         angles.append(combined_angle)
         #print(f"angle at {new_x,new_y}: {new_overall_angle}")
     return(angles)
