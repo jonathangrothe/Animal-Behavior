@@ -63,14 +63,14 @@ def sim_random_points(base,sample_size):
 
     # it would be a lot easier to gaurantee that they're all approximately different angles from the start point
     # eventually we will need to be able to calculate how points are aggregated
-    for s in range(2):
+    angle_list = np.linspace(2*np.pi/3,np.pi/2,num=5)
+    for s in range(1):
+        '''
         xpoints = []
         ypoints = []
         angles = []
         dists = []
         rng = np.random.default_rng()
-        dir_x = 0 
-        dir_y = 0
         while len(xpoints) < 10:
             angle = rng.uniform(0,2*np.pi)
             dist = rng.uniform(5,45)
@@ -83,100 +83,109 @@ def sim_random_points(base,sample_size):
             angles.append(angle)
             xpoints.append(50+dist*np.cos(angle))
             ypoints.append(50+dist*np.sin(angle))
-        base['h0'] = [0.25]*10
-        print(f"base: {base['h0']}")
+        '''
+        base['h0'] = [0.25]*3
+        x_adj = 50 + 30 * np.cos(angle_list[s])
+        y_adj = 50 + 30 * np.sin(angle_list[s])
+        xpoints = [x_adj,50,65]
+        ypoints = [y_adj,80,50+15*np.sqrt(3)]
         base['initialxt'] = xpoints
         base['initialyt'] = ypoints
-        base['ntargets'] = 10
-        dists = np.array(dists)
-        weights = np.exp(-1 * dists / 100)
-        x_mean = np.sum(weights * np.cos(angles))
-        y_mean = np.sum(weights * np.sin(angles))
-        weighted_mean_angle = np.atan2(y_mean, x_mean) # once we've calculated this, move one unit in this direction, recalculate everything
-        print(f"initial weighted mean: {weighted_mean_angle}")
-        approx_traj = [weighted_mean_angle]
-        prev_angle = weighted_mean_angle
-        prev_x = 50
-        prev_y = 50
-        x_traj = [50]
-        y_traj = [50]
-        for a in range(30):
-            new_x = prev_x + 5*np.cos(prev_angle)
-            new_y = prev_y + 5*np.sin(prev_angle)
-            x_traj.append(new_x)
-            y_traj.append(new_y)
-            # recalculate all the distances and angles and stuff
-            new_x_sum = 0
-            new_y_sum = 0
-            for p in range(10):
-                # calculate distance and weight
-                x_diff = xpoints[p]- new_x
-                y_diff = ypoints[p] - new_y
-                new_dist = np.sqrt((x_diff)**2+(y_diff)**2)
-                new_weight = np.exp(-1*new_dist/100)
-                new_angle = np.atan2(y_diff,x_diff)
-                #print(f"new angle to point {p}: {new_angle}")
-                new_x_sum += new_weight * np.cos(new_angle)
-                new_y_sum += new_weight * np.sin(new_angle)
-            new_overall_angle = np.atan2(new_y_sum,new_x_sum)
-            approx_traj.append(new_overall_angle)
-            #print(f"new overall angle: {new_overall_angle}")
-            prev_angle = new_overall_angle
-            prev_x = new_x
-            prev_y = new_y 
-        final_x = prev_x + 5*np.cos(prev_angle)
-        final_y = prev_y + 5*np.sin(prev_angle)
-        x_traj.append(final_x)
-        y_traj.append(final_y)
-        grid_angles = helpers.trajectory_grid(xpoints,ypoints)
-        #print(f"angles of approximated trahectory: {approx_traj}")
-        fig = plt.figure(layout='constrained',figsize=(7,14),num=s+1)
-        subfigs = fig.subfigures(4,1, wspace=0.1)
-        axs0 = subfigs[0].subplots(1,2)
-        axs0 = axs0.flatten()
-        axs1 = subfigs[1].subplots(1,2)
-        axs1 = axs1.flatten()
-        axs2 = subfigs[2].subplots(1,2)
-        axs2 = axs2.flatten()
-        axs3 = subfigs[3].subplots(1,2)
-        axs3 = axs3.flatten()
-        
+        base['ntargets'] = 3
+        grid_angles = helpers.trajectory_grid(xpoints,ypoints,1,0)
+        grid_sep_angles = helpers.trajectory_grid(xpoints,ypoints,0,1) 
+        grid_combined_angles = helpers.trajectory_grid(xpoints,ypoints,0.5,0.5)
+        #print(f"angles of approximated trajectory: {approx_traj}")
+        #fig = plt.figure(layout='constrained',figsize=(13,13),num=s*2+1)
+        subfigs, ax1 = plt.subplots(nrows=4,ncols=4,layout='constrained',figsize=(13,13),num=s*4+1)
+        ax1 = ax1.flatten()
+        fig2, ax2 = plt.subplots(figsize = (8,8),num=s*4+2)
+        fig3, ax3 = plt.subplots(figsize = (8,8),num=s*4+3)
+        fig4, ax4 = plt.subplots(figsize = (8,8),num=s*4+4)
+
         sigma_sim = []
-        for sig in range(4):
-            sigma_sim.append(0.03 + sig*0.15)
+        for sig in range(8):
+            sigma_sim.append(0.03 + sig*0.05)
 
         change_random = {'sigma':sigma_sim}
-        print(f"base: h0: {base['h0']}")
+        print(f"base: {base}")
         target_list, time_list, activity_list, x_list, y_list, headings_list  = repeated_sims.sample_sims(base,change_random,sample_size,True, True)
+        for g in range(10201):
+            base_x = g % 101
+            base_y = g // 101
+            gr_x2 = base_x + 0.5*np.cos(grid_angles[g])
+            gr_y2 = base_y + 0.5*np.sin(grid_angles[g])
+            sep_gr_x2 = base_x + 0.5*np.cos(grid_sep_angles[g])
+            sep_gr_y2 = base_y + 0.5*np.sin(grid_sep_angles[g])
+            combi_gr_x2 = base_x + 0.5*np.cos(grid_combined_angles[g])
+            combi_gr_y2 = base_y + 0.5*np.sin(grid_combined_angles[g])
+            ax2.arrow(base_x,base_y,gr_x2-base_x,gr_y2-base_y,width=0.005,head_width=0.2,head_length=0.2,color='green')
+            ax3.arrow(base_x,base_y,sep_gr_x2-base_x,sep_gr_y2-base_y,width=0.005,head_width=0.2,head_length=0.2,color='green')
+            ax4.arrow(base_x,base_y,combi_gr_x2-base_x,combi_gr_y2-base_y,width=0.005,head_width=0.2,head_length=0.2,color='green')
+        
+        # plotting expected (approximate) trajectory on top of the grid
+        xs = [50]
+        ys = [50]
+        xs_sep = [50]
+        ys_sep = [50]
+        xs_combi = [50]
+        ys_combi = [50]
+        start_x = 50
+        start_y = 50
+        start_x_sep = 50
+        start_y_sep = 50
+        start_x_combi = 50
+        start_y_combi = 50
+        for p in range(250):
+            closest_x = round(start_x)
+            closest_y = round(start_y)
+            ind = (closest_y+1) * 101 + closest_x+1
+            next_x = 0.2*np.cos(grid_angles[ind]) + start_x
+            next_y = 0.2*np.sin(grid_angles[ind]) + start_y 
+            #print(f"num: {p}, ind: {ind}, next x: {next_x}, next y: {next_y}")
+            xs.append(next_x)
+            ys.append(next_y)
+            start_x = next_x
+            start_y = next_y
+
+            closest_x_sep = round(start_x_sep)
+            closest_y_sep = round(start_y_sep)
+            ind_sep = (closest_y_sep+1) * 101 + closest_x_sep+1
+            next_x_sep = 0.2*np.cos(grid_sep_angles[ind_sep]) + start_x_sep
+            next_y_sep = 0.2*np.sin(grid_sep_angles[ind_sep]) + start_y_sep 
+            #print(f"num: {p}, ind: {ind}, next x: {next_x}, next y: {next_y}")
+            xs_sep.append(next_x_sep)
+            ys_sep.append(next_y_sep)
+            start_x_sep = next_x_sep
+            start_y_sep = next_y_sep
+
+            closest_x_combi = round(start_x_combi)
+            closest_y_combi = round(start_y_combi)
+            ind_combi = (closest_y_combi+1) * 101 + closest_x_combi+1
+            next_x_combi = 0.2*np.cos(grid_sep_angles[ind_combi]) + start_x_combi
+            next_y_combi = 0.2*np.sin(grid_sep_angles[ind_combi]) + start_y_combi
+            #print(f"num: {p}, ind: {ind}, next x: {next_x}, next y: {next_y}")
+            xs_combi.append(next_x_combi)
+            ys_combi.append(next_y_combi)
+            start_x_combi = next_x_combi
+            start_y_combi = next_y_combi
+
+        ax2.plot(xs,ys,c='red')
+        ax3.plot(xs_sep,ys_sep,c='red')
+        ax4.plot(xs_combi,ys_combi,c='red')
+
         for sig in range(len(sigma_sim)):
-            axs = 0
-            if sig == 0:
-                axs = axs0
-            if sig == 1:
-                axs = axs1
-            if sig == 2:
-                axs = axs2
-            if sig == 3:
-                axs = axs3
             #for pt in range(len(x_traj)-1):
                 #axs[0].plot([x_traj[pt], x_traj[pt+1]], [y_traj[pt], y_traj[pt+1]], color='green', linewidth=1, linestyle = '--')
             x_settings = x_list[sig*sample_size:(sig+1)*sample_size]
             y_settings = y_list[sig*sample_size:(sig+1)*sample_size]
-            sim_met.plot_traj(x_settings,y_settings,xpoints,ypoints,sample_size,axs[0])
+            sim_met.plot_traj(x_settings,y_settings,xpoints,ypoints,sample_size,ax1[sig*2])
+            ax1[sig*2].plot(xs,ys,c='red',linestyle='--')
+            ax1[sig*2].set_title(f"sigma: {sigma_sim[sig]}")
             ind = sig*sample_size
             sim_activity = activity_list[ind]
-            axs[1].imshow(sim_activity,aspect='auto')
-            for g in range(441):
-                base_x = g % 21 * 5
-                base_y = g // 21 * 5
-                gr_x2 = base_x + 2*np.cos(grid_angles[g])
-                gr_y2 = base_y + 2*np.sin(grid_angles[g])
-                #axs[2].plot([base_x, gr_x2], [base_y, gr_y2], color='red', linewidth=1, linestyle = '--')
-                axs[0].arrow(base_x,base_y,gr_x2-base_x,gr_y2-base_y,width=0.05,head_width=0.6,head_length=0.6,color='green')
+            ax1[sig*2+1].imshow(sim_activity,aspect='auto')
 
-        
-    
-        
     plt.show()
 
 def run_sims(base,change,change_var,sample_size,traj,activity,ncol,nrow):
@@ -280,5 +289,5 @@ change = {'sigma':sigma_list, 'h0':h0_list}
 
 
 #run_sims(base,change,'h0',sample_size,plot_trajs,plot_neurons,3,2)
-sim_random_points(base,1)
+sim_random_points(base,10)
 plt.show()

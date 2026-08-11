@@ -47,7 +47,7 @@ for i in range(N):
     J = np.squeeze(J)
 
 allocentricFlag = 1
-h0s = [0.25,0.25,0.25]
+h0s = [0.3,0.3,0.3]
 h_b = 0.2
 sigma = 0.5
 beta = 100
@@ -84,19 +84,23 @@ base = {'N':N,
 
 include_pos = True
 include_neurons = True
-sample_size = 10
-sigma_start = 0.16
-sigma_finish = 0.25
-n_sigma = 15
+sample_size = 5
+sigma_start = 0.01
+sigma_finish = 0.7
+n_sigma = 10
 base_sigma = np.linspace(sigma_start,sigma_finish,num=n_sigma)
-h0_start = 0.275
-h0_finish = 0.32
-n_h0 = 15
-h0_range= np.linspace(h0_start,h0_finish,num=n_h0)
-print(f"sigma diff: {base_sigma[1]-base_sigma[0]}, h0 diff: {h0_range[1]-h0_range[0]}")
-h0_list = []
-for item in h0_range:
-    h0_list.append([item,item,item])
+angle_start = 4*np.pi/3
+angle_finish = np.pi/2
+n_angle = 10
+angle_range= np.linspace(angle_start,angle_finish,num=n_angle)
+print(f"sigma diff: {base_sigma[1]-base_sigma[0]}, angle diff: {angle_range[1]-angle_range[0]}")
+initialxt_list = []
+initialyt_list = []
+for item in angle_range:
+    x_for_list = 50 + 30 * np.cos(item)
+    y_for_list = 50 + 30 * np.sin(item)
+    initialxt_list.append([x_for_list,initialxt[1],initialyt[1]])
+    initialyt_list.append([y_for_list,initialyt[1],initialyt[2]])
 
 target_grid = []
 p_targets_grid = []
@@ -107,13 +111,13 @@ angle_2_grid = []
 angle_len_grid = []
 
 n_thresh = 10
-dir_thresh_a1_arr = np.zeros((n_sigma*n_thresh,n_h0))
-dir_thresh_a2_arr = np.zeros((n_sigma*n_thresh,n_h0))
-dir_thresh_len_arr = np.zeros((n_sigma*n_thresh,n_h0))
+dir_thresh_a1_arr = np.zeros((n_sigma*n_thresh,n_angle))
+dir_thresh_a2_arr = np.zeros((n_sigma*n_thresh,n_angle))
+dir_thresh_len_arr = np.zeros((n_sigma*n_thresh,n_angle))
 
-delta_thresh_a1_arr = np.zeros((n_sigma*n_thresh,n_h0))
-delta_thresh_a2_arr = np.zeros((n_sigma*n_thresh,n_h0))
-delta_thresh_len_arr = np.zeros((n_sigma*n_thresh,n_h0))
+delta_thresh_a1_arr = np.zeros((n_sigma*n_thresh,n_angle))
+delta_thresh_a2_arr = np.zeros((n_sigma*n_thresh,n_angle))
+delta_thresh_len_arr = np.zeros((n_sigma*n_thresh,n_angle))
 
 direction_thresholds = np.linspace(0.01,np.pi/15,num=n_thresh)
 delta_thresholds = np.linspace(np.pi/1000,np.pi/300,num=n_thresh)
@@ -121,8 +125,9 @@ delta_thresholds = np.linspace(np.pi/1000,np.pi/300,num=n_thresh)
 
 
 for sigma_index in range(n_sigma):
-    sigma_list = [base_sigma[sigma_index]]*n_h0
-    change= {'h0':h0_list,
+    sigma_list = [base_sigma[sigma_index]]*n_angle
+    change= {'initialxt':initialxt_list,
+             'initialyt':initialyt_list,
              'sigma':sigma_list}
     sample_time = time.perf_counter()
     target_list, time_list, activity_list, x_list, y_list, headings_list  = repeated_sims.sample_sims(base,change,sample_size,include_pos,include_neurons)
@@ -220,7 +225,7 @@ for sigma_index in range(n_sigma):
     grid_angles = []
     grid_angles2 = []
     grid_angle_len = []
-    for s in range(n_h0):
+    for s in range(n_angle):
         sim_phases = phases[s*sample_size:(s+1)*sample_size]
         sim_targets = target_reached[s*sample_size:(s+1)*sample_size]
         sim_times = time_list[s*sample_size:(s+1)*sample_size]
@@ -276,16 +281,16 @@ for sigma_index in range(n_sigma):
     print(f"Analysis time: {analyzing_time:.6f} seconds")
 
 
-target_df = pd.DataFrame(target_grid,columns=h0_range,index=base_sigma)
-phase_df = pd.DataFrame(phase_grid,columns=h0_range,index=base_sigma)
-time_df = pd.DataFrame(time_grid,columns=h0_range,index=base_sigma)
-angle_df = pd.DataFrame(angle_grid,columns=h0_range,index=base_sigma)
-angle_2_df = pd.DataFrame(angle_2_grid,columns=h0_range,index=base_sigma)
-angle_len_df = pd.DataFrame(angle_len_grid,columns=h0_range,index=base_sigma)
+target_df = pd.DataFrame(target_grid,columns=angle_range,index=base_sigma)
+phase_df = pd.DataFrame(phase_grid,columns=angle_range,index=base_sigma)
+time_df = pd.DataFrame(time_grid,columns=angle_range,index=base_sigma)
+angle_df = pd.DataFrame(angle_grid,columns=angle_range,index=base_sigma)
+angle_2_df = pd.DataFrame(angle_2_grid,columns=angle_range,index=base_sigma)
+angle_len_df = pd.DataFrame(angle_len_grid,columns=angle_range,index=base_sigma)
 
-p0_arr = np.zeros((n_sigma,n_h0))
-p1_arr = np.zeros((n_sigma,n_h0))
-p2_arr = np.zeros((n_sigma,n_h0))
+p0_arr = np.zeros((n_sigma,n_angle))
+p1_arr = np.zeros((n_sigma,n_angle))
+p2_arr = np.zeros((n_sigma,n_angle))
 for r, row in enumerate(p_targets_grid):
     for c, entry in enumerate(row):
         p0_arr[r][c] = entry[0]
@@ -317,13 +322,13 @@ norm_phase = mcolors.BoundaryNorm(boundaries_phase,cmap2.N)
 categories_tar = ['fails', 'both', 'reaches']
 categories_phase = ['0 bumps', '1 bump', '2 bumps','3 bumps']
 
-im1 = axs_metric[0].imshow(target_df, cmap=cmap1,origin='lower',extent=[h0_range[0], h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
-im2 = axs_metric[1].imshow(phase_df,cmap=cmap2,origin='lower',extent=[h0_range[0], h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
-im3 = axs_metric[2].imshow(time_df,cmap=cmap3,origin='lower',extent=[h0_range[0],h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
-im4 = axs_metric[3].imshow(angle_df,cmap=cmap4,origin='lower',extent=[h0_range[0],h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
+im1 = axs_metric[0].imshow(target_df, cmap=cmap1,origin='lower',extent=[angle_range[0], angle_range[n_angle-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
+im2 = axs_metric[1].imshow(phase_df,cmap=cmap2,origin='lower',extent=[angle_range[0], angle_range[n_angle-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
+im3 = axs_metric[2].imshow(time_df,cmap=cmap3,origin='lower',extent=[angle_range[0],angle_range[n_angle-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
+im4 = axs_metric[3].imshow(angle_df,cmap=cmap4,origin='lower',extent=[angle_range[0],angle_range[n_angle-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
 shared_norm = im4.norm 
-im5 = axs_metric[4].imshow(angle_2_df,cmap=cmap4,norm=shared_norm,origin='lower',extent=[h0_range[0],h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
-im6 = axs_metric[5].imshow(angle_len_df,cmap=cmap5,origin='lower',extent=[h0_range[0],h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
+im5 = axs_metric[4].imshow(angle_2_df,cmap=cmap4,norm=shared_norm,origin='lower',extent=[angle_range[0],angle_range[n_angle-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
+im6 = axs_metric[5].imshow(angle_len_df,cmap=cmap5,origin='lower',extent=[angle_range[0],angle_range[n_angle-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
 shared_len_norm = im6.norm
 cbar1 = plt.colorbar(im1, ticks=np.arange(-1,2))
 cbar1.ax.set_yticklabels(categories_tar)
@@ -347,9 +352,9 @@ axs_dir = axs_dir.flatten()
 axs_delta = axs_delta.flatten()
 
 for t in range(n_thresh):
-    axs_dir[t].imshow(dir_thresh_a1_arr[t*n_sigma:(t+1)*n_sigma,:],cmap=cmap4,norm=shared_norm,origin='lower',extent=[h0_range[0], h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
-    axs_dir[t+n_thresh+1].imshow(dir_thresh_a2_arr[t*n_sigma:(t+1)*n_sigma,:],cmap=cmap4,norm=shared_norm,origin='lower',extent=[h0_range[0], h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
-    axs_dir[t+2*(n_thresh+1)].imshow(dir_thresh_len_arr[t*n_sigma:(t+1)*n_sigma,:],cmap=cmap5,norm=shared_len_norm,origin='lower',extent=[h0_range[0], h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
+    axs_dir[t].imshow(dir_thresh_a1_arr[t*n_sigma:(t+1)*n_sigma,:],cmap=cmap4,norm=shared_norm,origin='lower',extent=[angle_range[0], angle_range[n_angle-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
+    axs_dir[t+n_thresh+1].imshow(dir_thresh_a2_arr[t*n_sigma:(t+1)*n_sigma,:],cmap=cmap4,norm=shared_norm,origin='lower',extent=[angle_range[0], angle_range[n_angle-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
+    axs_dir[t+2*(n_thresh+1)].imshow(dir_thresh_len_arr[t*n_sigma:(t+1)*n_sigma,:],cmap=cmap5,norm=shared_len_norm,origin='lower',extent=[angle_range[0], angle_range[n_angle-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
     axs_dir[t].set_xticks([])
     axs_dir[t].set_yticks([])
     axs_dir[t+n_thresh+1].set_xticks([])
@@ -358,9 +363,9 @@ for t in range(n_thresh):
     axs_dir[t+2*(n_thresh+1)].set_yticks([])
     axs_dir[t].set_title(f"{direction_thresholds[t]:.4f}")
 
-    axs_delta[t].imshow(delta_thresh_a1_arr[t*n_sigma:(t+1)*n_sigma,:],cmap=cmap4,norm=shared_norm,origin='lower',extent=[h0_range[0], h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
-    axs_delta[t+n_thresh+1].imshow(delta_thresh_a2_arr[t*n_sigma:(t+1)*n_sigma,:],cmap=cmap4,norm=shared_norm,origin='lower',extent=[h0_range[0], h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
-    axs_delta[t+2*(n_thresh+1)].imshow(delta_thresh_len_arr[t*n_sigma:(t+1)*n_sigma,:],cmap=cmap5,norm=shared_len_norm,origin='lower',extent=[h0_range[0], h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
+    axs_delta[t].imshow(delta_thresh_a1_arr[t*n_sigma:(t+1)*n_sigma,:],cmap=cmap4,norm=shared_norm,origin='lower',extent=[angle_range[0], angle_range[n_angle-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
+    axs_delta[t+n_thresh+1].imshow(delta_thresh_a2_arr[t*n_sigma:(t+1)*n_sigma,:],cmap=cmap4,norm=shared_norm,origin='lower',extent=[angle_range[0], angle_range[n_angle-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
+    axs_delta[t+2*(n_thresh+1)].imshow(delta_thresh_len_arr[t*n_sigma:(t+1)*n_sigma,:],cmap=cmap5,norm=shared_len_norm,origin='lower',extent=[angle_range[0], angle_range[n_angle-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
     axs_delta[t].set_xticks([])
     axs_delta[t].set_yticks([])
     axs_delta[t+n_thresh+1].set_xticks([])
@@ -387,9 +392,13 @@ subfigs_dir.suptitle("Direction threshold analysis for angle 1, angle 2, and num
 subfigs_delta.suptitle("Delta threshold analysis for angle 1, angle 2, and number of bifurcations")
 
 subfigs_pr, axs_pr = plt.subplots(nrows=1,ncols=3,figsize=(17.25,8),num=4)
-p_t0 = axs_pr[0].imshow(p0_arr, cmap = bwr_r, origin='lower',extent=[h0_range[0], h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
-p_t1 = axs_pr[1].imshow(p1_arr, cmap = bwr_r, origin='lower',extent=[h0_range[0], h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
-p_t2 = axs_pr[2].imshow(p2_arr, cmap = bwr_r, origin='lower',extent=[h0_range[0], h0_range[n_h0-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
+p_t0 = axs_pr[0].imshow(p0_arr, cmap = bwr_r, origin='lower',extent=[angle_range[0], angle_range[n_angle-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
+p_t1 = axs_pr[1].imshow(p1_arr, cmap = bwr_r, origin='lower',extent=[angle_range[0], angle_range[n_angle-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
+p_t2 = axs_pr[2].imshow(p2_arr, cmap = bwr_r, origin='lower',extent=[angle_range[0], angle_range[n_angle-1], base_sigma[0], base_sigma[len(base_sigma)-1]],aspect='auto')
+
+axs_pr[0].set_title("Probability of reaching t0")
+axs_pr[1].set_title("Probability of reaching t1")
+axs_pr[2].set_title("Probability of reaching t2")
 
 end_time = time.perf_counter()
 execution_time = end_time - start_time
