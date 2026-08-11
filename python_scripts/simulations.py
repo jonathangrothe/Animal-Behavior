@@ -285,8 +285,8 @@ plot_neurons = True
 plot_trajs = True
 sample_size = 5
 #h0_first = np.linspace(0.275,0.371,num=6)
-h0_list = [[0.306,0.275,0.275],[0.309,0.275,0.275],[0.312,0.275,0.275],[0.315,0.275,0.275],[0.318,0.275,0.275],[0.321,0.275,0.275]]
-sigma_list = [0.09]*6
+h0_list = [[0.275,0.275,0.275],[0.285,0.275,0.275],[0.295,0.275,0.275]]
+sigma_list = [0.2]*3
 change = {'sigma':sigma_list, 'h0':h0_list}
 
 # current goal: so it seems like given geometry and the two constant h0s, for most h0s we can determine a sigma that will produce trajectories that minimize the in between zone 
@@ -295,6 +295,9 @@ change = {'sigma':sigma_list, 'h0':h0_list}
 # my current theory is that close to the decision it uses a straighter trajectory (aggregation phase), and we can estimate that phase with a line based only on parameters
 
 
-#run_sims(base,change,'h0',sample_size,plot_trajs,plot_neurons,3,2)
-sim_random_points(base,10)
+run_sims(base,change,'h0',sample_size,plot_trajs,plot_neurons,3,1)
+base['allocentricFlag'] = 0
+plt.show()
+run_sims(base,change,'h0',sample_size,plot_trajs,plot_neurons,3,1)
+#sim_random_points(base,5)
 plt.show()

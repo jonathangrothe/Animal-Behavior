@@ -29,8 +29,8 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
         h0: a list of floats which represent the attractiveness for each target, and then (if applicaple) the attractiveness of each agent
         h_b: a float which represents the base inhibition, which is subtracted from the activity of all neurons
         dt: a float which represents the activity step size for each time step
-        v0: a float which represents the velocity of the target
-        v0t: a list of floats which represent the velocities of the agents
+        v0: a float which represents the velocity of the agent
+        v0t: a list of floats which represent the velocities of the targets
         sigma: a float which represents the width of the input signal
         hColl: a float which is the updated input signal when the agent is within rColl of another agent, designed to avoid collisions within other agents
         rColl: a float which the distance within which collision avoidance behavior is activated
