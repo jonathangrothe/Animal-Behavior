@@ -16,7 +16,7 @@ initialx = np.zeros(nagents)
 initialy = np.zeros(nagents)
 for a in range(nagents):
     initialx[a] = 50
-    initialy[a] = 0
+    initialy[a] = 50
 initialxt = [35,50,65]
 initialyt = [50+15*np.sqrt(3),80,50+15*np.sqrt(3)]
 
@@ -30,7 +30,7 @@ rColl = 0
 distf = 1
 adistf = 1
 dt = 0.1
-v0 = 0.05
+v0 = 0.1
 v0t = np.zeros(ntargets)
 for i in range(ntargets):
     v0t[i] = 0
@@ -251,6 +251,7 @@ def run_sims(base,change,change_var,sample_size,traj,activity,ncol,nrow):
         col_max = np.max(sim_activity[:,40:])
         axs1[s].imshow(sim_activity,cmap=cmap,aspect='auto',vmin=col_min,vmax=col_max)
 
+
 # -------- Running the simulation --------
 
 base = {'N':N,
@@ -283,10 +284,10 @@ base = {'N':N,
 
 plot_neurons = True
 plot_trajs = True
-sample_size = 5
+sample_size = 1
 #h0_first = np.linspace(0.275,0.371,num=6)
-h0_list = [[0.275,0.275,0.275],[0.285,0.275,0.275],[0.295,0.275,0.275]]
-sigma_list = [0.2]*3
+h0_list = [[0.295,0.275,0.275],[0.315,0.275,0.275],[0.32,0.275,0.275],[0.33,0.275,0.275]]
+sigma_list = [0.08]*4
 change = {'sigma':sigma_list, 'h0':h0_list}
 
 # current goal: so it seems like given geometry and the two constant h0s, for most h0s we can determine a sigma that will produce trajectories that minimize the in between zone 
@@ -295,9 +296,7 @@ change = {'sigma':sigma_list, 'h0':h0_list}
 # my current theory is that close to the decision it uses a straighter trajectory (aggregation phase), and we can estimate that phase with a line based only on parameters
 
 
-run_sims(base,change,'h0',sample_size,plot_trajs,plot_neurons,3,1)
-base['allocentricFlag'] = 0
-plt.show()
-run_sims(base,change,'h0',sample_size,plot_trajs,plot_neurons,3,1)
+run_sims(base,change,'h0',sample_size,plot_trajs,plot_neurons,4,1)
 #sim_random_points(base,5)
+
 plt.show()

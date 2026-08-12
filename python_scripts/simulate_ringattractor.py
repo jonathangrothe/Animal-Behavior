@@ -88,7 +88,8 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
     else:
         targetXPos = initialxt
         targetYPos = initialyt
-
+    true_neurons = np.zeros((ntargets,T))
+    adj_ampl = np.zeros((ntargets,T))
     if plot == True:
         plt.figure(1)
         plt.gca().set_aspect('equal', adjustable='box')
@@ -135,6 +136,7 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
         
         # input of targets
         for a in range(nagents):
+            
             xa = xPos[a,tstep]
             ya = yPos[a,tstep]
             for ttarg in range(ntargets):
@@ -158,16 +160,23 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
                 ampl = h0[ttarg]
                 if distf != 0: 
                     ampl = ampl*(np.exp(-adistf*distAB/L))
+                adj_ampl[ttarg,tstep] = ampl
                 angleAB = np.atan2(dy,dx)
                 if angleAB < 0:
                     angleAB = angleAB + 2*np.pi
+                min_dang = 100
+                true_neuron = -1
                 for i in range(N):
                     dAng = abs(alpharing[a,i]-angleAB)
+                    if dAng < min_dang:
+                        min_dang = dAng
+                        true_neuron = angleAB * 100/(2*np.pi)
                     if dAng > np.pi:
                         dAng = 2*np.pi - dAng
                     #if tstep == 2000:
                         #print(f"target: {ttarg}, neuron: {i}, dang: {dAng}, angleAB: {angleAB}")
                     Iextern[i,a] = Iextern[i,a] + ampl*np.exp(-0.5*(dAng**2)/sigma**2)
+                true_neurons[ttarg,tstep] = true_neuron
 
         # -------- STEP B --------
         for a in range(nagents):
@@ -305,9 +314,77 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
                     targetXPos = targetXPos[:,:tstep]
                     targetYPos = targetYPos[:,:tstep]
                 uArray = uArray[:,:,:tstep]
+                plt.figure(1)
+                diff1 = np.diff(np.unwrap(true_neurons[0,:tstep],period=100))
+                diff2 = np.diff(np.unwrap(true_neurons[1,:tstep],period=100))
+                diff3 = np.diff(np.unwrap(true_neurons[2,:tstep],period=100))
+                diff1_sum = 0
+                diff2_sum = 0
+                diff3_sum = 0
+                switches1 = [0]
+                switches2 = [0]
+                switches3 = [0]
+                for i in range(tstep-1):
+                    diff1_sum += diff1[i]
+                    diff2_sum += diff2[i]
+                    diff3_sum += diff3[i]
+                    if np.abs(diff1_sum) > 1:
+                        diff1_sum = 0
+                        switches1.append(i)
+                    if np.abs(diff2_sum) > 1:
+                        diff2_sum = 0
+                        switches2.append(i)
+                    if np.abs(diff3_sum) > 1:
+                        diff3_sum = 0
+                        switches3.append(i)
+
+                print(f"t0: mean diff: {np.mean(np.abs(diff1))}, max diff: {np.max(np.abs(diff1))}")
+                print(f"t1: mean diff: {np.mean(np.abs(diff2))}, max diff: {np.max(np.abs(diff2))}")
+                print(f"t2: mean diff: {np.mean(np.abs(diff3))}, max diff: {np.max(np.abs(diff3))}")
+                print(f"lengths t0: {np.diff(switches1)}")
+                print(f"lengths t1: {np.diff(switches2)}")
+                print(f"lengths t2: {np.diff(switches3)}")
+                plt.plot(diff1,c='red')
+                plt.plot(diff2,c='blue')
+                plt.plot(diff3,c='green')
+                plt.show()
                 return headings, xPos, yPos, targetXPos, targetYPos, uArray
             
         if plot == True:
             plt.show(block = False)
+    plt.figure(1)
+    diff1 = np.diff(np.unwrap(true_neurons[0,:tstep],period=100))
+    diff2 = np.diff(np.unwrap(true_neurons[1,:tstep],period=100))
+    diff3 = np.diff(np.unwrap(true_neurons[2,:tstep],period=100))
+    diff1_sum = 0
+    diff2_sum = 0
+    diff3_sum = 0
+    switches1 = [0]
+    switches2 = [0]
+    switches3 = [0]
+    for i in range(tstep-1):
+        diff1_sum += diff1[i]
+        diff2_sum += diff2[i]
+        diff3_sum += diff3[i]
+        if np.abs(diff1_sum) > 1:
+            diff1_sum = 0
+            switches1.append(i)
+        if np.abs(diff2_sum) > 1:
+            diff2_sum = 0
+            switches2.append(i)
+        if np.abs(diff3_sum) > 1:
+            diff3_sum = 0
+            switches3.append(i)
+
+    print(f"t0: mean diff: {np.mean(np.abs(diff1))}, max diff: {np.max(np.abs(diff1))}")
+    print(f"t1: mean diff: {np.mean(np.abs(diff2))}, max diff: {np.max(np.abs(diff2))}")
+    print(f"t2: mean diff: {np.mean(np.abs(diff3))}, max diff: {np.max(np.abs(diff3))}")
+    print(f"lengths t0: {np.diff(switches1)}")
+    print(f"lengths t1: {np.diff(switches2)}")
+    print(f"lengths t2: {np.diff(switches3)}")
+    plt.plot(diff1,c='red')
+    plt.plot(diff2,c='blue')
+    plt.plot(diff3,c='green')
+    plt.show()
     return headings, xPos, yPos, targetXPos, targetYPos, uArray
 
