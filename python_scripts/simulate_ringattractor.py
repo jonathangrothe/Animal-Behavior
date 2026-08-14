@@ -5,7 +5,7 @@ import math
 # ---------- Simulation code!! ----------
 def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag,rEgo,rEgoTarget,Egonumber,
                             distf,adistf,J,beta,h0,h_b,dt,v0,v0t,sigma,hColl,rColl,
-                            initialx,initialy,initialxt,initialyt,plot,stop,stopping_dist=0.1):
+                            initialx,initialy,initialxt,initialyt,plot,stop,stopping_dist=0.1,diff_adj=False):
     '''
     The code to run a single simulation of the ring attractor model. 
     Designed to work with any number of agents but so far I've only really focused on one agent, which impacts stopping distance and v0 right now. 
@@ -93,6 +93,7 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
     if plot == True:
         plt.figure(1)
         plt.gca().set_aspect('equal', adjustable='box')
+    activated = False
     for tstep in range(0,T):
 
         # -------- STEP A --------
@@ -165,19 +166,23 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
                 if angleAB < 0:
                     angleAB = angleAB + 2*np.pi
                 min_dang = 100
-                true_neuron = -1
+                true_neuron = angleAB * N/(2*np.pi)
+                diff = np.abs(true_neuron-round(true_neuron))*2*np.pi/N
                 for i in range(N):
                     dAng = abs(alpharing[a,i]-angleAB)
-                    if dAng < min_dang:
-                        min_dang = dAng
-                        true_neuron = angleAB * 100/(2*np.pi)
+                    if diff_adj:
+                        dAng = dAng-diff
                     if dAng > np.pi:
                         dAng = 2*np.pi - dAng
+                    if dAng < min_dang:
+                        min_dang = dAng
                     #if tstep == 2000:
                         #print(f"target: {ttarg}, neuron: {i}, dang: {dAng}, angleAB: {angleAB}")
                     Iextern[i,a] = Iextern[i,a] + ampl*np.exp(-0.5*(dAng**2)/sigma**2)
                 true_neurons[ttarg,tstep] = true_neuron
-
+            
+        #t1t2_unwrapped = np.unwrap([true_neurons[1,tstep],true_neurons[2,tstep]],period=N)
+        #targ_differences = np.abs(t1t2_unwrapped[0]-t1t2_unwrapped[1])
         # -------- STEP B --------
         for a in range(nagents):
             uaOld = uArray[:,a,tstep]
@@ -206,6 +211,12 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
                 if newAngle < 0:
                     newAngle = newAngle + 2*np.pi
             headings[a,tstep+1] = newAngle
+            if (tstep > 100) and (0 < newAngle < np.pi/2 or activated):
+                delta_x = xPos[a,tstep]-xPos[a,tstep-1]
+                delta_y = yPos[a,tstep]-yPos[a,tstep-1]
+                #print(f'tstep: {tstep}, heading: {newAngle}, distance: {targ_differences}, target neurons: {true_neurons[0,tstep]:.4f}, {true_neurons[1,tstep]:.4f}, {true_neurons[2,tstep]:.4f}')
+                if not activated: 
+                    activated = True
             if allocentricFlag == 0:
                 alpharing[a,:] = np.mod(alpharing[a,:] - headings[a,tstep] + headings[a,tstep+1],2*np.pi)
             elif Egocentric[a] >= Egonumber:
@@ -314,6 +325,7 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
                     targetXPos = targetXPos[:,:tstep]
                     targetYPos = targetYPos[:,:tstep]
                 uArray = uArray[:,:,:tstep]
+                '''
                 plt.figure(1)
                 diff1 = np.diff(np.unwrap(true_neurons[0,:tstep],period=100))
                 diff2 = np.diff(np.unwrap(true_neurons[1,:tstep],period=100))
@@ -348,10 +360,12 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
                 plt.plot(diff2,c='blue')
                 plt.plot(diff3,c='green')
                 plt.show()
+                '''
                 return headings, xPos, yPos, targetXPos, targetYPos, uArray
             
         if plot == True:
             plt.show(block = False)
+    '''
     plt.figure(1)
     diff1 = np.diff(np.unwrap(true_neurons[0,:tstep],period=100))
     diff2 = np.diff(np.unwrap(true_neurons[1,:tstep],period=100))
@@ -386,5 +400,6 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
     plt.plot(diff2,c='blue')
     plt.plot(diff3,c='green')
     plt.show()
+    '''
     return headings, xPos, yPos, targetXPos, targetYPos, uArray
 

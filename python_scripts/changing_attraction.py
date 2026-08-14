@@ -82,7 +82,7 @@ base = {'N':N,
         'sigma':sigma,
         'beta':beta}
 
-sample_size = 20
+sample_size = 15
 h0_base = 0.275
 num_changes = 50
 changing_h0 = np.linspace(0.03,0.05,num=num_changes)

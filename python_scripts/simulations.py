@@ -30,7 +30,7 @@ rColl = 0
 distf = 1
 adistf = 1
 dt = 0.1
-v0 = 0.1
+v0 = 0.05
 v0t = np.zeros(ntargets)
 for i in range(ntargets):
     v0t[i] = 0
@@ -195,7 +195,7 @@ def sim_random_points(base,sample_size):
 
     plt.show()
 
-def run_sims(base,change,change_var,sample_size,traj,activity,ncol,nrow):
+def run_sims(base,change,change_var,sample_size,traj,activity,ncol,nrow,fig_num):
     target_list, time_list, activity_list, x_list, y_list, headings_list  = repeated_sims.sample_sims(base,change,sample_size,traj,activity)
     phases = []
     angles = []
@@ -226,7 +226,7 @@ def run_sims(base,change,change_var,sample_size,traj,activity,ncol,nrow):
     n_plots = len(change[change_var])
     ncols = ncol
     nrows = nrow
-    fig = plt.figure(layout='constrained',figsize=(ncols*3.5,nrows*6))
+    fig = plt.figure(layout='constrained',figsize=(ncols*3.5,nrows*6),num=fig_num)
     subfigs = fig.subfigures(2,1, wspace=0.1)
     axs0 = subfigs[0].subplots(nrows,ncols)
     axs0 = axs0.flatten()
@@ -241,7 +241,7 @@ def run_sims(base,change,change_var,sample_size,traj,activity,ncol,nrow):
         x2 = 50 + 30 * np.cos(theor_angle)
         y2 = 50 + 30 * np.sin(theor_angle)
         #axs0[s].plot([50, x2], [50, y2], color='green', linewidth=2, linestyle = '--')
-        axs0[s].set_title(f"sigma: {round(sigma_list[s],4)}, h0: {h0_list[s]}, beta: {beta}")
+        axs0[s].set_title(f"sigma: {round(sigma_list[s],4)}, h0: {[f"{h:.4f}" for h in h0_list[s]]} beta: {beta}")
         axs0[s].set_aspect('equal', adjustable='box')
         target_list_sample = target_list[s*sample_size:(s+1)*sample_size]
         print(f"sim: {s}, targets reached: {target_list_sample}")
@@ -284,10 +284,10 @@ base = {'N':N,
 
 plot_neurons = True
 plot_trajs = True
-sample_size = 1
+sample_size = 10
 #h0_first = np.linspace(0.275,0.371,num=6)
-h0_list = [[0.295,0.275,0.275],[0.315,0.275,0.275],[0.32,0.275,0.275],[0.33,0.275,0.275]]
-sigma_list = [0.08]*4
+h0_list = [[0.275,0.275,0.275],[0.275,0.275,0.275]]
+sigma_list = [0.22,0.22]
 change = {'sigma':sigma_list, 'h0':h0_list}
 
 # current goal: so it seems like given geometry and the two constant h0s, for most h0s we can determine a sigma that will produce trajectories that minimize the in between zone 
@@ -296,7 +296,9 @@ change = {'sigma':sigma_list, 'h0':h0_list}
 # my current theory is that close to the decision it uses a straighter trajectory (aggregation phase), and we can estimate that phase with a line based only on parameters
 
 
-run_sims(base,change,'h0',sample_size,plot_trajs,plot_neurons,4,1)
+run_sims(base,change,'h0',sample_size,plot_trajs,plot_neurons,2,1,1)
 #sim_random_points(base,5)
+#base['allocentricFlag'] = 0
+#run_sims(base,change,'h0',sample_size,plot_trajs,plot_neurons,2,1,2)
 
 plt.show()
