@@ -35,7 +35,7 @@ v0t = np.zeros(ntargets)
 for i in range(ntargets):
     v0t[i] = 0
 
-N = 100
+N = 1000
 nu = 0.5
 theta = np.linspace(0,2*np.pi,N+1)
 theta = theta[:-1]
@@ -46,6 +46,17 @@ for i in range(N):
     J[i,:] = np.cos(np.pi*(deltah/np.pi)**nu)
     J[i,i] = 0.0
     J = np.squeeze(J)
+
+N2 = 100
+theta2 = np.linspace(0,2*np.pi,N2+1)
+theta2 = theta2[:-1]
+J2 = np.zeros((N2,N2))
+for i in range(N2):
+    deltah = np.abs(theta2 - theta[i])
+    deltah = np.pi-np.abs(np.pi-deltah)
+    J2[i,:] = np.cos(np.pi*(deltah/np.pi)**nu)
+    J2[i,i] = 0.0
+    J2 = np.squeeze(J2)
 
 allocentricFlag = 1
 h0s = [0.21903,0.21903,0.21904]
@@ -64,8 +75,7 @@ def sim_random_points(base,sample_size):
     # it would be a lot easier to gaurantee that they're all approximately different angles from the start point
     # eventually we will need to be able to calculate how points are aggregated
     angle_list = np.linspace(2*np.pi/3,np.pi/2,num=5)
-    for s in range(1):
-        
+    for s in range(5):
         xpoints = []
         ypoints = []
         angles = []
@@ -84,53 +94,43 @@ def sim_random_points(base,sample_size):
             xpoints.append(initialx[0]+dist*np.cos(angle))
             ypoints.append(initialy[0]+dist*np.sin(angle))
         farthest = np.argmax(dists)
-        base_h0 = [0.25]*10
-        #base['h0'] = [0.25]*10
-        '''
-        x_adj = 50 + 30 * np.cos(angle_list[s])
-        y_adj = 50 + 30 * np.sin(angle_list[s])
-        xpoints = [x_adj,50,65]
-        ypoints = [y_adj,80,50+15*np.sqrt(3)]
-        '''
+        #base_h0 = [0.25]*10
+        base['h0'] = [0.75]*10
         base['initialxt'] = xpoints
         base['initialyt'] = ypoints
         base['ntargets'] = 10
-        n_trajpoints = 51
+        n_trajpoints = 101
         traj_factor = L/(n_trajpoints-1)
-        grid_angles = helpers.trajectory_grid(xpoints,ypoints,n_trajpoints,0.8,0.2)
-        grid_sep_angles = helpers.trajectory_grid(xpoints,ypoints,n_trajpoints,0.2,0.8) 
-        grid_combined_angles = helpers.trajectory_grid(xpoints,ypoints,n_trajpoints,0.5,0.5)
-        #print(f"angles of approximated trajectory: {approx_traj}")
-        #fig = plt.figure(layout='constrained',figsize=(13,13),num=s*2+1)
-        subfigs, ax1 = plt.subplots(nrows=4,ncols=4,layout='constrained',figsize=(13,13),num=s*4+1)
+        grid_angles = helpers.trajectory_grid(xpoints,ypoints,n_trajpoints,1,0)
+        subfigs, ax1 = plt.subplots(nrows=4,ncols=2,layout='constrained',figsize=(13,13),num=s*3+1)
         ax1 = ax1.flatten()
-        fig2, ax2 = plt.subplots(figsize = (8,8),num=s*4+2)
-        fig3, ax3 = plt.subplots(figsize = (8,8),num=s*4+3)
-        fig4, ax4 = plt.subplots(figsize = (8,8),num=s*4+4)
+        subfigs, ax2 = plt.subplots(nrows=4,ncols=2,layout='constrained',figsize=(13,13),num=s*3+2)
+        ax2 = ax2.flatten()
+        fig3, ax3 = plt.subplots(figsize = (8,8),num=s*3+3)
 
+        '''
         h0_list = []
         diffs = np.linspace(0,4,num=8)
         for diff in diffs:
             new_h0s = base_h0.copy()
             new_h0s[farthest] += diff
             h0_list.append(new_h0s)
+        '''
             
-
-        change_random = {'h0':h0_list}
+        sigma_list = [0.01,0.01,0.05,0.05]
+        change_random = {'sigma':sigma_list,
+                         'N':[N,N2,N,N2],
+                         'J':[J,J2,J,J2]}
         print(f"base: {base}")
         target_list, time_list, activity_list, x_list, y_list, headings_list  = repeated_sims.sample_sims(base,change_random,sample_size,True, True)
+        base['adj'] = False
+        target_list_unadj, time_list_unadj, activity_list_unadj, x_list_unadj, y_list_unadj, headings_list_unadj  = repeated_sims.sample_sims(base,change_random,sample_size,True, True)
         for g in range(n_trajpoints**2):
             base_x = g % n_trajpoints * traj_factor
             base_y = g // n_trajpoints * traj_factor
             gr_x2 = base_x + 0.5*np.cos(grid_angles[g]) * traj_factor
             gr_y2 = base_y + 0.5*np.sin(grid_angles[g]) * traj_factor
-            sep_gr_x2 = base_x + 0.5*np.cos(grid_sep_angles[g]) * traj_factor
-            sep_gr_y2 = base_y + 0.5*np.sin(grid_sep_angles[g]) * traj_factor
-            combi_gr_x2 = base_x + 0.5*np.cos(grid_combined_angles[g]) * traj_factor
-            combi_gr_y2 = base_y + 0.5*np.sin(grid_combined_angles[g]) * traj_factor
-            ax2.arrow(base_x,base_y,gr_x2-base_x,gr_y2-base_y,width=0.005,head_width=0.4,head_length=0.2,color='green')
-            ax3.arrow(base_x,base_y,sep_gr_x2-base_x,sep_gr_y2-base_y,width=0.005,head_width=0.4,head_length=0.2,color='green')
-            ax4.arrow(base_x,base_y,combi_gr_x2-base_x,combi_gr_y2-base_y,width=0.005,head_width=0.4,head_length=0.2,color='green')
+            ax3.arrow(base_x,base_y,gr_x2-base_x,gr_y2-base_y,width=0.005,head_width=0.4,head_length=0.2,color='green')
         
         # plotting expected (approximate) trajectory on top of the grid
         xs = [initialx[0]]
@@ -145,53 +145,37 @@ def sim_random_points(base,sample_size):
         start_y_sep = initialy[0]
         start_x_combi = initialx[0]
         start_y_combi = initialy[0]
-        for p in range(5000):
+        for p in range(10000):
             closest_x = round(start_x/traj_factor)
             closest_y = round(start_y/traj_factor)
             ind = (closest_y+1) * n_trajpoints + closest_x+1
-            next_x = 0.01*np.cos(grid_angles[ind]) + start_x
-            next_y = 0.01*np.sin(grid_angles[ind]) + start_y 
+            next_x = 0.005*np.cos(grid_angles[ind]) + start_x
+            next_y = 0.005*np.sin(grid_angles[ind]) + start_y 
             xs.append(next_x)
             ys.append(next_y)
             start_x = next_x
             start_y = next_y
-
-            closest_x_sep = round(start_x_sep/traj_factor)
-            closest_y_sep = round(start_y_sep/traj_factor)
-            ind_sep = (closest_y_sep+1) * n_trajpoints + closest_x_sep+1
-            next_x_sep = 0.01*np.cos(grid_sep_angles[ind_sep]) + start_x_sep
-            next_y_sep = 0.01*np.sin(grid_sep_angles[ind_sep]) + start_y_sep 
-            xs_sep.append(next_x_sep)
-            ys_sep.append(next_y_sep)
-            start_x_sep = next_x_sep
-            start_y_sep = next_y_sep
-
-            closest_x_combi = round(start_x_combi/traj_factor)
-            closest_y_combi = round(start_y_combi/traj_factor)
-            ind_combi = (closest_y_combi+1) * n_trajpoints + closest_x_combi+1
-            #print(f"x: {start_x_combi}, y: {start_y_combi}, closest x: {closest_x_combi}, closest y: {closest_y_combi}, ind: {ind_combi}, angle: {grid_combined_angles[ind_combi]}")
-            next_x_combi = 0.01*np.cos(grid_combined_angles[ind_combi]) + start_x_combi
-            next_y_combi = 0.01*np.sin(grid_combined_angles[ind_combi]) + start_y_combi
-            xs_combi.append(next_x_combi)
-            ys_combi.append(next_y_combi)
-            start_x_combi = next_x_combi
-            start_y_combi = next_y_combi
         #print(f"diffs for combo: {np.array([np.diff(xs_combi),np.diff(ys_combi)])}")
-        ax2.plot(xs,ys,c='red')
-        ax3.plot(xs_sep,ys_sep,c='red')
-        ax4.plot(xs_combi,ys_combi,c='red')
+        ax3.plot(xs,ys,c='red')
 
-        for sig in range(len(h0_list)):
-            #for pt in range(len(x_traj)-1):
-                #axs[0].plot([x_traj[pt], x_traj[pt+1]], [y_traj[pt], y_traj[pt+1]], color='green', linewidth=1, linestyle = '--')
+        for sig in range(len(sigma_list)):
             x_settings = x_list[sig*sample_size:(sig+1)*sample_size]
             y_settings = y_list[sig*sample_size:(sig+1)*sample_size]
             sim_met.plot_traj(x_settings,y_settings,xpoints,ypoints,sample_size,ax1[sig*2])
             ax1[sig*2].plot(xs,ys,c='red',linestyle='--')
-            ax1[sig*2].set_title(f"diff: {diffs[sig]}")
+            ax1[sig*2].set_title(f"sigma: {sigma_list[sig]}")
             ind = sig*sample_size
             sim_activity = activity_list[ind]
             ax1[sig*2+1].imshow(sim_activity,aspect='auto')
+
+            x_settings_ua = x_list_unadj[sig*sample_size:(sig+1)*sample_size]
+            y_settings_ua = y_list_unadj[sig*sample_size:(sig+1)*sample_size]
+            sim_met.plot_traj(x_settings_ua,y_settings_ua,xpoints,ypoints,sample_size,ax2[sig*2])
+            ax2[sig*2].plot(xs,ys,c='red',linestyle='--')
+            ax2[sig*2].set_title(f"sigma: {sigma_list[sig]}")
+            ind = sig*sample_size
+            sim_activity_ua = activity_list_unadj[ind]
+            ax2[sig*2+1].imshow(sim_activity_ua,aspect='auto')
 
     plt.show()
 
@@ -280,13 +264,14 @@ base = {'N':N,
         'h0':h0s,
         'h_b':h_b,
         'sigma':sigma,
-        'beta':beta}
+        'beta':beta,
+        'adj':True}
 
 plot_neurons = True
 plot_trajs = True
 sample_size = 10
 #h0_first = np.linspace(0.275,0.371,num=6)
-h0_list = [[0.275,0.275,0.275],[0.275,0.275,0.275]]
+h0_list = [[0.275,0,0],[0.275,0.275,0.275]]
 sigma_list = [0.22,0.22]
 change = {'sigma':sigma_list, 'h0':h0_list}
 
@@ -296,9 +281,8 @@ change = {'sigma':sigma_list, 'h0':h0_list}
 # my current theory is that close to the decision it uses a straighter trajectory (aggregation phase), and we can estimate that phase with a line based only on parameters
 
 
-run_sims(base,change,'h0',sample_size,plot_trajs,plot_neurons,2,1,1)
-#sim_random_points(base,5)
-#base['allocentricFlag'] = 0
+#run_sims(base,change,'h0',sample_size,plot_trajs,plot_neurons,2,1,1)
+sim_random_points(base,1)
 #run_sims(base,change,'h0',sample_size,plot_trajs,plot_neurons,2,1,2)
 
 plt.show()

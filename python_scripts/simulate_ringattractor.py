@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import math
+import time
 
 # ---------- Simulation code!! ----------
 def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag,rEgo,rEgoTarget,Egonumber,
@@ -94,8 +95,9 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
         plt.figure(1)
         plt.gca().set_aspect('equal', adjustable='box')
     activated = False
+    times = []
     for tstep in range(0,T):
-
+        step_time_start = time.perf_counter()
         # -------- STEP A --------
 
         Iextern = np.zeros((N,nagents))
@@ -325,46 +327,12 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
                     targetXPos = targetXPos[:,:tstep]
                     targetYPos = targetYPos[:,:tstep]
                 uArray = uArray[:,:,:tstep]
-                '''
-                plt.figure(1)
-                diff1 = np.diff(np.unwrap(true_neurons[0,:tstep],period=100))
-                diff2 = np.diff(np.unwrap(true_neurons[1,:tstep],period=100))
-                diff3 = np.diff(np.unwrap(true_neurons[2,:tstep],period=100))
-                diff1_sum = 0
-                diff2_sum = 0
-                diff3_sum = 0
-                switches1 = [0]
-                switches2 = [0]
-                switches3 = [0]
-                for i in range(tstep-1):
-                    diff1_sum += diff1[i]
-                    diff2_sum += diff2[i]
-                    diff3_sum += diff3[i]
-                    if np.abs(diff1_sum) > 1:
-                        diff1_sum = 0
-                        switches1.append(i)
-                    if np.abs(diff2_sum) > 1:
-                        diff2_sum = 0
-                        switches2.append(i)
-                    if np.abs(diff3_sum) > 1:
-                        diff3_sum = 0
-                        switches3.append(i)
-
-                print(f"t0: mean diff: {np.mean(np.abs(diff1))}, max diff: {np.max(np.abs(diff1))}")
-                print(f"t1: mean diff: {np.mean(np.abs(diff2))}, max diff: {np.max(np.abs(diff2))}")
-                print(f"t2: mean diff: {np.mean(np.abs(diff3))}, max diff: {np.max(np.abs(diff3))}")
-                print(f"lengths t0: {np.diff(switches1)}")
-                print(f"lengths t1: {np.diff(switches2)}")
-                print(f"lengths t2: {np.diff(switches3)}")
-                plt.plot(diff1,c='red')
-                plt.plot(diff2,c='blue')
-                plt.plot(diff3,c='green')
-                plt.show()
-                '''
                 return headings, xPos, yPos, targetXPos, targetYPos, uArray
             
         if plot == True:
             plt.show(block = False)
+        step_end_time = time.perf_counter()
+        times.append(step_end_time-step_time_start)
     '''
     plt.figure(1)
     diff1 = np.diff(np.unwrap(true_neurons[0,:tstep],period=100))
@@ -401,5 +369,6 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
     plt.plot(diff3,c='green')
     plt.show()
     '''
+    print(f"total time: {sum(times)}, mean step time: {np.mean(times)}, median step time: {np.median(times)}, sd step time: {np.std(times)}")
     return headings, xPos, yPos, targetXPos, targetYPos, uArray
 
