@@ -17,8 +17,8 @@ initialy = np.zeros(nagents)
 for a in range(nagents):
     initialx[a] = 50
     initialy[a] = 0
-initialxt = [25,75]
-initialyt = [80,80]
+initialxt = [20,80]
+initialyt = [60,60]
 
 T = 5000
 periodicflag = 0
@@ -30,7 +30,7 @@ rColl = 0
 distf = 1
 adistf = 1
 dt = 0.1
-v0 = 0.05
+v0 = 0.1
 v0t = np.zeros(ntargets)
 for i in range(ntargets):
     v0t[i] = 0
@@ -71,7 +71,7 @@ def sim_random_points(base,sample_size):
         angles = []
         dists = []
         rng = np.random.default_rng()
-        ntarg = 50
+        ntarg = 10
         while len(xpoints) < ntarg:
             angle = rng.uniform(0,2*np.pi)
             dist = rng.uniform(0.5,25)
@@ -111,7 +111,7 @@ def sim_random_points(base,sample_size):
             new_h0s[farthest] += diff
             h0_list.append(new_h0s)
         '''
-            
+        print(f"x: {xpoints[4]}, y: {ypoints[4]}")
         sigma_list = [0.05,0.1,0.2,0.4]
         change_random = {'sigma':sigma_list}
         target_list, time_list, activity_list, x_list, y_list, headings_list  = repeated_sims.sample_sims(base,change_random,sample_size,True, True)
@@ -198,30 +198,30 @@ def run_sims(base,change,change_var,sample_size,traj,activity,ncol,nrow,fig_num)
     n_plots = len(change[change_var])
     ncols = ncol
     nrows = nrow
-    fig = plt.figure(layout='constrained',figsize=(ncols*3.5,nrows*6),num=fig_num)
+    fig = plt.figure(layout='constrained',figsize=(ncols*5,nrows*10),num=fig_num)
     subfigs = fig.subfigures(2,1, wspace=0.1)
     axs0 = subfigs[0].subplots(nrows,ncols)
-    axs0 = axs0.flatten()
+    #axs0 = axs0.flatten()
     axs1 = subfigs[1].subplots(nrows,ncols)
-    axs1 = axs1.flatten()
+    #axs1 = axs1.flatten()
     grey_to_blue = ["#D3D3D3", "#A9A9A9", "#708090", "#4682B4", "#000080"]
     cmap = mcolors.LinearSegmentedColormap.from_list("GreyBlue", grey_to_blue)
 
     for s in range(n_plots):
-        sim_met.plot_traj(x_list[s*sample_size:(s+1)*sample_size],y_list[s*sample_size:(s+1)*sample_size],initialxt,initialyt,sample_size,axs0[s],False,[[100,1000,2000]],0)
+        sim_met.plot_traj(x_list[s*sample_size:(s+1)*sample_size],y_list[s*sample_size:(s+1)*sample_size],initialxt,initialyt,sample_size,axs0,True,[[0,100,200,300,400,500,600]],0)
         #theor_angle = theor_angles[s]
         #x2 = 50 + 30 * np.cos(theor_angle)
         #y2 = 50 + 30 * np.sin(theor_angle)
         #axs0[s].plot([50, x2], [50, y2], color='green', linewidth=2, linestyle = '--')
-        axs0[s].set_title(f"sigma: {round(sigma_list[s],4)}, h0: {[f"{h:.4f}" for h in h0_list[s]]} beta: {beta}")
-        axs0[s].set_aspect('equal', adjustable='box')
+        axs0.set_title(f"sigma: {round(sigma_list[s],4)}, h0: {[f"{h:.4f}" for h in h0_list[s]]} beta: {beta}")
+        axs0.set_aspect('equal', adjustable='box')
         target_list_sample = target_list[s*sample_size:(s+1)*sample_size]
         print(f"sim: {s}, targets reached: {target_list_sample}")
         ind = s*sample_size
         sim_activity = activity_list[ind]
         col_min = np.min(sim_activity[:,40:])
         col_max = np.max(sim_activity[:,40:])
-        axs1[s].imshow(sim_activity,cmap=cmap,aspect='auto',vmin=col_min,vmax=col_max)
+        axs1.imshow(sim_activity,cmap=cmap,aspect='auto',vmin=col_min,vmax=col_max)
 
 
 # -------- Running the simulation --------
@@ -253,14 +253,14 @@ base = {'N':N,
         'h_b':h_b,
         'sigma':sigma,
         'beta':beta,
-        'adj':True}
+        'adj':False}
 
 plot_neurons = True
 plot_trajs = True
-sample_size = 10
+sample_size = 1
 #h0_first = np.linspace(0.275,0.371,num=6)
-h0_list = [[0.25,0.25],[0.28,0.28]]
-sigma_list = [0.15,0.15]
+h0_list = [[0.29,0.29]]
+sigma_list = [0.5]
 change = {'sigma':sigma_list, 'h0':h0_list}
 
 # current goal: so it seems like given geometry and the two constant h0s, for most h0s we can determine a sigma that will produce trajectories that minimize the in between zone 
@@ -273,8 +273,8 @@ change = {'sigma':sigma_list, 'h0':h0_list}
 
 #base['adj'] = False
 #run_sims(base,change,'h0',sample_size,plot_trajs,plot_neurons,4,1,2)
-sim_random_points(base,1)
+#sim_random_points(base,1)
 #base['adj'] = True
-#run_sims(base,change,'h0',sample_size,plot_trajs,plot_neurons,2,1,1)
+run_sims(base,change,'h0',sample_size,plot_trajs,plot_neurons,1,1,1)
 
 plt.show()

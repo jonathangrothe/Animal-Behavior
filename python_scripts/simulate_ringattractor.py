@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import math
 import time
+import matplotlib.animation as animation
 
 # ---------- Simulation code!! ----------
 def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag,rEgo,rEgoTarget,Egonumber,
@@ -60,16 +61,36 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
     def fAct(u,beta):
         # a function which introduces neural noise
         return ((1+np.tanh(beta * u))/2)
-    
+
     alpharing0 = np.linspace(0,2*np.pi, N+1)
     alpharing0 = alpharing0[:-1]
     alpharing = np.zeros((nagents,N))
     for a in range (nagents):
         alpharing[a,:] = alpharing0
+    
+    figure = plt.figure(layout='constrained',figsize=(12,8),num=3)
+    subfigs = figure.subfigures(2,3, wspace=0.1)
+    color_counter = 0
+    plasma_r = plt.colormaps['plasma_r']
+    steps = [30,100,250,200,300,350,400,500,600]
+    colors = plasma_r.resampled(9)(np.linspace(0,1,9))
+    uaold_plot = subfigs[0,0].subplots(1,1)
+    subfigs[0,0].suptitle("uaOld")
+    faold_plot = subfigs[0,1].subplots(1,1)
+    subfigs[0,1].suptitle("faOld")
+    netring_plot = subfigs[0,2].subplots(1,1)
+    subfigs[0,2].suptitle("net ring")
+    extern_plot = subfigs[1,0].subplots(1,1)
+    subfigs[1,0].suptitle("external input")
+    du_plot = subfigs[1,1].subplots(1,1)
+    subfigs[1,1].suptitle("du")
+    uanew_plot = subfigs[1,2].subplots(1,1)
+    subfigs[1,2].suptitle("uanew")
 
+    details_plot = False
     uArray = np.zeros((N, nagents, T+1))
-    u0 = 0.2*np.random.randn(N,nagents) 
-    uArray[:,:,0] = u0
+    #u0 = 0.2*np.random.randn(N,nagents) 
+    #uArray[:,:,0] = u0
 
     xPos = np.zeros((nagents,T+1))
     yPos = np.zeros((nagents,T+1))
@@ -96,6 +117,10 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
         plt.gca().set_aspect('equal', adjustable='box')
     activated = False
     times = []
+    fa_data = np.zeros((N,T))
+    netring_data = np.zeros((N,T))
+    extern_data = np.zeros((N,T))
+    du_data = np.zeros((N,T))
     for tstep in range(0,T):
         step_time_start = time.perf_counter()
         # -------- STEP A --------
@@ -139,7 +164,6 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
         
         # input of targets
         for a in range(nagents):
-            
             xa = xPos[a,tstep]
             ya = yPos[a,tstep]
             for ttarg in range(ntargets):
@@ -178,13 +202,9 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
                         dAng = 2*np.pi - dAng
                     if dAng < min_dang:
                         min_dang = dAng
-                    #if tstep == 2000:
-                        #print(f"target: {ttarg}, neuron: {i}, dang: {dAng}, angleAB: {angleAB}")
                     Iextern[i,a] = Iextern[i,a] + ampl*np.exp(-0.5*(dAng**2)/sigma**2)
                 true_neurons[ttarg,tstep] = true_neuron
             
-        #t1t2_unwrapped = np.unwrap([true_neurons[1,tstep],true_neurons[2,tstep]],period=N)
-        #targ_differences = np.abs(t1t2_unwrapped[0]-t1t2_unwrapped[1])
         # -------- STEP B --------
         for a in range(nagents):
             uaOld = uArray[:,a,tstep]
@@ -193,7 +213,25 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
             dU = -uaOld + netRing - h_b + Iextern[:,a]
             uaNew = uaOld + dt * dU
             uArray[:,a,tstep+1] = uaNew
-    
+            fa_data[:,tstep] = faOld
+            netring_data[:,tstep] = netRing
+            du_data[:,tstep] = dU
+            extern_data[:,tstep] = Iextern[:,a]
+            if tstep in steps:
+                details_plot = True
+                color = colors[color_counter]
+                color_counter += 1
+            if details_plot:
+                print(f"time: {tstep}")
+                uaold_plot.plot(uaOld,c=color)
+                faold_plot.plot(faOld,c=color)
+                netring_plot.plot(netRing,c=color)
+                extern_plot.plot(Iextern[:,a],c=color)
+                du_plot.plot(dU,c=color)
+                uanew_plot.plot(uaNew,c=color)
+                details_plot = False
+                print(f"xpos: {xPos[:,tstep]}, ypos: {yPos[:,tstep]}")
+            
         # -------- STEP C --------
         for a in range(nagents):
             uaNow = uArray[:,a,tstep+1]
@@ -327,48 +365,68 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
                     targetXPos = targetXPos[:,:tstep]
                     targetYPos = targetYPos[:,:tstep]
                 uArray = uArray[:,:,:tstep]
+                #plt.show()
+                data = {'uaold': uArray[:,0,:-1],
+                        'faold':fa_data[:,:tstep-1],
+                        'netring':netring_data[:,:tstep-1],
+                        'extern':extern_data[:,:tstep-1],
+                        'du':du_data[:,:tstep-1],
+                        'uanew':uArray[:,0,1:]}
+                print(f"tstep: {tstep},len:{len(data['netring'][0,:])}")
+                x = np.arange(100)
+                t = np.arange(tstep-1) 
+                fig, axes = plt.subplots(3,2,layout='constrained',figsize=(12,8),num=4)
+                axes = axes.flatten()
+                lines = {}
+                for ax, (name, arr) in zip(axes, data.items()):
+                    (line,) = ax.plot([], [])
+                    lines[name] = line
+                    ax.set_xlim(x.min(), x.max())
+                    ax.set_ylim(arr.min(), arr.max())
+                    ax.set_title(name)
+                fig.suptitle("t = 0")
+                def update(frame):
+                    for name, line in lines.items():
+                        line.set_data(x,data[name][:,frame])
+                    fig.suptitle(f"t={t[frame]}")
+                    return list(lines.values())
+                
+                
+                ani = animation.FuncAnimation(fig, update, frames=tstep-1, interval=100, blit=False)
+                ani.save("example_animation.gif", writer="pillow", fps=30, dpi=150)
                 return headings, xPos, yPos, targetXPos, targetYPos, uArray
             
         if plot == True:
             plt.show(block = False)
         step_end_time = time.perf_counter()
         times.append(step_end_time-step_time_start)
-    '''
-    plt.figure(1)
-    diff1 = np.diff(np.unwrap(true_neurons[0,:tstep],period=100))
-    diff2 = np.diff(np.unwrap(true_neurons[1,:tstep],period=100))
-    diff3 = np.diff(np.unwrap(true_neurons[2,:tstep],period=100))
-    diff1_sum = 0
-    diff2_sum = 0
-    diff3_sum = 0
-    switches1 = [0]
-    switches2 = [0]
-    switches3 = [0]
-    for i in range(tstep-1):
-        diff1_sum += diff1[i]
-        diff2_sum += diff2[i]
-        diff3_sum += diff3[i]
-        if np.abs(diff1_sum) > 1:
-            diff1_sum = 0
-            switches1.append(i)
-        if np.abs(diff2_sum) > 1:
-            diff2_sum = 0
-            switches2.append(i)
-        if np.abs(diff3_sum) > 1:
-            diff3_sum = 0
-            switches3.append(i)
 
-    print(f"t0: mean diff: {np.mean(np.abs(diff1))}, max diff: {np.max(np.abs(diff1))}")
-    print(f"t1: mean diff: {np.mean(np.abs(diff2))}, max diff: {np.max(np.abs(diff2))}")
-    print(f"t2: mean diff: {np.mean(np.abs(diff3))}, max diff: {np.max(np.abs(diff3))}")
-    print(f"lengths t0: {np.diff(switches1)}")
-    print(f"lengths t1: {np.diff(switches2)}")
-    print(f"lengths t2: {np.diff(switches3)}")
-    plt.plot(diff1,c='red')
-    plt.plot(diff2,c='blue')
-    plt.plot(diff3,c='green')
-    plt.show()
-    '''
-    print(f"total time: {sum(times)}, mean step time: {np.mean(times)}, median step time: {np.median(times)}, sd step time: {np.std(times)}")
+    data = {'uaold': uArray[:,0,:-1],
+            'faold':fa_data[:,:tstep-1],
+            'netring':netring_data[:,:tstep-1],
+            'extern':extern_data[:,:tstep-1],
+            'du':du_data[:,:tstep-1],
+            'uanew':uArray[:,0,1:]}
+    x = np.arange(100)
+    t = np.arange(tstep-1) 
+    fig, axes = plt.subplots(3,2,layout='constrained',figsize=(12,8),num=4)
+    axes = axes.flatten()
+    lines = {}
+    for ax, (name, arr) in zip(axes, data.items()):
+        (line,) = ax.plot([], [])
+        lines[name] = line
+        ax.set_xlim(x.min(), x.max())
+        ax.set_ylim(arr.min(), arr.max())
+        ax.set_title(name)
+    fig.suptitle("t = 0")
+    def update(frame):
+        for name, line in lines.items():
+            line.set_data(x,data[name][:,frame])
+        fig.suptitle(f"t={t[frame]}")
+        return list(lines.values())
+    
+    
+    ani = animation.FuncAnimation(fig, update, frames=tstep-1, interval=100, blit=False)
+    ani.save("example_animation.gif", writer="pillow", fps=30, dpi=150)
     return headings, xPos, yPos, targetXPos, targetYPos, uArray
 
