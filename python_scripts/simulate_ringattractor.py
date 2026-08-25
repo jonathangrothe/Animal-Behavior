@@ -67,8 +67,8 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
     alpharing = np.zeros((nagents,N))
     for a in range (nagents):
         alpharing[a,:] = alpharing0
-    
-    figure = plt.figure(layout='constrained',figsize=(12,8),num=3)
+    '''
+    figure = plt.figure(layout='constrained',figsize=(12,8),num=10)
     subfigs = figure.subfigures(2,3, wspace=0.1)
     color_counter = 0
     plasma_r = plt.colormaps['plasma_r']
@@ -86,11 +86,12 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
     subfigs[1,1].suptitle("du")
     uanew_plot = subfigs[1,2].subplots(1,1)
     subfigs[1,2].suptitle("uanew")
-
+    '''
     details_plot = False
     uArray = np.zeros((N, nagents, T+1))
-    u0 = 0.2*np.random.randn(N,nagents) 
-    uArray[:,:,0] = u0
+    #u0 = 0.0002*np.random.randn(N,nagents) 
+    #uArray[:,:,0] = u0
+    uArray[:,:,75:85] = 0.2
 
     xPos = np.zeros((nagents,T+1))
     yPos = np.zeros((nagents,T+1))
@@ -195,6 +196,7 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
                     dAng = abs(alpharing[a,i]-angleAB)
                     if dAng > np.pi:
                         dAng = 2*np.pi - dAng
+                    Iextern[i,a] = Iextern[i,a] + ampl*np.exp(-0.5*(dAng**2)/sigma**2)
             
         # -------- STEP B --------
         for a in range(nagents):
@@ -208,12 +210,13 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
             netring_data[:,tstep] = netRing
             du_data[:,tstep] = dU
             extern_data[:,tstep] = Iextern[:,a]
+            '''
             if tstep in steps:
                 details_plot = True
                 color = colors[color_counter]
                 color_counter += 1
             if details_plot:
-                print(f"time: {tstep}")
+                #print(f"time: {tstep}")
                 uaold_plot.plot(uaOld,c=color)
                 faold_plot.plot(faOld,c=color)
                 netring_plot.plot(netRing,c=color)
@@ -221,8 +224,8 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
                 du_plot.plot(dU,c=color)
                 uanew_plot.plot(uaNew,c=color)
                 details_plot = False
-                print(f"xpos: {xPos[:,tstep]}, ypos: {yPos[:,tstep]}")
-            
+                #print(f"xpos: {xPos[:,tstep]}, ypos: {yPos[:,tstep]}")
+            '''
         # -------- STEP C --------
         for a in range(nagents):
             uaNow = uArray[:,a,tstep+1]
