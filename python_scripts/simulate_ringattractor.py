@@ -7,7 +7,7 @@ import matplotlib.animation as animation
 # ---------- Simulation code!! ----------
 def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag,rEgo,rEgoTarget,Egonumber,
                             distf,adistf,J,beta,h0,h_b,dt,v0,v0t,sigma,hColl,rColl,
-                            initialx,initialy,initialxt,initialyt,plot,stop,stopping_dist=0.1,diff_adj=False):
+                            initialx,initialy,initialxt,initialyt,plot,stop,stopping_dist=0.1):
     '''
     The code to run a single simulation of the ring attractor model. 
     Designed to work with any number of agents but so far I've only really focused on one agent, which impacts stopping distance and v0 right now. 
@@ -89,8 +89,8 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
 
     details_plot = False
     uArray = np.zeros((N, nagents, T+1))
-    #u0 = 0.2*np.random.randn(N,nagents) 
-    #uArray[:,:,0] = u0
+    u0 = 0.2*np.random.randn(N,nagents) 
+    uArray[:,:,0] = u0
 
     xPos = np.zeros((nagents,T+1))
     yPos = np.zeros((nagents,T+1))
@@ -191,19 +191,10 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
                 angleAB = np.atan2(dy,dx)
                 if angleAB < 0:
                     angleAB = angleAB + 2*np.pi
-                min_dang = 100
-                true_neuron = angleAB * N/(2*np.pi)
-                diff = np.abs(true_neuron-round(true_neuron))*2*np.pi/N
                 for i in range(N):
                     dAng = abs(alpharing[a,i]-angleAB)
-                    if diff_adj:
-                        dAng = dAng-diff
                     if dAng > np.pi:
                         dAng = 2*np.pi - dAng
-                    if dAng < min_dang:
-                        min_dang = dAng
-                    Iextern[i,a] = Iextern[i,a] + ampl*np.exp(-0.5*(dAng**2)/sigma**2)
-                true_neurons[ttarg,tstep] = true_neuron
             
         # -------- STEP B --------
         for a in range(nagents):
@@ -366,6 +357,7 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
                     targetYPos = targetYPos[:,:tstep]
                 uArray = uArray[:,:,:tstep]
                 #plt.show()
+                '''
                 data = {'uaold': uArray[:,0,:-1],
                         'faold':fa_data[:,:tstep-1],
                         'netring':netring_data[:,:tstep-1],
@@ -394,13 +386,14 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
                 
                 ani = animation.FuncAnimation(fig, update, frames=tstep-1, interval=100, blit=False)
                 ani.save("example_animation.gif", writer="pillow", fps=30, dpi=150)
+                '''
                 return headings, xPos, yPos, targetXPos, targetYPos, uArray
             
         if plot == True:
             plt.show(block = False)
         step_end_time = time.perf_counter()
         times.append(step_end_time-step_time_start)
-
+    '''
     data = {'uaold': uArray[:,0,:-1],
             'faold':fa_data[:,:tstep-1],
             'netring':netring_data[:,:tstep-1],
@@ -428,5 +421,6 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
     
     ani = animation.FuncAnimation(fig, update, frames=tstep-1, interval=100, blit=False)
     ani.save("example_animation.gif", writer="pillow", fps=30, dpi=150)
+    '''
     return headings, xPos, yPos, targetXPos, targetYPos, uArray
 
