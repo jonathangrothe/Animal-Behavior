@@ -7,7 +7,7 @@ import matplotlib.animation as animation
 # ---------- Simulation code!! ----------
 def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag,rEgo,rEgoTarget,Egonumber,
                             distf,adistf,J,beta,h0,h_b,dt,v0,v0t,sigma,hColl,rColl,
-                            initialx,initialy,initialxt,initialyt,plot,stop,stopping_dist=0.1):
+                            initialx,initialy,initialxt,initialyt,u0,plot,stop,stopping_dist=0.1):
     '''
     The code to run a single simulation of the ring attractor model. 
     Designed to work with any number of agents but so far I've only really focused on one agent, which impacts stopping distance and v0 right now. 
@@ -89,9 +89,9 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
     '''
     details_plot = False
     uArray = np.zeros((N, nagents, T+1))
-    #u0 = 0.0002*np.random.randn(N,nagents) 
-    #uArray[:,:,0] = u0
-    uArray[:,:,75:85] = 0.2
+    #u0 = 0.2*np.random.randn(N,nagents) 
+    uArray[:,:,0] = u0
+    #uArray[:,:,75:85] = 0.2
 
     xPos = np.zeros((nagents,T+1))
     yPos = np.zeros((nagents,T+1))
@@ -122,6 +122,33 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
     netring_data = np.zeros((N,T))
     extern_data = np.zeros((N,T))
     du_data = np.zeros((N,T))
+
+    f0 = fAct(u0,beta)
+    f0[f0 < 0] = 0
+    cx0 = 0
+    cy0 = 0
+    unact_cx = 0
+    unact_cy = 0
+    for i in range(N):
+        cx0 = cx0 + (f0[i] * np.cos(alpharing[0,i]))
+        cy0 = cy0 + (f0[i] * np.sin(alpharing[0,i]))
+        unact_cx = unact_cx + u0[i] * np.cos(alpharing[0,i])
+        unact_cy = unact_cy + u0[i] * np.sin(alpharing[0,i])
+    first_heading = 0
+    dir_unact = 0
+    if (np.abs(cx0) < 1e-9) or (np.abs(cy0) < 1e-9):
+        first_heading = headings[0,0]
+    else:
+        first_heading = np.atan2(cy0,cx0)
+        if first_heading < 0:
+            first_heading = first_heading + 2*np.pi
+    if (np.abs(unact_cx) < 1e-9) or (np.abs(unact_cy) < 1e-9):
+        dir_unact = headings[0,0]
+    else:
+        dir_unact = np.atan2(unact_cy,unact_cx)
+        if dir_unact < 0:
+            dir_unact = dir_unact + 2*np.pi
+    print(f"first heading: {first_heading}, first direction pre activation: {dir_unact}")
     for tstep in range(0,T):
         step_time_start = time.perf_counter()
         # -------- STEP A --------
@@ -388,9 +415,9 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
                 
                 
                 ani = animation.FuncAnimation(fig, update, frames=tstep-1, interval=100, blit=False)
-                ani.save("example_animation.gif", writer="pillow", fps=30, dpi=150)
+                ani.save("example_animation_seeded.mp4", writer='ffmpeg', fps=10, dpi=150)
                 '''
-                return headings, xPos, yPos, targetXPos, targetYPos, uArray
+                return headings, xPos, yPos, targetXPos, targetYPos, uArray, [first_heading,dir_unact]
             
         if plot == True:
             plt.show(block = False)
@@ -425,5 +452,5 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
     ani = animation.FuncAnimation(fig, update, frames=tstep-1, interval=100, blit=False)
     ani.save("example_animation.gif", writer="pillow", fps=30, dpi=150)
     '''
-    return headings, xPos, yPos, targetXPos, targetYPos, uArray
+    return headings, xPos, yPos, targetXPos, targetYPos, uArray, [first_heading,dir_unact]
 

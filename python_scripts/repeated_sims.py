@@ -29,6 +29,8 @@ def sample_sims(bp,changing_params,n_samples,include_trajs,include_activity):
         y_list: a list of size (n_samples * len(changing_params)) which contains 1d numpy arrays which contain all the y positions for the agent in each individual simulation
         headings_list: a list of size (n_samples * len(changing_params)) which contains 1d numpy arrays which contain all the headings for the agent in each individual simulation
     '''
+
+    # TO DO: add a random init param (to initialize it randomly each time or not)
     time_list = []
     target_list = []
     activity_list = [] 
@@ -36,6 +38,7 @@ def sample_sims(bp,changing_params,n_samples,include_trajs,include_activity):
     y_list = []
     headings_list = []
     n_sweeps = -1
+    init_list = []
     for key in changing_params.keys():
         curr_len = len(changing_params[key])
         if n_sweeps > 0 and curr_len != n_sweeps:
@@ -47,14 +50,15 @@ def sample_sims(bp,changing_params,n_samples,include_trajs,include_activity):
             print(f"param: {param}, value: {changing_params[param][index]}")
         start_one_setting = time.perf_counter()
         for sample in range(n_samples):
-                headings, xPos, yPos, targetsx, targetsy, activity = sim_ra.simulate_ring_attractor(bp['N'],bp['L'],bp['T'],bp['ntargets'],bp['nagents'],bp['allocentricFlag'],
+                headings, xPos, yPos, targetsx, targetsy, activity, init_heading = sim_ra.simulate_ring_attractor(bp['N'],bp['L'],bp['T'],bp['ntargets'],bp['nagents'],bp['allocentricFlag'],
                                                                                  bp['periodicFlag'],bp['rEgo'],bp['rEgoTarget'],bp['Egonumber'],bp['distf'],
                                                                                  bp['adistf'],bp['J'],bp['beta'],bp['h0'],bp['h_b'],bp['dt'],bp['v0'],bp['v0t'],
-                                                                                 bp['sigma'],bp['hColl'],bp['rColl'],bp['initialx'],bp['initialy'],bp['initialxt'],bp['initialyt'],
+                                                                                 bp['sigma'],bp['hColl'],bp['rColl'],bp['initialx'],bp['initialy'],bp['initialxt'],bp['initialyt'],bp['u0'],
                                                                                  False,True,0.1)
-                
                 if bp['ntargets'] > 0:
                     target_reached, time_reached = sim_met.get_destination_metrics(xPos,yPos,targetsx,targetsy)
+                    print(f"heading: {init_heading[0]}, target reached: {target_reached}")
+                    init_list.append(init_heading[0])
                     target_list.append(target_reached)
                     time_list.append(time_reached)
 
@@ -70,7 +74,7 @@ def sample_sims(bp,changing_params,n_samples,include_trajs,include_activity):
         end_one_setting = time.perf_counter()
         print(f"time for one setting: {end_one_setting-start_one_setting}")
 
-    return target_list, time_list, activity_list, x_list, y_list, headings_list
+    return target_list, time_list, activity_list, x_list, y_list, headings_list, init_list
     
 
 
