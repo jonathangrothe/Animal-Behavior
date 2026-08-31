@@ -53,9 +53,7 @@ sigma = 0.2
 beta = 100
 
 # -------- Running the simulation --------
-#u0 = 0.2*np.random.randn(N,1) 
 u0 = np.zeros((N,1))
-u0[0:26] = 0.2
 base = {'N':N,
         'L':L,
         'ntargets':ntargets,
@@ -88,36 +86,78 @@ base = {'N':N,
 include_pos = True
 include_neurons = True
 sample_size = 1
-v0_start = 0.0155
-v0_finish = 0.045
-n_v0 = 100
-beta_start = 10
+v0_start = 0.03
+v0_finish = 0.929
+n_v0 = 75
+beta_start = 25
 beta_finish = 200
-n_beta = 100
+n_beta = 75
 base_v0 = np.linspace(v0_start,v0_finish,num=n_v0)
-base_beta = np.linspace(beta_start, beta_finish,num=n_beta)
-print(f"v0 diff: {base_v0[1]-base_v0[0]},")
+base_beta = np.linspace(beta_start,beta_finish,num=n_beta)
+v0_list = []
+beta_list = []
+for b in range(n_beta):
+    for v in range(n_v0):
+        v0_list.append(base_v0[v])
+        beta_list.append(base_beta[b])
 
+init_list = []
+for i in range(6):
+    u0 = np.zeros((N,1))
+    start_ind = (i*5)+50
+    end_ind = (i*5)+76
+    if end_ind < 100:
+        u0[start_ind:end_ind] = 0.2
+    else:
+        u0[start_ind:] = 0.2
+    init_list.append(u0)
 
-
-
-change= {'beta':base_beta}
+change= {'beta':beta_list,
+         'v0':v0_list}
 sample_time = time.perf_counter()
-target_list, time_list, activity_list, x_list, y_list, headings_list, init_heading  = repeated_sims.sample_sims(base,change,sample_size,include_pos,include_neurons)
-end_sample_time = time.perf_counter()
-sampling_time = end_sample_time - sample_time
-print(f"Sampling time: {sampling_time:.6f} seconds")
-analysis_time = time.perf_counter()
-p_target, se_target = sim_met.get_success_rate(target_list, sample_size, ntargets)
-pt0 = []
-pt1 = []
-for item in p_target:
-    pt0.append(item[0])
-    pt1.append(item[1])
-
-plt.figure(1)
-plt.plot(base_v0,pt0,c='red')
-plt.plot(base_v0,pt1,c='green')
+fig_init = plt.figure(layout='constrained',figsize = (20,5.5),num=1)
+subfigs_init = fig_init.subfigures(2,3)
+for u in range(6):
+    base['u0'] = init_list[u]
+    target_list, time_list, activity_list, x_list, y_list, headings_list, init_heading  = repeated_sims.sample_sims(base,change,sample_size,include_pos,include_neurons)
+    end_sample_time = time.perf_counter()
+    sampling_time = end_sample_time - sample_time
+    print(f"Sampling time: {sampling_time:.6f} seconds")
+    analysis_time = time.perf_counter()
+    t_reached = []
+    row_ind = 1 if u>2 else 0
+    for item in target_list:
+        if item == -1:
+            t_reached.append(0)
+        elif item != row_ind:
+            t_reached.append(1)
+        else:
+            t_reached.append(-1)
+        
+    grid = np.zeros((n_v0,n_beta))
+    for p in range(n_beta):
+        row = t_reached[p*n_beta:(p+1)*n_beta]
+        grid[p,:] = row
+    print(grid)
+    bwr_r = plt.colormaps['bwr_r']
+    axs0 = subfigs_init[row_ind][u%3].subplots(1,2)
+    axs0[0].imshow(grid,cmap=bwr_r,aspect='auto',extent=[base_v0[0], base_v0[-1], base_beta[-1], base_beta[0]])
+    axs0[0].set_xlabel("v0")
+    axs0[0].set_ylabel("beta")
+    start_angle = ((u*5+50)/100)*np.pi*2
+    end_angle = (((u*5+76)+25)/100)*np.pi*2 
+    theta = np.linspace(start_angle, end_angle, 200)
+    to_finish = np.linspace(end_angle,2*np.pi,600)
+    to_start = np.linspace(0,start_angle,200)
+    x_plot = np.cos(theta)
+    y_plot = np.sin(theta)
+    x_finish = np.cos(to_finish)
+    y_finish = np.sin(to_finish)
+    x_start = np.cos(to_start)
+    y_start = np.sin(to_start)
+    axs0[1].plot(x_plot,y_plot,c='red')
+    axs0[1].plot(x_finish,y_finish, c='blue')
+    axs0[1].plot(x_start,y_start, c='blue')
 end_analysis_time = time.perf_counter()
 analyzing_time = end_analysis_time - analysis_time
 print(f"Analysis time: {analyzing_time:.6f} seconds")

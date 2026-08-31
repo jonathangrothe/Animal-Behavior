@@ -7,7 +7,7 @@ import matplotlib.animation as animation
 # ---------- Simulation code!! ----------
 def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag,rEgo,rEgoTarget,Egonumber,
                             distf,adistf,J,beta,h0,h_b,dt,v0,v0t,sigma,hColl,rColl,
-                            initialx,initialy,initialxt,initialyt,u0,plot,stop,stopping_dist=0.1):
+                            initialx,initialy,initialxt,initialyt,u0,plot,stop,stopping_dist=0.1,video=False):
     '''
     The code to run a single simulation of the ring attractor model. 
     Designed to work with any number of agents but so far I've only really focused on one agent, which impacts stopping distance and v0 right now. 
@@ -67,27 +67,7 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
     alpharing = np.zeros((nagents,N))
     for a in range (nagents):
         alpharing[a,:] = alpharing0
-    '''
-    figure = plt.figure(layout='constrained',figsize=(12,8),num=10)
-    subfigs = figure.subfigures(2,3, wspace=0.1)
-    color_counter = 0
-    plasma_r = plt.colormaps['plasma_r']
-    steps = [30,100,250,200,300,350,400,500,600]
-    colors = plasma_r.resampled(9)(np.linspace(0,1,9))
-    uaold_plot = subfigs[0,0].subplots(1,1)
-    subfigs[0,0].suptitle("uaOld")
-    faold_plot = subfigs[0,1].subplots(1,1)
-    subfigs[0,1].suptitle("faOld")
-    netring_plot = subfigs[0,2].subplots(1,1)
-    subfigs[0,2].suptitle("net ring")
-    extern_plot = subfigs[1,0].subplots(1,1)
-    subfigs[1,0].suptitle("external input")
-    du_plot = subfigs[1,1].subplots(1,1)
-    subfigs[1,1].suptitle("du")
-    uanew_plot = subfigs[1,2].subplots(1,1)
-    subfigs[1,2].suptitle("uanew")
-    '''
-    details_plot = False
+    
     uArray = np.zeros((N, nagents, T+1))
     #u0 = 0.2*np.random.randn(N,nagents) 
     uArray[:,:,0] = u0
@@ -237,22 +217,7 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
             netring_data[:,tstep] = netRing
             du_data[:,tstep] = dU
             extern_data[:,tstep] = Iextern[:,a]
-            '''
-            if tstep in steps:
-                details_plot = True
-                color = colors[color_counter]
-                color_counter += 1
-            if details_plot:
-                #print(f"time: {tstep}")
-                uaold_plot.plot(uaOld,c=color)
-                faold_plot.plot(faOld,c=color)
-                netring_plot.plot(netRing,c=color)
-                extern_plot.plot(Iextern[:,a],c=color)
-                du_plot.plot(dU,c=color)
-                uanew_plot.plot(uaNew,c=color)
-                details_plot = False
-                #print(f"xpos: {xPos[:,tstep]}, ypos: {yPos[:,tstep]}")
-            '''
+
         # -------- STEP C --------
         for a in range(nagents):
             uaNow = uArray[:,a,tstep+1]
@@ -387,70 +352,96 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
                     targetYPos = targetYPos[:,:tstep]
                 uArray = uArray[:,:,:tstep]
                 #plt.show()
-                '''
-                data = {'uaold': uArray[:,0,:-1],
-                        'faold':fa_data[:,:tstep-1],
-                        'netring':netring_data[:,:tstep-1],
-                        'extern':extern_data[:,:tstep-1],
-                        'du':du_data[:,:tstep-1],
-                        'uanew':uArray[:,0,1:]}
-                print(f"tstep: {tstep},len:{len(data['netring'][0,:])}")
-                x = np.arange(100)
-                t = np.arange(tstep-1) 
-                fig, axes = plt.subplots(3,2,layout='constrained',figsize=(12,8),num=4)
-                axes = axes.flatten()
-                lines = {}
-                for ax, (name, arr) in zip(axes, data.items()):
-                    (line,) = ax.plot([], [])
-                    lines[name] = line
-                    ax.set_xlim(x.min(), x.max())
-                    ax.set_ylim(arr.min(), arr.max())
-                    ax.set_title(name)
-                fig.suptitle("t = 0")
-                def update(frame):
-                    for name, line in lines.items():
-                        line.set_data(x,data[name][:,frame])
-                    fig.suptitle(f"t={t[frame]}")
-                    return list(lines.values())
+                if video:
+                    data = {'Previous state': uArray[:,0,:-1],
+                            'Activated':fa_data[:,:tstep-1],
+                            'Post connectivity (netring)':netring_data[:,:tstep-1],
+                            'External input':extern_data[:,:tstep-1],
+                            'Change':du_data[:,:tstep-1],
+                            'uanew':uArray[:,0,1:]}
+                    x = np.arange(100)
+                    t = np.arange(tstep-1) 
+                    #fig, axes = plt.subplots(1,2,layout='constrained',figsize=(12,8),num=4)
+                    fig = plt.figure(layout='constrained',figsize=(12,8),num=4)
+                    subfigs = fig.subfigures(1,2, wspace=0.1)
+                    sf0 = subfigs[0]
+                    sf1 = subfigs[1]
+                    ax0 = sf0.subplots(1,1)
+                    (traj_line,) = ax0.plot([], [], "-o", markersize=3, linewidth=1)
+                    ax0.set_xlim(0, 100)
+                    ax0.set_ylim(0, 100)
+                    ax0.scatter(targ_x,targ_y,c='red')
+                    ax0.set_title("Trajectory")
+                    ax1 = sf1.subplots(5,1)
+                    axes = ax1.flatten()
+                    lines = {}
+                    for ax, (name, arr) in zip(axes, data.items()):
+                        (line,) = ax.plot([], [])
+                        lines[name] = line
+                        if name is not 'Change':
+                            ax.set_xlim(x.min(), x.max())
+                            ax.set_ylim(arr.min(), arr.max()+0.05)
+                        else:
+                            ax.set_xlim(x.min(), x.max())
+                            ax.set_ylim(-0.01, 0.01)
+                        ax.set_title(name)
+                    fig.suptitle("t = 0")
+                    def update(frame):
+                        for name, line in lines.items():
+                            line.set_data(x,data[name][:,frame])
+                        traj_line.set_data(xPos[0,:frame+1], yPos[0,:frame+1])
+                        fig.suptitle(f"t={t[frame]}")
+                        return list(lines.values()) + [traj_line]
+                    ani = animation.FuncAnimation(fig, update, frames=tstep-1, interval=20, blit=False)
+                    ani.save("example_animation_seeded.mp4", writer='ffmpeg', fps=50, dpi=150)
                 
-                
-                ani = animation.FuncAnimation(fig, update, frames=tstep-1, interval=100, blit=False)
-                ani.save("example_animation_seeded.mp4", writer='ffmpeg', fps=10, dpi=150)
-                '''
                 return headings, xPos, yPos, targetXPos, targetYPos, uArray, [first_heading,dir_unact]
             
         if plot == True:
             plt.show(block = False)
         step_end_time = time.perf_counter()
         times.append(step_end_time-step_time_start)
-    '''
-    data = {'uaold': uArray[:,0,:-1],
-            'faold':fa_data[:,:tstep-1],
-            'netring':netring_data[:,:tstep-1],
-            'extern':extern_data[:,:tstep-1],
-            'du':du_data[:,:tstep-1],
-            'uanew':uArray[:,0,1:]}
-    x = np.arange(100)
-    t = np.arange(tstep-1) 
-    fig, axes = plt.subplots(3,2,layout='constrained',figsize=(12,8),num=4)
-    axes = axes.flatten()
-    lines = {}
-    for ax, (name, arr) in zip(axes, data.items()):
-        (line,) = ax.plot([], [])
-        lines[name] = line
-        ax.set_xlim(x.min(), x.max())
-        ax.set_ylim(arr.min(), arr.max())
-        ax.set_title(name)
-    fig.suptitle("t = 0")
-    def update(frame):
-        for name, line in lines.items():
-            line.set_data(x,data[name][:,frame])
-        fig.suptitle(f"t={t[frame]}")
-        return list(lines.values())
-    
-    
-    ani = animation.FuncAnimation(fig, update, frames=tstep-1, interval=100, blit=False)
-    ani.save("example_animation.gif", writer="pillow", fps=30, dpi=150)
-    '''
+    if video: 
+        data = {'Previous state': uArray[:,0,:-1],
+                'Activated':fa_data[:,:tstep-1],
+                'Post connectivity (netring)':netring_data[:,:tstep-1],
+                'External input':extern_data[:,:tstep-1],
+                'Change':du_data[:,:tstep-1],
+                'uanew':uArray[:,0,1:]}
+        x = np.arange(100)
+        t = np.arange(tstep-1) 
+        #fig, axes = plt.subplots(1,2,layout='constrained',figsize=(12,8),num=4)
+        fig = plt.figure(layout='constrained',figsize=(12,8),num=4)
+        subfigs = fig.subfigures(1,2, wspace=0.1)
+        sf0 = subfigs[0]
+        sf1 = subfigs[1]
+        ax0 = sf0.subplots(1,1)
+        (traj_line,) = ax0.plot([], [], "-o", markersize=3, linewidth=1)
+        ax0.set_xlim(0, 100)
+        ax0.set_ylim(0, 100)
+        ax0.scatter(targ_x,targ_y,c='red')
+        ax0.set_title("Trajectory")
+        ax1 = sf1.subplots(5,1)
+        axes = ax1.flatten()
+        lines = {}
+        for ax, (name, arr) in zip(axes, data.items()):
+            (line,) = ax.plot([], [])
+            lines[name] = line
+            if name is not 'Change':
+                ax.set_xlim(x.min(), x.max())
+                ax.set_ylim(arr.min(), arr.max()+0.05)
+            else:
+                ax.set_xlim(x.min(), x.max())
+                ax.set_ylim(-0.01, 0.01)
+            ax.set_title(name)
+        fig.suptitle("t = 0")
+        def update(frame):
+            for name, line in lines.items():
+                line.set_data(x,data[name][:,frame])
+            traj_line.set_data(xPos[0,:frame+1], yPos[0,:frame+1])
+            fig.suptitle(f"t={t[frame]}")
+            return list(lines.values()) + [traj_line]
+        ani = animation.FuncAnimation(fig, update, frames=tstep-1, interval=20, blit=False)
+        ani.save("example_animation_seeded.mp4", writer='ffmpeg', fps=50, dpi=150)
     return headings, xPos, yPos, targetXPos, targetYPos, uArray, [first_heading,dir_unact]
 

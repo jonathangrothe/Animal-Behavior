@@ -418,9 +418,9 @@ def plot_traj(xPos,yPos,targetsx,targetsy,sample_size,figure,plot_dec_point=Fals
             deltax = np.diff(xPos[sample][start_ind:end_ind])
             deltay = np.diff(yPos[sample][start_ind:end_ind])
             dist = np.zeros(len(xPos[sample][start_ind:end_ind]))
-            dist[0] =0
-            dist[1:] = np.sqrt(deltax**2 + deltay**2)
-            figure.scatter(xPos[sample][start_ind:end_ind],yPos[sample][start_ind:end_ind],c = dist, cmap = 'afmhot_r', alpha=0.5,s=8)
+            #dist[0] =0
+            #dist[1:] = np.sqrt(deltax**2 + deltay**2)
+            figure.scatter(xPos[sample][start_ind:end_ind],yPos[sample][start_ind:end_ind], alpha=0.5,s=8)
             if plot_dec_point:
                 dec_time = dec_points[sample]
                 figure.scatter(xPos[sample][dec_time],yPos[sample][dec_time], color="green",alpha = 0.1)
