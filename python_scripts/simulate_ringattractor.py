@@ -8,6 +8,7 @@ import matplotlib.animation as animation
 def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag,rEgo,rEgoTarget,Egonumber,
                             distf,adistf,J,beta,h0,h_b,dt,v0,v0t,sigma,hColl,rColl,
                             initialx,initialy,initialxt,initialyt,u0,plot,stop,stopping_dist=0.1,video=False):
+    print(f"stop:{stop},stopping dist:{stopping_dist}")
     '''
     The code to run a single simulation of the ring attractor model. 
     Designed to work with any number of agents but so far I've only really focused on one agent, which impacts stopping distance and v0 right now. 
@@ -362,7 +363,12 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
                     x = np.arange(100)
                     t = np.arange(tstep-1) 
                     #fig, axes = plt.subplots(1,2,layout='constrained',figsize=(12,8),num=4)
-                    fig = plt.figure(layout='constrained',figsize=(12,8),num=4)
+                    num = 4
+                    if adistf == 1:
+                        num = 5
+                    if adistf == 10:
+                        num = 6
+                    fig = plt.figure(layout='constrained',figsize=(12,8),num=num)
                     subfigs = fig.subfigures(1,2, wspace=0.1)
                     sf0 = subfigs[0]
                     sf1 = subfigs[1]
@@ -378,7 +384,7 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
                     for ax, (name, arr) in zip(axes, data.items()):
                         (line,) = ax.plot([], [])
                         lines[name] = line
-                        if name is not 'Change':
+                        if name !='Change':
                             ax.set_xlim(x.min(), x.max())
                             ax.set_ylim(arr.min(), arr.max()+0.05)
                         else:
@@ -393,8 +399,8 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
                         fig.suptitle(f"t={t[frame]}")
                         return list(lines.values()) + [traj_line]
                     ani = animation.FuncAnimation(fig, update, frames=tstep-1, interval=20, blit=False)
-                    ani.save("example_animation_seeded.mp4", writer='ffmpeg', fps=50, dpi=150)
-                
+                    ani.save(f"example_animation_random.mp4", writer='ffmpeg', fps=50, dpi=150)
+                print(Egocentric)
                 return headings, xPos, yPos, targetXPos, targetYPos, uArray, [first_heading,dir_unact]
             
         if plot == True:
@@ -419,7 +425,7 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
         (traj_line,) = ax0.plot([], [], "-o", markersize=3, linewidth=1)
         ax0.set_xlim(0, 100)
         ax0.set_ylim(0, 100)
-        ax0.scatter(targ_x,targ_y,c='red')
+        ax0.scatter(initialxt,initialyt,c='red')
         ax0.set_title("Trajectory")
         ax1 = sf1.subplots(5,1)
         axes = ax1.flatten()
@@ -427,7 +433,7 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
         for ax, (name, arr) in zip(axes, data.items()):
             (line,) = ax.plot([], [])
             lines[name] = line
-            if name is not 'Change':
+            if name != 'Change':
                 ax.set_xlim(x.min(), x.max())
                 ax.set_ylim(arr.min(), arr.max()+0.05)
             else:
@@ -441,7 +447,8 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
             traj_line.set_data(xPos[0,:frame+1], yPos[0,:frame+1])
             fig.suptitle(f"t={t[frame]}")
             return list(lines.values()) + [traj_line]
-        ani = animation.FuncAnimation(fig, update, frames=tstep-1, interval=20, blit=False)
-        ani.save("example_animation_seeded.mp4", writer='ffmpeg', fps=50, dpi=150)
+        ani = animation.FuncAnimation(fig, update, frames=tstep-1, interval=10, blit=False)
+        ani.save(f"example_animation_random_nonstop.mp4", writer='ffmpeg', fps=100, dpi=150)
+    print(Egocentric)
     return headings, xPos, yPos, targetXPos, targetYPos, uArray, [first_heading,dir_unact]
 

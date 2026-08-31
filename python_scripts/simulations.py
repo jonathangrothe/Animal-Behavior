@@ -15,10 +15,10 @@ nagents = 1
 initialx = np.zeros(nagents)
 initialy = np.zeros(nagents)
 for a in range(nagents):
-    initialx[a] = 50
+    initialx[a] = 20
     initialy[a] = 50
-initialxt = [25,75]
-initialyt = [75,75]
+initialxt = [80,80]
+initialyt = [20,80]
 
 T = 5000
 periodicflag = 0
@@ -51,7 +51,7 @@ for i in range(N):
 allocentricFlag = 1
 h0s = [0.2]*ntargets
 h_b = 0.2
-sigma = 0.25
+sigma = 0.2
 beta = 100 
 
 # --- trying out the non stopping situation --- - turn this and the traditional simulations into functions so its easier to keep it organized
@@ -69,11 +69,11 @@ def sim_random_points(base,sample_size):
         ypoints = []
         angles = []
         dists = []
-        rng = np.random.default_rng()
+        rng = np.random.default_rng(seed=55)
         ntarg = 10
         while len(xpoints) < ntarg:
             angle = rng.uniform(0,2*np.pi)
-            dist = rng.uniform(0.5,25)
+            dist = rng.uniform(1,25)
             for p in range(len(angles)):
                 a = angles[p]
                 d = dists[p]
@@ -87,7 +87,10 @@ def sim_random_points(base,sample_size):
             dists.append(dist)
             xpoints.append(50+dist*np.cos(angle))
             ypoints.append(50+dist*np.sin(angle))
+        furthest = 3
+        print(f"furthest dist: {dists[furthest]}, x:{xpoints[furthest]}, y:{ypoints[furthest]}")
         h0_list = [0.25]*ntarg
+        h0_list[furthest] += 20
         base['h0'] = h0_list
         base['initialxt'] = xpoints
         base['initialyt'] = ypoints
@@ -95,16 +98,17 @@ def sim_random_points(base,sample_size):
         n_trajpoints = 101
         traj_factor = L/(n_trajpoints-1)
         grid_angles = helpers.trajectory_grid(xpoints,ypoints,n_trajpoints,1,0)
-        subfigs, ax1 = plt.subplots(nrows=3,ncols=2,layout='constrained',figsize=(13,13),num=s*2+1)
+        subfigs, ax1 = plt.subplots(nrows=3,ncols=2,layout='constrained',figsize=(12,12),num=s*2+1)
         ax1 = ax1.flatten()
         fig2, ax2 = plt.subplots(figsize = (8,8),num=s*2+3)
 
         #sigma_list = [0.05,0.1,0.2,0.4]
         #h0_lists = [[0.15]*10,[0.2]*10,[0.25]*10,[0.3]*10]
-        #distf_list = [0,1,1]
-        #adistf_list = [0,1,10]
-        rEgo_list = [0,1,10]
-        change_random = {'rEgo':rEgo_list}
+        distf_list = [0,1,1]
+        adistf_list = [0,1,10]
+        #rEgoTarget_list = [0,0,3.5,3.5]
+        change_random = {'distf':distf_list,
+                         'adistf':adistf_list}
         target_list, time_list, activity_list, x_list, y_list, headings_list, init_heading  = repeated_sims.sample_sims(base,change_random,sample_size,True,True)
         base['h0'] = h0_list
         for g in range(n_trajpoints**2):
@@ -132,17 +136,19 @@ def sim_random_points(base,sample_size):
         #print(f"diffs for combo: {np.array([np.diff(xs_combi),np.diff(ys_combi)])}")
         ax2.plot(xs,ys,c='red')
 
-        for sig in range(len(rEgo_list)):
+        for sig in range(len(distf_list)):
             x_settings = x_list[sig*sample_size:(sig+1)*sample_size]
             y_settings = y_list[sig*sample_size:(sig+1)*sample_size]
             sim_met.plot_traj(x_settings,y_settings,xpoints,ypoints,sample_size,ax1[sig*2])
             #ax1[sig*2].plot(xs,ys,c='red',linestyle='--')
             if sig == 0:
-                ax1[sig*2].set_title("No ego switch")
+                ax1[sig*2].set_title("No distance dependence")
             if sig == 1:
-                ax1[sig*2].set_title("Ego switch within 1 unit")
-            if sig ==2:
-                ax1[sig*2].set_title("Ego switch within 10 units")
+                ax1[sig*2].set_title("Normal distance dependence")
+            if sig == 2:
+                ax1[sig*2].set_title("Extreme distance dependence")
+            if sig == 3:
+                ax1[sig*2].set_title("Distance dependent, ego switch within 3.5 units")
             ind = sig*sample_size
             sim_activity = activity_list[ind]
             ax1[sig*2+1].imshow(sim_activity,aspect='auto')
@@ -195,7 +201,7 @@ def run_sims(base,change,change_var,sample_size,traj,activity,ncol,nrow,fig_num)
     n_plots = len(change[change_var])
     ncols = ncol
     nrows = nrow
-    fig = plt.figure(layout='constrained',figsize=(ncols*10,nrows*3.5),num=fig_num)
+    fig = plt.figure(layout='constrained',figsize=(ncols*10,nrows*5),num=fig_num)
     subfigs = fig.subfigures(2,1, wspace=0.1)
     axs0 = subfigs[0].subplots(nrows,ncols)
     axs0 = axs0.flatten()
@@ -222,7 +228,8 @@ def run_sims(base,change,change_var,sample_size,traj,activity,ncol,nrow,fig_num)
         
 
 # -------- Running the simulation --------
-#u0 = 0.2*np.random.randn(N,1) 
+#np.random.seed(24)
+u0_rand = 0.2*np.random.randn(N,1) 
 u0 = np.zeros((N,1))
 #u0[5:31] = 0.2
 #u0[0:26] = 0.2
@@ -257,15 +264,16 @@ base = {'N':N,
 
 plot_neurons = True
 plot_trajs = True
-sample_size = 1
+sample_size = 100
 #h0_first = np.linspace(0.275,0.371,num=6)
-h0_list = [[0.23,0.23],[0.23,0.23],[0.23,0.23],[0.23,0.23],[0.23,0.23],[0.23,0.23],[0.23,0.23],[0.23,0.23]]
-sigma_list = np.linspace(0.85,0.2,num=8)
+h0_list = [[0.25,0.26],[0.251,0.261],[0.25,0.26],[0.251,0.261]]
+sigma_list = [0.5]*4
 #u0_list = [10*u0,2*u0,u0,u0*0.5,u0*0.1]
 #beta_list = [300,100,60,25,10]
 #v0_list = [0.1,0.2,0.3,0.4,0.5,0.6]
 #beta_list = [20]*6
-change = {'sigma':sigma_list, 'h0':h0_list}
+u0_list = [u0,u0,u0_rand,u0_rand]
+change = {'sigma':sigma_list, 'h0':h0_list, 'u0':u0_list}
 
 # current goal: so it seems like given geometry and the two constant h0s, for most h0s we can determine a sigma that will produce trajectories that minimize the in between zone 
 # (ie: we will find the lowest possible sigma that results in the agent reaching the target)
@@ -275,9 +283,9 @@ change = {'sigma':sigma_list, 'h0':h0_list}
 
 #run_sims(base,change,'h0',sample_size,plot_trajs,plot_neurons,4,1,1)
 
-#run_sims(base,change,'sigma',sample_size,plot_trajs,plot_neurons,8,1,1)
+run_sims(base,change,'sigma',sample_size,plot_trajs,plot_neurons,4,1,1)
 #base['distf'] = 0
-sim_random_points(base,1)
+#sim_random_points(base,1)
 
 
 plt.show()
