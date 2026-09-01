@@ -7,7 +7,7 @@ import matplotlib.animation as animation
 # ---------- Simulation code!! ----------
 def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag,rEgo,rEgoTarget,Egonumber,
                             distf,adistf,J,beta,h0,h_b,dt,v0,v0t,sigma,hColl,rColl,
-                            initialx,initialy,initialxt,initialyt,u0,plot,stop,stopping_dist=0.1,video=False):
+                            initialx,initialy,initialxt,initialyt,u0,plot,stop,stopping_dist=0.1,video=True):
     print(f"stop:{stop},stopping dist:{stopping_dist}")
     '''
     The code to run a single simulation of the ring attractor model. 
@@ -80,9 +80,6 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
     for a in range(nagents):
         xPos[a,0] = initialx[a]
         yPos[a,0] = initialy[a]
-        headings[a,0] = 2*math.pi*np.random.rand() 
-        if allocentricFlag == 0:
-            alpharing[a,:] = np.mod(alpharing[a,:]+headings[a,0], 2*np.pi)
     if v0t.any():
         targetXPos = np.zeros((ntargets, T+1))
         targetYPos = np.zeros((ntargets, T+1))
@@ -92,7 +89,6 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
     else:
         targetXPos = initialxt
         targetYPos = initialyt
-    true_neurons = np.zeros((ntargets,T))
     adj_ampl = np.zeros((ntargets,T))
     if plot == True:
         plt.figure(1)
@@ -105,31 +101,24 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
     du_data = np.zeros((N,T))
 
     f0 = fAct(u0,beta)
-    f0[f0 < 0] = 0
+    f0_copy = f0.copy()
+    f0_copy[f0_copy < 0] = 0
     cx0 = 0
     cy0 = 0
-    unact_cx = 0
-    unact_cy = 0
     for i in range(N):
-        cx0 = cx0 + (f0[i] * np.cos(alpharing[0,i]))
-        cy0 = cy0 + (f0[i] * np.sin(alpharing[0,i]))
-        unact_cx = unact_cx + u0[i] * np.cos(alpharing[0,i])
-        unact_cy = unact_cy + u0[i] * np.sin(alpharing[0,i])
+        cx0 = cx0 + (f0_copy[i] * np.cos(alpharing[0,i]))
+        cy0 = cy0 + (f0_copy[i] * np.sin(alpharing[0,i]))
     first_heading = 0
-    dir_unact = 0
     if (np.abs(cx0) < 1e-9) or (np.abs(cy0) < 1e-9):
         first_heading = headings[0,0]
     else:
         first_heading = np.atan2(cy0,cx0)
         if first_heading < 0:
             first_heading = first_heading + 2*np.pi
-    if (np.abs(unact_cx) < 1e-9) or (np.abs(unact_cy) < 1e-9):
-        dir_unact = headings[0,0]
-    else:
-        dir_unact = np.atan2(unact_cy,unact_cx)
-        if dir_unact < 0:
-            dir_unact = dir_unact + 2*np.pi
-    print(f"first heading: {first_heading}, first direction pre activation: {dir_unact}")
+    print(f"init heading: {first_heading}, type: {type(first_heading)}, item: {first_heading.item()}")
+    headings[0,0] = first_heading.item()
+    if allocentricFlag == 0:
+        alpharing[a,:] = np.mod(alpharing[a,:]+headings[a,0], 2*np.pi)
     for tstep in range(0,T):
         step_time_start = time.perf_counter()
         # -------- STEP A --------
@@ -389,7 +378,7 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
                             ax.set_ylim(arr.min(), arr.max()+0.05)
                         else:
                             ax.set_xlim(x.min(), x.max())
-                            ax.set_ylim(-0.01, 0.01)
+                            ax.set_ylim(-0.3, 0.3)
                         ax.set_title(name)
                     fig.suptitle("t = 0")
                     def update(frame):
@@ -399,9 +388,9 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
                         fig.suptitle(f"t={t[frame]}")
                         return list(lines.values()) + [traj_line]
                     ani = animation.FuncAnimation(fig, update, frames=tstep-1, interval=20, blit=False)
-                    ani.save(f"example_animation_random.mp4", writer='ffmpeg', fps=50, dpi=150)
+                    ani.save(f"example_animation_ego.mp4", writer='ffmpeg', fps=50, dpi=150)
                 print(Egocentric)
-                return headings, xPos, yPos, targetXPos, targetYPos, uArray, [first_heading,dir_unact]
+                return headings, xPos, yPos, targetXPos, targetYPos, uArray, first_heading
             
         if plot == True:
             plt.show(block = False)
@@ -438,7 +427,7 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
                 ax.set_ylim(arr.min(), arr.max()+0.05)
             else:
                 ax.set_xlim(x.min(), x.max())
-                ax.set_ylim(-0.01, 0.01)
+                ax.set_ylim(-0.1, 0.1)
             ax.set_title(name)
         fig.suptitle("t = 0")
         def update(frame):
@@ -448,7 +437,7 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
             fig.suptitle(f"t={t[frame]}")
             return list(lines.values()) + [traj_line]
         ani = animation.FuncAnimation(fig, update, frames=tstep-1, interval=10, blit=False)
-        ani.save(f"example_animation_random_nonstop.mp4", writer='ffmpeg', fps=100, dpi=150)
+        ani.save(f"example_animation_ego.mp4", writer='ffmpeg', fps=100, dpi=150)
     print(Egocentric)
-    return headings, xPos, yPos, targetXPos, targetYPos, uArray, [first_heading,dir_unact]
+    return headings, xPos, yPos, targetXPos, targetYPos, uArray, first_heading
 

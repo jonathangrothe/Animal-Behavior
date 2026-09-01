@@ -15,10 +15,10 @@ nagents = 1
 initialx = np.zeros(nagents)
 initialy = np.zeros(nagents)
 for a in range(nagents):
-    initialx[a] = 20
+    initialx[a] = 50
     initialy[a] = 50
-initialxt = [80,80]
-initialyt = [20,80]
+initialxt = [25,75]
+initialyt = [75,75]
 
 T = 5000
 periodicflag = 0
@@ -46,9 +46,10 @@ for i in range(N):
     J[i,:] = np.cos(np.pi*(deltah/np.pi)**nu)
     J[i,i] = 0.0
     J = np.squeeze(J)
+    
 
 
-allocentricFlag = 1
+allocentricFlag = 0
 h0s = [0.2]*ntargets
 h_b = 0.2
 sigma = 0.2
@@ -90,7 +91,6 @@ def sim_random_points(base,sample_size):
         furthest = 3
         print(f"furthest dist: {dists[furthest]}, x:{xpoints[furthest]}, y:{ypoints[furthest]}")
         h0_list = [0.25]*ntarg
-        h0_list[furthest] += 20
         base['h0'] = h0_list
         base['initialxt'] = xpoints
         base['initialyt'] = ypoints
@@ -228,9 +228,9 @@ def run_sims(base,change,change_var,sample_size,traj,activity,ncol,nrow,fig_num)
         
 
 # -------- Running the simulation --------
-#np.random.seed(24)
+np.random.seed(24)
 u0_rand = 0.2*np.random.randn(N,1) 
-u0 = np.zeros((N,1))
+#u0 = np.zeros((N,1))
 #u0[5:31] = 0.2
 #u0[0:26] = 0.2
 base = {'N':N,
@@ -260,19 +260,19 @@ base = {'N':N,
         'h_b':h_b,
         'sigma':sigma,
         'beta':beta,
-        'u0':u0}
+        'u0':u0_rand}
 
 plot_neurons = True
 plot_trajs = True
-sample_size = 100
+sample_size = 1
 #h0_first = np.linspace(0.275,0.371,num=6)
-h0_list = [[0.25,0.26],[0.251,0.261],[0.25,0.26],[0.251,0.261]]
-sigma_list = [0.5]*4
+h0_list = [[0.27,0.27]]
+sigma_list = [0.4]
 #u0_list = [10*u0,2*u0,u0,u0*0.5,u0*0.1]
 #beta_list = [300,100,60,25,10]
 #v0_list = [0.1,0.2,0.3,0.4,0.5,0.6]
 #beta_list = [20]*6
-u0_list = [u0,u0,u0_rand,u0_rand]
+u0_list = [u0_rand]
 change = {'sigma':sigma_list, 'h0':h0_list, 'u0':u0_list}
 
 # current goal: so it seems like given geometry and the two constant h0s, for most h0s we can determine a sigma that will produce trajectories that minimize the in between zone 
@@ -283,7 +283,7 @@ change = {'sigma':sigma_list, 'h0':h0_list, 'u0':u0_list}
 
 #run_sims(base,change,'h0',sample_size,plot_trajs,plot_neurons,4,1,1)
 
-run_sims(base,change,'sigma',sample_size,plot_trajs,plot_neurons,4,1,1)
+run_sims(base,change,'sigma',sample_size,plot_trajs,plot_neurons,2,1,1)
 #base['distf'] = 0
 #sim_random_points(base,1)
 

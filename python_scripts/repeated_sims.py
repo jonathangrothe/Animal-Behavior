@@ -57,8 +57,8 @@ def sample_sims(bp,changing_params,n_samples,include_trajs,include_activity):
                                                                                  False,True,0.1)
                 if bp['ntargets'] > 0:
                     target_reached, time_reached = sim_met.get_destination_metrics(xPos,yPos,targetsx,targetsy)
-                    print(f"heading: {init_heading[0]}, target reached: {target_reached}")
-                    init_list.append(init_heading[0])
+                    print(f"heading: {init_heading}, target reached: {target_reached}")
+                    init_list.append(init_heading)
                     target_list.append(target_reached)
                     time_list.append(time_reached)
 
