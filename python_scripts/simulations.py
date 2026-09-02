@@ -49,7 +49,7 @@ for i in range(N):
     
 
 
-allocentricFlag = 0
+allocentricFlag = 1
 h0s = [0.2]*ntargets
 h_b = 0.2
 sigma = 0.2
@@ -171,9 +171,6 @@ def run_sims(base,change,change_var,sample_size,traj,activity,ncol,nrow,fig_num)
         theor_angles.append(angle)
     print(f"theoretical angles: {theor_angles}")
     '''
-    fig_init = plt.figure(layout='constrained',figsize=(10,5),num=fig_num+1)
-    subfigs_init = fig_init.subfigures(1,1, wspace=0.1,squeeze=False)
-    axs0_init = subfigs_init[0][0].subplots(1,2)
     for i in range(len(target_list)):
         curr_activity = activity_list[i]
         curr_headings = headings_list[i][0]
@@ -188,15 +185,6 @@ def run_sims(base,change,change_var,sample_size,traj,activity,ncol,nrow,fig_num)
         angles.append(bifurcation_angles)
         bif_indices.append(indices)
         phases.append(phase)
-        heading = init_heading[i].item()
-        print(heading)
-        x_plot = math.cos(heading)
-        y_plot = math.sin(heading)
-        color = 'red'
-        if target_list[i] == 1:
-            color = 'green'
-        axs0_init[0].plot([0,x_plot],[0,y_plot],c=color)
-        
 
     n_plots = len(change[change_var])
     ncols = ncol
@@ -219,7 +207,9 @@ def run_sims(base,change,change_var,sample_size,traj,activity,ncol,nrow,fig_num)
         axs0[s].set_title(f"sigma: {round(sigma_list[s],4)}")
         #axs0[s].set_aspect('equal', adjustable='box')
         target_list_sample = target_list[s*sample_size:(s+1)*sample_size]
-        print(f"sim: {s}, targets reached: {target_list_sample}")
+        n_better = target_list_sample.count(1)
+        print(f"probability of reaching right target: {n_better/sample_size}")
+
         ind = s*sample_size
         sim_activity = activity_list[ind]
         col_min = np.min(sim_activity[:,-5])
@@ -228,8 +218,9 @@ def run_sims(base,change,change_var,sample_size,traj,activity,ncol,nrow,fig_num)
         
 
 # -------- Running the simulation --------
-np.random.seed(24)
+#np.random.seed(24)
 u0_rand = 0.2*np.random.randn(N,1) 
+u0_rand2 = 2*np.random.randn(N,1)
 #u0 = np.zeros((N,1))
 #u0[5:31] = 0.2
 #u0[0:26] = 0.2
@@ -260,20 +251,21 @@ base = {'N':N,
         'h_b':h_b,
         'sigma':sigma,
         'beta':beta,
-        'u0':u0_rand}
+        'u0':u0_rand,
+        'factor':0.2}
 
 plot_neurons = True
 plot_trajs = True
-sample_size = 1
+sample_size = 10
 #h0_first = np.linspace(0.275,0.371,num=6)
-h0_list = [[0.27,0.27]]
-sigma_list = [0.4]
+h0_list = [[0.27,0.27],[0.27,0.2701],[0.27,0.2705],[0.27,0.271],[0.27,0.27],[0.27,0.2701],[0.27,0.2705],[0.27,0.271]]
+sigma_list = [0.4]*8
 #u0_list = [10*u0,2*u0,u0,u0*0.5,u0*0.1]
 #beta_list = [300,100,60,25,10]
 #v0_list = [0.1,0.2,0.3,0.4,0.5,0.6]
 #beta_list = [20]*6
-u0_list = [u0_rand]
-change = {'sigma':sigma_list, 'h0':h0_list, 'u0':u0_list}
+factor_list = [0.02,0.02,0.02,0.02,2,2,2,2]
+change = {'sigma':sigma_list, 'h0':h0_list, 'factor':factor_list}
 
 # current goal: so it seems like given geometry and the two constant h0s, for most h0s we can determine a sigma that will produce trajectories that minimize the in between zone 
 # (ie: we will find the lowest possible sigma that results in the agent reaching the target)
@@ -283,7 +275,7 @@ change = {'sigma':sigma_list, 'h0':h0_list, 'u0':u0_list}
 
 #run_sims(base,change,'h0',sample_size,plot_trajs,plot_neurons,4,1,1)
 
-run_sims(base,change,'sigma',sample_size,plot_trajs,plot_neurons,2,1,1)
+run_sims(base,change,'sigma',sample_size,plot_trajs,plot_neurons,4,2,1)
 #base['distf'] = 0
 #sim_random_points(base,1)
 

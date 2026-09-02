@@ -7,8 +7,7 @@ import matplotlib.animation as animation
 # ---------- Simulation code!! ----------
 def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag,rEgo,rEgoTarget,Egonumber,
                             distf,adistf,J,beta,h0,h_b,dt,v0,v0t,sigma,hColl,rColl,
-                            initialx,initialy,initialxt,initialyt,u0,plot,stop,stopping_dist=0.1,video=True):
-    print(f"stop:{stop},stopping dist:{stopping_dist}")
+                            initialx,initialy,initialxt,initialyt,u0,plot,stop,seed=False,factor=0.2,stopping_dist=0.1,video=False):
     '''
     The code to run a single simulation of the ring attractor model. 
     Designed to work with any number of agents but so far I've only really focused on one agent, which impacts stopping distance and v0 right now. 
@@ -70,7 +69,8 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
         alpharing[a,:] = alpharing0
     
     uArray = np.zeros((N, nagents, T+1))
-    #u0 = 0.2*np.random.randn(N,nagents) 
+    if not seed:
+        u0 = factor*np.random.randn(N,nagents) 
     uArray[:,:,0] = u0
     #uArray[:,:,75:85] = 0.2
 
@@ -115,7 +115,6 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
         first_heading = np.atan2(cy0,cx0)
         if first_heading < 0:
             first_heading = first_heading + 2*np.pi
-    print(f"init heading: {first_heading}, type: {type(first_heading)}, item: {first_heading.item()}")
     headings[0,0] = first_heading.item()
     if allocentricFlag == 0:
         alpharing[a,:] = np.mod(alpharing[a,:]+headings[a,0], 2*np.pi)
@@ -389,7 +388,6 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
                         return list(lines.values()) + [traj_line]
                     ani = animation.FuncAnimation(fig, update, frames=tstep-1, interval=20, blit=False)
                     ani.save(f"example_animation_ego.mp4", writer='ffmpeg', fps=50, dpi=150)
-                print(Egocentric)
                 return headings, xPos, yPos, targetXPos, targetYPos, uArray, first_heading
             
         if plot == True:
@@ -438,6 +436,5 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
             return list(lines.values()) + [traj_line]
         ani = animation.FuncAnimation(fig, update, frames=tstep-1, interval=10, blit=False)
         ani.save(f"example_animation_ego.mp4", writer='ffmpeg', fps=100, dpi=150)
-    print(Egocentric)
     return headings, xPos, yPos, targetXPos, targetYPos, uArray, first_heading
 

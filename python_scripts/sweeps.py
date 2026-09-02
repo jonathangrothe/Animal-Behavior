@@ -15,7 +15,7 @@ initialx = np.zeros(nagents)
 initialy = np.zeros(nagents)
 for a in range(nagents):
     initialx[a] = 50
-    initialy[a] = 50
+    initialy[a] = 20
 initialxt = [25,75]
 initialyt = [75,75]
 
@@ -86,85 +86,74 @@ base = {'N':N,
 include_pos = True
 include_neurons = True
 sample_size = 1
-v0_start = 0.03
-v0_finish = 0.929
-n_v0 = 75
-beta_start = 25
-beta_finish = 200
-n_beta = 75
-base_v0 = np.linspace(v0_start,v0_finish,num=n_v0)
-base_beta = np.linspace(beta_start,beta_finish,num=n_beta)
-v0_list = []
-beta_list = []
-for b in range(n_beta):
-    for v in range(n_v0):
-        v0_list.append(base_v0[v])
-        beta_list.append(base_beta[b])
+h0_start = 0.15
+h0_finish = 0.4
+n_h0 = 100
+sigma_start = 0.1
+sigma_finish = 1
+n_sigma = 100
+base_h0 = np.linspace(h0_start,h0_finish,num=n_h0)
+base_sigma = np.linspace(sigma_start,sigma_finish,num=n_sigma)
+h0_list = []
+sigma_list = []
+for s in range(n_sigma):
+    for h in range(n_h0):
+        h0_list.append([base_h0[h],base_h0[h]])
+        sigma_list.append(base_sigma[s])
 
-init_list = []
-for i in range(6):
-    u0 = np.zeros((N,1))
-    start_ind = (i*5)+50
-    end_ind = (i*5)+76
-    if end_ind < 100:
-        u0[start_ind:end_ind] = 0.2
-    else:
-        u0[start_ind:] = 0.2
-    init_list.append(u0)
+h0_diff_start = 0
+h0_diff_finish = 0.001
+h0_diff = np.linspace(h0_diff_start,h0_diff_finish,num=10)
+h0_diff_list = []
+base_h0_val = 0.25
+for d in h0_diff:
+    h0_diff_list.append([base_h0_val,base_h0_val+d])
 
-change= {'beta':beta_list,
-         'v0':v0_list}
+
+change= {'h0':h0_list,
+         'sigma':sigma_list}
+
 sample_time = time.perf_counter()
+target_list, time_list, activity_list, x_list, y_list, headings_list, init_heading  = repeated_sims.sample_sims(base,change,sample_size,include_pos,include_neurons)
+end_sample_time = time.perf_counter()
+sampling_time = end_sample_time - sample_time
+print(f"Sampling time: {sampling_time:.6f} seconds")
+
+
+analysis_time = time.perf_counter()
 fig_init = plt.figure(layout='constrained',figsize = (20,5.5),num=1)
-subfigs_init = fig_init.subfigures(2,3)
-for u in range(6):
-    base['u0'] = init_list[u]
-    target_list, time_list, activity_list, x_list, y_list, headings_list, init_heading  = repeated_sims.sample_sims(base,change,sample_size,include_pos,include_neurons)
-    end_sample_time = time.perf_counter()
-    sampling_time = end_sample_time - sample_time
-    print(f"Sampling time: {sampling_time:.6f} seconds")
-    analysis_time = time.perf_counter()
-    t_reached = []
-    row_ind = 1 if u>2 else 0
-    for item in target_list:
-        if item == -1:
-            t_reached.append(0)
-        elif item != row_ind:
-            t_reached.append(1)
-        else:
-            t_reached.append(-1)
-        
-    grid = np.zeros((n_v0,n_beta))
-    for p in range(n_beta):
-        row = t_reached[p*n_beta:(p+1)*n_beta]
-        grid[p,:] = row
-    print(grid)
-    bwr_r = plt.colormaps['bwr_r']
-    axs0 = subfigs_init[row_ind][u%3].subplots(1,2)
-    axs0[0].imshow(grid,cmap=bwr_r,aspect='auto',extent=[base_v0[0], base_v0[-1], base_beta[-1], base_beta[0]])
-    axs0[0].set_xlabel("v0")
-    axs0[0].set_ylabel("beta")
-    start_angle = ((u*5+50)/100)*np.pi*2
-    end_angle = (((u*5+76)+25)/100)*np.pi*2 
-    theta = np.linspace(start_angle, end_angle, 200)
-    to_finish = np.linspace(end_angle,2*np.pi,600)
-    to_start = np.linspace(0,start_angle,200)
-    x_plot = np.cos(theta)
-    y_plot = np.sin(theta)
-    x_finish = np.cos(to_finish)
-    y_finish = np.sin(to_finish)
-    x_start = np.cos(to_start)
-    y_start = np.sin(to_start)
-    axs0[1].plot(x_plot,y_plot,c='red')
-    axs0[1].plot(x_finish,y_finish, c='blue')
-    axs0[1].plot(x_start,y_start, c='blue')
+subfigs_init = fig_init.subfigures(1,1,squeeze=False)
+
+targ_reached = []
+
+for item in target_list:
+    if item == -1:
+        targ_reached.append(0)
+    else:
+        targ_reached.append(1)
+    
+targ_grid = np.zeros((n_h0,n_sigma))
+time_grid = np.zeros((n_h0,n_sigma))
+for p in range(n_sigma):
+    targ_row = targ_reached[p*n_sigma:(p+1)*n_sigma]
+    targ_grid[p,:] = targ_row
+    time_row = time_list[p*n_sigma:(p+1)*n_sigma]
+    time_grid[p,:] = time_row
+
+bwr_r = plt.colormaps['bwr_r']
+plasma_r = plt.colormaps['plasma_r']
+axs0 = subfigs_init[0][0].subplots(1,2)
+axs0[0].imshow(targ_grid,cmap=bwr_r,origin='lower',aspect='auto',extent=[base_h0[0], base_h0[-1], base_sigma[0], base_sigma[-1]])
+axs0[0].set_xlabel("h0")
+axs0[0].set_ylabel("sigma")
+axs0[0].text(-0.1,1.05,'A',transform=axs0[0].transAxes,size=14,weight="bold")
+
+axs0[1].imshow(time_grid,cmap=plasma_r,origin='lower',aspect='auto',extent=[base_h0[0], base_h0[-1], base_sigma[0], base_sigma[-1]])
+axs0[1].set_xlabel("h0")
+axs0[1].set_ylabel("sigma")
+axs0[1].text(-0.1,1.05,'B',transform=axs0[1].transAxes,size=14,weight="bold")
+
 end_analysis_time = time.perf_counter()
 analyzing_time = end_analysis_time - analysis_time
 print(f"Analysis time: {analyzing_time:.6f} seconds")
-
-
-
-end_time = time.perf_counter()
-execution_time = end_time - start_time
-print(f"Execution time: {execution_time:.6f} seconds")
 plt.show()

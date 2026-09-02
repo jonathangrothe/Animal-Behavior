@@ -50,11 +50,14 @@ def sample_sims(bp,changing_params,n_samples,include_trajs,include_activity):
             print(f"param: {param}, value: {changing_params[param][index]}")
         start_one_setting = time.perf_counter()
         for sample in range(n_samples):
+                f = 0.2
+                if 'factor' in bp.keys():
+                    f = bp['factor']
                 headings, xPos, yPos, targetsx, targetsy, activity, init_heading = sim_ra.simulate_ring_attractor(bp['N'],bp['L'],bp['T'],bp['ntargets'],bp['nagents'],bp['allocentricFlag'],
                                                                                  bp['periodicFlag'],bp['rEgo'],bp['rEgoTarget'],bp['Egonumber'],bp['distf'],
                                                                                  bp['adistf'],bp['J'],bp['beta'],bp['h0'],bp['h_b'],bp['dt'],bp['v0'],bp['v0t'],
                                                                                  bp['sigma'],bp['hColl'],bp['rColl'],bp['initialx'],bp['initialy'],bp['initialxt'],bp['initialyt'],bp['u0'],
-                                                                                 False,True,0.1)
+                                                                                 False,True,False,f,0.1)
                 if bp['ntargets'] > 0:
                     target_reached, time_reached = sim_met.get_destination_metrics(xPos,yPos,targetsx,targetsy)
                     print(f"heading: {init_heading}, target reached: {target_reached}")
