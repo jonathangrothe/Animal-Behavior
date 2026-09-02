@@ -16,7 +16,7 @@ initialx = np.zeros(nagents)
 initialy = np.zeros(nagents)
 for a in range(nagents):
     initialx[a] = 50
-    initialy[a] = 50
+    initialy[a] = 20
 initialxt = [25,75]
 initialyt = [75,75]
 
@@ -258,8 +258,8 @@ plot_neurons = True
 plot_trajs = True
 sample_size = 10
 #h0_first = np.linspace(0.275,0.371,num=6)
-h0_list = [[0.27,0.27],[0.27,0.2701],[0.27,0.2705],[0.27,0.271],[0.27,0.27],[0.27,0.2701],[0.27,0.2705],[0.27,0.271]]
-sigma_list = [0.4]*8
+h0_list = [[0.25,0.25],[0.25,0.2501],[0.25,0.2505],[0.25,0.251],[0.25,0.25],[0.25,0.2501],[0.25,0.2505],[0.25,0.251]]
+sigma_list = [0.5]*8
 #u0_list = [10*u0,2*u0,u0,u0*0.5,u0*0.1]
 #beta_list = [300,100,60,25,10]
 #v0_list = [0.1,0.2,0.3,0.4,0.5,0.6]

@@ -70,7 +70,8 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
     
     uArray = np.zeros((N, nagents, T+1))
     if not seed:
-        u0 = factor*np.random.randn(N,nagents) 
+        u0 = factor*np.random.randn(N,nagents)
+
     uArray[:,:,0] = u0
     #uArray[:,:,75:85] = 0.2
 
