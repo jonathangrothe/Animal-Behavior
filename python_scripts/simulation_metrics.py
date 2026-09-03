@@ -382,7 +382,7 @@ def plot_metric(metrics,x,colors,labels,fig,title,xlabel,ylabel): # Function not
     return mean_metric_list
 
 
-def plot_traj(xPos,yPos,targetsx,targetsy,sample_size,figure,plot_dec_point=False,dec_points=None,start_ind=0,end_ind=0):
+def plot_traj(xPos,yPos,targetsx,targetsy,sample_size,figure,plot_dec_point=False,dec_points=None,start_ind=0,end_ind=0,arrow=False,color=None):
     '''
     A function that takes x trajectories and y trajectories and plots them over each other, with a low ish opacity so we can see overlap. 
     Designed to be used over the same simulation settings with a number s of samples.
@@ -418,12 +418,57 @@ def plot_traj(xPos,yPos,targetsx,targetsy,sample_size,figure,plot_dec_point=Fals
             deltax = np.diff(xPos[sample][start_ind:end_ind])
             deltay = np.diff(yPos[sample][start_ind:end_ind])
             dist = np.zeros(len(xPos[sample][start_ind:end_ind]))
+            #directions = np.atan2(deltay,deltax)
             #dist[0] =0
             #dist[1:] = np.sqrt(deltax**2 + deltay**2)
-            figure.scatter(xPos[sample][start_ind:end_ind],yPos[sample][start_ind:end_ind], alpha=0.5,s=8)
+            #figure.scatter(xPos[sample][start_ind:end_ind],yPos[sample][start_ind:end_ind], alpha=0.5,s=8)
+            min_x = min(xPos[sample][start_ind:end_ind+1])
+            max_x = max(xPos[sample][start_ind:end_ind+1])
+            x_range = max_x - min_x
+            min_y = min(yPos[sample][start_ind:end_ind+1])
+            max_y = max(yPos[sample][start_ind:end_ind+1])
+            y_range = max_y-min_y
+            bigger_range = max(x_range,y_range)
+            buffer = 0.05*bigger_range
+            fig_x_min = min_x-buffer
+            fig_x_max = max_x+buffer
+            fig_y_min = min_y-buffer
+            fig_y_max = max_y+buffer
+            if x_range == bigger_range:
+                y_mean = (min_y+max_y)/2
+                jump = bigger_range/2 + buffer
+                fig_y_min = y_mean - jump
+                fig_y_max = y_mean + jump
+            if y_range == bigger_range:
+                x_mean = (min_x+max_x)/2
+                print(f"x mean: {x_mean}, y mean: {(min_y+max_y)/2}")
+                jump = bigger_range/2 + buffer
+                fig_x_min = x_mean - jump
+                fig_x_max = x_mean + jump
+            figure.set_xlim(fig_x_min,fig_x_max)
+            figure.set_ylim(fig_y_min,fig_y_max)
+            plot_xdiff = fig_x_max - fig_x_min
+            plot_ydiff = fig_y_max - fig_y_min
+            print(f"plotx diff: {plot_xdiff}, ploty diff: {plot_ydiff}")
+            if arrow: 
+                for pt in range(start_ind,end_ind):
+                    curr_x = xPos[sample][pt]
+                    curr_y = yPos[sample][pt]
+                    next_x = xPos[sample][pt+1]
+                    next_y = yPos[sample][pt+1]
+                    x_diff = next_x - curr_x
+                    y_diff = next_y - curr_y
+                    mag = np.sqrt(x_diff**2+y_diff**2)
+                    #print(f"pt: {pt}, magnitude: {mag}")
+                    figure.set_xticks([])
+                    figure.set_yticks([])
+                    figure.annotate("",xytext=(curr_x,curr_y),xy=(next_x,next_y),arrowprops=dict(arrowstyle='->',mutation_scale=7,color=color))
+            else:
+                figure.scatter(xPos[sample][start_ind:end_ind],yPos[sample][start_ind:end_ind], alpha=0.5,s=8)
+                
             if plot_dec_point:
                 dec_time = dec_points[sample]
-                figure.scatter(xPos[sample][dec_time],yPos[sample][dec_time], color="green",alpha = 0.1)
+                figure.scatter(xPos[sample][dec_time],yPos[sample][dec_time],color="green",alpha = 0.1)
     return None
 
 

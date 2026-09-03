@@ -7,6 +7,7 @@ from . import simulation_metrics as sim_met
 from . import repeated_sims
 from . import simulate_ringattractor as sim_ra
 from helper_functions import helpers
+from matplotlib.ticker import ScalarFormatter
 
 
 L = 100
@@ -49,7 +50,7 @@ for i in range(N):
     
 
 
-allocentricFlag = 1
+allocentricFlag = 0
 h0s = [0.2]*ntargets
 h_b = 0.2
 sigma = 0.2
@@ -189,22 +190,67 @@ def run_sims(base,change,change_var,sample_size,traj,activity,ncol,nrow,fig_num)
     n_plots = len(change[change_var])
     ncols = ncol
     nrows = nrow
-    fig = plt.figure(layout='constrained',figsize=(ncols*10,nrows*5),num=fig_num)
-    subfigs = fig.subfigures(2,1, wspace=0.1)
-    axs0 = subfigs[0].subplots(nrows,ncols)
-    axs0 = axs0.flatten()
-    axs1 = subfigs[1].subplots(nrows,ncols)
-    axs1 = axs1.flatten()
+    fig = plt.figure(layout='constrained',figsize=(25,3),num=fig_num)
+    subfigs = fig.subfigures(1,3, wspace=0.01,squeeze = False,width_ratios = [0.25,0.15,0.6])
+    axs0 = subfigs[0][0].subplots(2,1,squeeze=False)
+    #axs0 = axs0.flatten()
+    axs1 = subfigs[0][1].subplots(1,1,squeeze=False)
+    axs2 = subfigs[0][2].subplots(2,6)
+    axs2 = axs2.flatten()
     grey_to_blue = ["#D3D3D3", "#A9A9A9", "#708090", "#4682B4", "#000080"]
     cmap = mcolors.LinearSegmentedColormap.from_list("GreyBlue", grey_to_blue)
-
+    start = 0
+    end = 0
+    starts = [320,320,333,339,341,343,351,355,357,361,367,372,377]
+    ends = [385,333,339,341,343,351,355,357,361,367,372,377,385]
+    scales = [0.7936949508178941,0.23694761438319745,0.04019928154785646,0.0003646965090453591,2.297071610257717e-06,2.899096784858557e-08,8.3162489517008e-07,0.00012495761202302447,1.166164592802943e-05,0.0027941730132425846,0.0748318750175585,0.2927372863376334]
+    viridis = plt.colormaps['viridis']
+    discrete_viridis = viridis.resampled(12)(np.linspace(0,1,12))
+    boundary = scales[0]/2+0.03
+    axs1[0][0].set_xlim(-boundary,boundary)
+    axs1[0][0].set_ylim(-boundary,boundary)
+    base_x = 50.62965942217946
+    base_y = 52.90147052018296
+    x1 = base_x - boundary
+    x2 = base_x + boundary
+    y1 = base_y - boundary
+    y2 = base_y + boundary
+    square_x = [x1,x1,x2,x2,x1]
+    square_y = [y1,y2,y2,y1,y1]
+    axs0[0][0].plot(square_x,square_y,c=discrete_viridis[0])
+    fmt = ScalarFormatter(useOffset=True)
+    fmt.set_powerlimits((-3, 4))
     for s in range(n_plots):
-        sim_met.plot_traj(x_list[s*sample_size:(s+1)*sample_size],y_list[s*sample_size:(s+1)*sample_size],initialxt,initialyt,sample_size,axs0[s],False,[],0,0)
+        if s == 0:
+            sim_met.plot_traj(x_list[s*sample_size:(s+1)*sample_size],y_list[s*sample_size:(s+1)*sample_size],initialxt,initialyt,sample_size,axs0[0][0],False,[],start,end)
+            axs0[0][0].tick_params(axis='both', labelsize=8)
+        else:
+            prev_scale = 0
+            for b in range(len(starts)):
+                st = starts[b]
+                en = ends[b]
+                print(f"start: {st}, end: {en}")
+                if b == 0:
+                    sim_met.plot_traj(x_list[s*sample_size:(s+1)*sample_size],y_list[s*sample_size:(s+1)*sample_size],initialxt,initialyt,sample_size,axs0[1][0],False,[],st,en)
+                    axs0[1][0].tick_params(axis='both', labelsize=8)
+                else:
+                    axs2[b-1].xaxis.set_major_formatter(fmt)
+                    axs2[b-1].yaxis.set_major_formatter(fmt)
+                    sim_met.plot_traj(x_list[s*sample_size:(s+1)*sample_size],y_list[s*sample_size:(s+1)*sample_size],initialxt,initialyt,sample_size,axs2[b-1],False,[],st,en,True,discrete_viridis[b-1])
+                    axs2[b-1].tick_params(axis='both', labelsize=5)
+    for sc, col in zip(scales,discrete_viridis):
+        half = sc/2
+        x = [-half,-half,half,half,-half]
+        y = [-half,half,half,-half,-half]
+        axs1[0][0].plot(x,y,c=col)
+
+                    
+
         #theor_angle = theor_angles[s]
         #x2 = 50 + 30 * np.cos(theor_angle)
         #y2 = 50 + 30 * np.sin(theor_angle)
         #axs0[s].plot([50, x2], [50, y2], color='green', linewidth=2, linestyle = '--')
-        axs0[s].set_title(f"sigma: {round(sigma_list[s],4)}")
+        #axs0[s].set_title(f"sigma: {round(sigma_list[s],4)}")
         #axs0[s].set_aspect('equal', adjustable='box')
         target_list_sample = target_list[s*sample_size:(s+1)*sample_size]
         n_better = target_list_sample.count(1)
@@ -214,13 +260,13 @@ def run_sims(base,change,change_var,sample_size,traj,activity,ncol,nrow,fig_num)
         sim_activity = activity_list[ind]
         col_min = np.min(sim_activity[:,-5])
         col_max = np.max(sim_activity[:,-5])
-        axs1[s].imshow(sim_activity,cmap=cmap,aspect='auto',vmin=col_min,vmax=col_max)
+        #axs1[s].imshow(sim_activity,cmap=cmap,aspect='auto',vmin=col_min,vmax=col_max)
         
 
 # -------- Running the simulation --------
-#np.random.seed(24)
+np.random.seed(24)
 u0_rand = 0.2*np.random.randn(N,1) 
-u0_rand2 = 2*np.random.randn(N,1)
+#u0_rand2 = 2*np.random.randn(N,1)
 #u0 = np.zeros((N,1))
 #u0[5:31] = 0.2
 #u0[0:26] = 0.2
@@ -256,16 +302,15 @@ base = {'N':N,
 
 plot_neurons = True
 plot_trajs = True
-sample_size = 10
+sample_size = 1
 #h0_first = np.linspace(0.275,0.371,num=6)
-h0_list = [[0.25,0.25],[0.25,0.2501],[0.25,0.2505],[0.25,0.251],[0.25,0.25],[0.25,0.2501],[0.25,0.2505],[0.25,0.251]]
-sigma_list = [0.5]*8
+h0_list = [[0.25,0.255],[0.25,0.255]]
+sigma_list = [0.4]*2
 #u0_list = [10*u0,2*u0,u0,u0*0.5,u0*0.1]
 #beta_list = [300,100,60,25,10]
 #v0_list = [0.1,0.2,0.3,0.4,0.5,0.6]
 #beta_list = [20]*6
-factor_list = [0.02,0.02,0.02,0.02,2,2,2,2]
-change = {'sigma':sigma_list, 'h0':h0_list, 'factor':factor_list}
+change = {'sigma':sigma_list, 'h0':h0_list}
 
 # current goal: so it seems like given geometry and the two constant h0s, for most h0s we can determine a sigma that will produce trajectories that minimize the in between zone 
 # (ie: we will find the lowest possible sigma that results in the agent reaching the target)
@@ -275,7 +320,7 @@ change = {'sigma':sigma_list, 'h0':h0_list, 'factor':factor_list}
 
 #run_sims(base,change,'h0',sample_size,plot_trajs,plot_neurons,4,1,1)
 
-run_sims(base,change,'sigma',sample_size,plot_trajs,plot_neurons,4,2,1)
+run_sims(base,change,'sigma',sample_size,plot_trajs,plot_neurons,2,2,1)
 #base['distf'] = 0
 #sim_random_points(base,1)
 

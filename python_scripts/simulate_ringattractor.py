@@ -71,6 +71,7 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
     uArray = np.zeros((N, nagents, T+1))
     if not seed:
         u0 = factor*np.random.randn(N,nagents)
+        print("entered")
 
     uArray[:,:,0] = u0
     #uArray[:,:,75:85] = 0.2
@@ -119,6 +120,8 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
     headings[0,0] = first_heading.item()
     if allocentricFlag == 0:
         alpharing[a,:] = np.mod(alpharing[a,:]+headings[a,0], 2*np.pi)
+    #print(f"initial heading: {headings[0,0]}")
+    #print(f"u0: {uArray[:,:,0]}")
     for tstep in range(0,T):
         step_time_start = time.perf_counter()
         # -------- STEP A --------
