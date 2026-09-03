@@ -462,7 +462,7 @@ def plot_traj(xPos,yPos,targetsx,targetsy,sample_size,figure,plot_dec_point=Fals
                     #print(f"pt: {pt}, magnitude: {mag}")
                     figure.set_xticks([])
                     figure.set_yticks([])
-                    figure.annotate("",xytext=(curr_x,curr_y),xy=(next_x,next_y),arrowprops=dict(arrowstyle='->',mutation_scale=7,color=color))
+                    figure.annotate("",xytext=(curr_x,curr_y),xy=(next_x,next_y),arrowprops=dict(arrowstyle='->',mutation_scale=10,color=color))
             else:
                 figure.scatter(xPos[sample][start_ind:end_ind],yPos[sample][start_ind:end_ind], alpha=0.5,s=8)
                 

@@ -190,12 +190,12 @@ def run_sims(base,change,change_var,sample_size,traj,activity,ncol,nrow,fig_num)
     n_plots = len(change[change_var])
     ncols = ncol
     nrows = nrow
-    fig = plt.figure(layout='constrained',figsize=(25,3),num=fig_num)
-    subfigs = fig.subfigures(1,3, wspace=0.01,squeeze = False,width_ratios = [0.25,0.15,0.6])
-    axs0 = subfigs[0][0].subplots(2,1,squeeze=False)
+    fig = plt.figure(layout='constrained',figsize=(12,5.5),num=fig_num)
+    subfigs = fig.subfigures(2,1, wspace=0.01,squeeze = False,height_ratios = [0.4,0.6])
+    axs0 = subfigs[0][0].subplots(1,4,squeeze=False)
     #axs0 = axs0.flatten()
-    axs1 = subfigs[0][1].subplots(1,1,squeeze=False)
-    axs2 = subfigs[0][2].subplots(2,6)
+    #axs1 = subfigs[2][0].subplots(1,2,squeeze=False)
+    axs2 = subfigs[1][0].subplots(2,6)
     axs2 = axs2.flatten()
     grey_to_blue = ["#D3D3D3", "#A9A9A9", "#708090", "#4682B4", "#000080"]
     cmap = mcolors.LinearSegmentedColormap.from_list("GreyBlue", grey_to_blue)
@@ -207,14 +207,24 @@ def run_sims(base,change,change_var,sample_size,traj,activity,ncol,nrow,fig_num)
     viridis = plt.colormaps['viridis']
     discrete_viridis = viridis.resampled(12)(np.linspace(0,1,12))
     boundary = scales[0]/2+0.03
-    axs1[0][0].set_xlim(-boundary,boundary)
-    axs1[0][0].set_ylim(-boundary,boundary)
-    base_x = 50.62965942217946
-    base_y = 52.90147052018296
-    x1 = base_x - boundary
-    x2 = base_x + boundary
-    y1 = base_y - boundary
-    y2 = base_y + boundary
+    boundary2 = scales[3]/2+0.00003
+    axs0[0][2].set_xlim(-boundary,boundary)
+    axs0[0][2].set_ylim(-boundary,boundary)
+    axs0[0][3].set_xlim(-boundary2,boundary2)
+    axs0[0][3].set_ylim(-boundary2,boundary2)
+    axs0[0][2].set_xticks([-0.4,0.4])
+    axs0[0][2].set_yticks([-0.4,0.4])
+    axs0[0][3].set_xticks([-2e-4,2e-4])
+    axs0[0][3].set_yticks([-2e-4,2e-4])
+    axs0[0][2].tick_params(axis='both', labelsize=10)
+    axs0[0][3].tick_params(axis='both', labelsize=10)
+    base_x = 50.74152911899337
+    base_y = 53.1007457764417
+    total_zoom_boundary = 1.2321005145871098/2
+    x1 = base_x - total_zoom_boundary
+    x2 = base_x + total_zoom_boundary
+    y1 = base_y - total_zoom_boundary
+    y2 = base_y + total_zoom_boundary
     square_x = [x1,x1,x2,x2,x1]
     square_y = [y1,y2,y2,y1,y1]
     axs0[0][0].plot(square_x,square_y,c=discrete_viridis[0])
@@ -231,20 +241,13 @@ def run_sims(base,change,change_var,sample_size,traj,activity,ncol,nrow,fig_num)
                 en = ends[b]
                 print(f"start: {st}, end: {en}")
                 if b == 0:
-                    sim_met.plot_traj(x_list[s*sample_size:(s+1)*sample_size],y_list[s*sample_size:(s+1)*sample_size],initialxt,initialyt,sample_size,axs0[1][0],False,[],st,en)
-                    axs0[1][0].tick_params(axis='both', labelsize=8)
+                    sim_met.plot_traj(x_list[s*sample_size:(s+1)*sample_size],y_list[s*sample_size:(s+1)*sample_size],initialxt,initialyt,sample_size,axs0[0][1],False,[],st,en)
+                    axs0[0][1].tick_params(axis='both', labelsize=8)
                 else:
                     axs2[b-1].xaxis.set_major_formatter(fmt)
                     axs2[b-1].yaxis.set_major_formatter(fmt)
                     sim_met.plot_traj(x_list[s*sample_size:(s+1)*sample_size],y_list[s*sample_size:(s+1)*sample_size],initialxt,initialyt,sample_size,axs2[b-1],False,[],st,en,True,discrete_viridis[b-1])
                     axs2[b-1].tick_params(axis='both', labelsize=5)
-    for sc, col in zip(scales,discrete_viridis):
-        half = sc/2
-        x = [-half,-half,half,half,-half]
-        y = [-half,half,half,-half,-half]
-        axs1[0][0].plot(x,y,c=col)
-
-                    
 
         #theor_angle = theor_angles[s]
         #x2 = 50 + 30 * np.cos(theor_angle)
@@ -261,6 +264,35 @@ def run_sims(base,change,change_var,sample_size,traj,activity,ncol,nrow,fig_num)
         col_min = np.min(sim_activity[:,-5])
         col_max = np.max(sim_activity[:,-5])
         #axs1[s].imshow(sim_activity,cmap=cmap,aspect='auto',vmin=col_min,vmax=col_max)
+    for p in range(3):
+        s1_ind = p
+        e1_ind = -(p+1)
+        s2_ind = p+3
+        e2_ind = -(p+4)
+        start1 = scales[s1_ind]/2
+        end1 = scales[e1_ind]/2
+        s1_x = [-start1,-start1,start1,start1,-start1]
+        s1_y = [-start1,start1,start1,-start1,-start1]
+        e1_x = [-end1,-end1,end1,end1,-end1]
+        e1_y = [-end1,end1,end1,-end1,-end1]
+        axs0[0][2].plot(s1_x,s1_y,c=discrete_viridis[s1_ind])
+        axs0[0][2].plot(e1_x,e1_y,c=discrete_viridis[e1_ind])
+        start2 = scales[s2_ind]/2
+        end2 = scales[e2_ind]/2
+        s2_x = [-start2,-start2,start2,start2,-start2]
+        s2_y = [-start2,start2,start2,-start2,-start2]
+        e2_x = [-end2,-end2,end2,end2,-end2]
+        e2_y = [-end2,end2,end2,-end2,-end2]
+        axs0[0][3].plot(s2_x,s2_y,c=discrete_viridis[s2_ind])
+        axs0[0][3].plot(e2_x,e2_y,c=discrete_viridis[e2_ind])
+
+    axs0[0][0].text(0.07,0.91,'A',transform=axs0[0][0].transAxes,size=12,weight="bold")
+    axs0[0][1].text(0.07,0.91,'B',transform=axs0[0][1].transAxes,size=12,weight="bold")
+    letters = ['E','F','G','H','I','J','K','L','M','N','O','P']
+    for i in range(len(axs2)):
+        axs2[i].text(0.05,0.89,letters[i],transform=axs2[i].transAxes,size=12,weight="bold")
+    axs0[0][2].text(0.06,0.87,'C',transform=axs0[0][2].transAxes,size=12,weight="bold")
+    axs0[0][3].text(0.08,0.85,'D',transform=axs0[0][3].transAxes,size=12,weight="bold")
         
 
 # -------- Running the simulation --------
