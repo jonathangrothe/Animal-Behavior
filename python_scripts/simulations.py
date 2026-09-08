@@ -17,7 +17,7 @@ initialx = np.zeros(nagents)
 initialy = np.zeros(nagents)
 for a in range(nagents):
     initialx[a] = 50
-    initialy[a] = 20
+    initialy[a] = 50
 initialxt = [25,75]
 initialyt = [75,75]
 
@@ -28,7 +28,7 @@ rEgoTarget = 0
 Egonumber = 1
 hColl = -10
 rColl = 0
-distf = 0
+distf = 1
 adistf = 1
 dt = 0.1
 v0 = 0.05
@@ -50,7 +50,7 @@ for i in range(N):
     
 
 
-allocentricFlag = 0
+allocentricFlag = 1
 h0s = [0.2]*ntargets
 h_b = 0.2
 sigma = 0.2
@@ -157,142 +157,29 @@ def sim_random_points(base,sample_size):
     #subfigs.suptitle("equal targs")
     plt.show()
 
-def run_sims(base,change,change_var,sample_size,traj,activity,ncol,nrow,fig_num):
+def run_sims(base,change,sample_size,traj,activity,ncol,nrow,fig_num):
     target_list, time_list, activity_list, x_list, y_list, headings_list, init_heading  = repeated_sims.sample_sims(base,change,sample_size,traj,activity)
-    phases = []
-    angles = []
-    bif_indices = []
     h0_list = change['h0']
-    '''
-    theor_angles = []
-    for item in h0_list:
-        sum_hs = sum(item)
-        print(f"bias from item 1: {item[0]/sum_hs*(np.pi/6)} item 2: {item[2]/sum_hs*(-np.pi/6)}")
-        angle = item[0]/sum_hs*(np.pi/6)+item[2]/sum_hs*(-np.pi/6) + np.pi/2
-        theor_angles.append(angle)
-    print(f"theoretical angles: {theor_angles}")
-    '''
-    for i in range(len(target_list)):
-        curr_activity = activity_list[i]
-        curr_headings = headings_list[i][0]
-        curr_xpos = x_list[i:(i+1)][0]
-        curr_ypos = y_list[i:(i+1)][0]
-        target = target_list[i]
-        indices = [0]
-        bifurcation_angles = [np.pi/2]
-        if target != -1:
-            indices, bifurcation_angles = sim_met.get_bifurcation_angle(curr_xpos,curr_ypos,curr_headings)
-        phase = sim_met.get_bump_type(curr_activity)
-        angles.append(bifurcation_angles)
-        bif_indices.append(indices)
-        phases.append(phase)
-
-    n_plots = len(change[change_var])
-    ncols = ncol
-    nrows = nrow
-    fig = plt.figure(layout='constrained',figsize=(12,5.5),num=fig_num)
-    subfigs = fig.subfigures(2,1, wspace=0.01,squeeze = False,height_ratios = [0.4,0.6])
-    axs0 = subfigs[0][0].subplots(1,4,squeeze=False)
+    n_plots = len(h0_list)
+    fig = plt.figure(layout='constrained',figsize=(ncol*10,nrow*5),num=fig_num)
+    subfigs = fig.subfigures(2,1, wspace=0.1)
+    axs0 = subfigs[0].subplots(nrow,ncol)
     #axs0 = axs0.flatten()
-    #axs1 = subfigs[2][0].subplots(1,2,squeeze=False)
-    axs2 = subfigs[1][0].subplots(2,6)
-    axs2 = axs2.flatten()
+    axs1 = subfigs[1].subplots(nrow,ncol)
+    #axs1 = axs1.flatten()
     grey_to_blue = ["#D3D3D3", "#A9A9A9", "#708090", "#4682B4", "#000080"]
     cmap = mcolors.LinearSegmentedColormap.from_list("GreyBlue", grey_to_blue)
-    start = 0
-    end = 0
-    starts = [320,320,333,339,341,343,351,355,357,361,367,372,377]
-    ends = [385,333,339,341,343,351,355,357,361,367,372,377,385]
-    scales = [0.7936949508178941,0.23694761438319745,0.04019928154785646,0.0003646965090453591,2.297071610257717e-06,2.899096784858557e-08,8.3162489517008e-07,0.00012495761202302447,1.166164592802943e-05,0.0027941730132425846,0.0748318750175585,0.2927372863376334]
-    viridis = plt.colormaps['viridis']
-    discrete_viridis = viridis.resampled(12)(np.linspace(0,1,12))
-    boundary = scales[0]/2+0.03
-    boundary2 = scales[3]/2+0.00003
-    axs0[0][2].set_xlim(-boundary,boundary)
-    axs0[0][2].set_ylim(-boundary,boundary)
-    axs0[0][3].set_xlim(-boundary2,boundary2)
-    axs0[0][3].set_ylim(-boundary2,boundary2)
-    axs0[0][2].set_xticks([-0.4,0.4])
-    axs0[0][2].set_yticks([-0.4,0.4])
-    axs0[0][3].set_xticks([-2e-4,2e-4])
-    axs0[0][3].set_yticks([-2e-4,2e-4])
-    axs0[0][2].tick_params(axis='both', labelsize=10)
-    axs0[0][3].tick_params(axis='both', labelsize=10)
-    base_x = 50.74152911899337
-    base_y = 53.1007457764417
-    total_zoom_boundary = 1.2321005145871098/2
-    x1 = base_x - total_zoom_boundary
-    x2 = base_x + total_zoom_boundary
-    y1 = base_y - total_zoom_boundary
-    y2 = base_y + total_zoom_boundary
-    square_x = [x1,x1,x2,x2,x1]
-    square_y = [y1,y2,y2,y1,y1]
-    axs0[0][0].plot(square_x,square_y,c=discrete_viridis[0])
-    fmt = ScalarFormatter(useOffset=True)
-    fmt.set_powerlimits((-3, 4))
     for s in range(n_plots):
-        if s == 0:
-            sim_met.plot_traj(x_list[s*sample_size:(s+1)*sample_size],y_list[s*sample_size:(s+1)*sample_size],initialxt,initialyt,sample_size,axs0[0][0],False,[],start,end)
-            axs0[0][0].tick_params(axis='both', labelsize=8)
-        else:
-            prev_scale = 0
-            for b in range(len(starts)):
-                st = starts[b]
-                en = ends[b]
-                print(f"start: {st}, end: {en}")
-                if b == 0:
-                    sim_met.plot_traj(x_list[s*sample_size:(s+1)*sample_size],y_list[s*sample_size:(s+1)*sample_size],initialxt,initialyt,sample_size,axs0[0][1],False,[],st,en)
-                    axs0[0][1].tick_params(axis='both', labelsize=8)
-                else:
-                    axs2[b-1].xaxis.set_major_formatter(fmt)
-                    axs2[b-1].yaxis.set_major_formatter(fmt)
-                    sim_met.plot_traj(x_list[s*sample_size:(s+1)*sample_size],y_list[s*sample_size:(s+1)*sample_size],initialxt,initialyt,sample_size,axs2[b-1],False,[],st,en,True,discrete_viridis[b-1])
-                    axs2[b-1].tick_params(axis='both', labelsize=5)
-
-        #theor_angle = theor_angles[s]
-        #x2 = 50 + 30 * np.cos(theor_angle)
-        #y2 = 50 + 30 * np.sin(theor_angle)
-        #axs0[s].plot([50, x2], [50, y2], color='green', linewidth=2, linestyle = '--')
-        #axs0[s].set_title(f"sigma: {round(sigma_list[s],4)}")
-        #axs0[s].set_aspect('equal', adjustable='box')
+        sim_met.plot_traj(x_list[s*sample_size:(s+1)*sample_size],y_list[s*sample_size:(s+1)*sample_size],initialxt,initialyt,sample_size,axs0,False,[],0,0)
         target_list_sample = target_list[s*sample_size:(s+1)*sample_size]
         n_better = target_list_sample.count(1)
         print(f"probability of reaching right target: {n_better/sample_size}")
-
         ind = s*sample_size
         sim_activity = activity_list[ind]
         col_min = np.min(sim_activity[:,-5])
         col_max = np.max(sim_activity[:,-5])
-        #axs1[s].imshow(sim_activity,cmap=cmap,aspect='auto',vmin=col_min,vmax=col_max)
-    for p in range(3):
-        s1_ind = p
-        e1_ind = -(p+1)
-        s2_ind = p+3
-        e2_ind = -(p+4)
-        start1 = scales[s1_ind]/2
-        end1 = scales[e1_ind]/2
-        s1_x = [-start1,-start1,start1,start1,-start1]
-        s1_y = [-start1,start1,start1,-start1,-start1]
-        e1_x = [-end1,-end1,end1,end1,-end1]
-        e1_y = [-end1,end1,end1,-end1,-end1]
-        axs0[0][2].plot(s1_x,s1_y,c=discrete_viridis[s1_ind])
-        axs0[0][2].plot(e1_x,e1_y,c=discrete_viridis[e1_ind])
-        start2 = scales[s2_ind]/2
-        end2 = scales[e2_ind]/2
-        s2_x = [-start2,-start2,start2,start2,-start2]
-        s2_y = [-start2,start2,start2,-start2,-start2]
-        e2_x = [-end2,-end2,end2,end2,-end2]
-        e2_y = [-end2,end2,end2,-end2,-end2]
-        axs0[0][3].plot(s2_x,s2_y,c=discrete_viridis[s2_ind])
-        axs0[0][3].plot(e2_x,e2_y,c=discrete_viridis[e2_ind])
+        axs1.imshow(sim_activity,cmap=cmap,aspect='auto',vmin=col_min,vmax=col_max)
 
-    axs0[0][0].text(0.07,0.91,'A',transform=axs0[0][0].transAxes,size=12,weight="bold")
-    axs0[0][1].text(0.07,0.91,'B',transform=axs0[0][1].transAxes,size=12,weight="bold")
-    letters = ['E','F','G','H','I','J','K','L','M','N','O','P']
-    for i in range(len(axs2)):
-        axs2[i].text(0.05,0.89,letters[i],transform=axs2[i].transAxes,size=12,weight="bold")
-    axs0[0][2].text(0.06,0.87,'C',transform=axs0[0][2].transAxes,size=12,weight="bold")
-    axs0[0][3].text(0.08,0.85,'D',transform=axs0[0][3].transAxes,size=12,weight="bold")
         
 
 # -------- Running the simulation --------
@@ -336,8 +223,8 @@ plot_neurons = True
 plot_trajs = True
 sample_size = 1
 #h0_first = np.linspace(0.275,0.371,num=6)
-h0_list = [[0.25,0.255],[0.25,0.255]]
-sigma_list = [0.4]*2
+h0_list = [[0.25,0.255]]
+sigma_list = [0.4]
 #u0_list = [10*u0,2*u0,u0,u0*0.5,u0*0.1]
 #beta_list = [300,100,60,25,10]
 #v0_list = [0.1,0.2,0.3,0.4,0.5,0.6]
@@ -352,9 +239,9 @@ change = {'sigma':sigma_list, 'h0':h0_list}
 
 #run_sims(base,change,'h0',sample_size,plot_trajs,plot_neurons,4,1,1)
 
-run_sims(base,change,'sigma',sample_size,plot_trajs,plot_neurons,2,2,1)
+#run_sims(base,change,sample_size,plot_trajs,plot_neurons,1,1,1)
 #base['distf'] = 0
-#sim_random_points(base,1)
+sim_random_points(base,1)
 
 
 plt.show()

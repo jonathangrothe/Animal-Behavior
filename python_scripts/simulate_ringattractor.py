@@ -7,7 +7,7 @@ import matplotlib.animation as animation
 # ---------- Simulation code!! ----------
 def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag,rEgo,rEgoTarget,Egonumber,
                             distf,adistf,J,beta,h0,h_b,dt,v0,v0t,sigma,hColl,rColl,
-                            initialx,initialy,initialxt,initialyt,u0,plot,stop,seed=False,factor=0.2,stopping_dist=0.1,video=False):
+                            initialx,initialy,initialxt,initialyt,u0,plot,stop,seed=False,factor=0.2,stopping_dist=0.1,video=True):
     '''
     The code to run a single simulation of the ring attractor model. 
     Designed to work with any number of agents but so far I've only really focused on one agent, which impacts stopping distance and v0 right now. 
@@ -391,7 +391,7 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
                         fig.suptitle(f"t={t[frame]}")
                         return list(lines.values()) + [traj_line]
                     ani = animation.FuncAnimation(fig, update, frames=tstep-1, interval=20, blit=False)
-                    ani.save(f"example_animation_ego.mp4", writer='ffmpeg', fps=50, dpi=150)
+                    ani.save(f"ego_failure_animation.mp4", writer='ffmpeg', fps=50, dpi=150)
                 return headings, xPos, yPos, targetXPos, targetYPos, uArray, first_heading
             
         if plot == True:
@@ -408,7 +408,12 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
         x = np.arange(100)
         t = np.arange(tstep-1) 
         #fig, axes = plt.subplots(1,2,layout='constrained',figsize=(12,8),num=4)
-        fig = plt.figure(layout='constrained',figsize=(12,8),num=4)
+        add = 0
+        if adistf == 1:
+            add = 1
+        if adistf == 10:
+            add = 2
+        fig = plt.figure(layout='constrained',figsize=(12,8),num=4+add)
         subfigs = fig.subfigures(1,2, wspace=0.1)
         sf0 = subfigs[0]
         sf1 = subfigs[1]
@@ -439,6 +444,11 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
             fig.suptitle(f"t={t[frame]}")
             return list(lines.values()) + [traj_line]
         ani = animation.FuncAnimation(fig, update, frames=tstep-1, interval=10, blit=False)
-        ani.save(f"example_animation_ego.mp4", writer='ffmpeg', fps=100, dpi=150)
+        if adistf == 0:
+            ani.save(f"tentarg_nodd_cont.mp4", writer='ffmpeg', fps=100, dpi=150)
+        if adistf == 1:
+            ani.save(f"tentarg_dd_cont.mp4", writer='ffmpeg', fps=100, dpi=150)
+        if adistf == 10:
+            ani.save(f"tentarg_extremedd_cont.mp4", writer='ffmpeg', fps=100, dpi=150)
     return headings, xPos, yPos, targetXPos, targetYPos, uArray, first_heading
 
