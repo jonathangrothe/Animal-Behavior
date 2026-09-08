@@ -16,8 +16,8 @@ initialy = np.zeros(nagents)
 for a in range(nagents):
     initialx[a] = 50
     initialy[a] = 20
-initialxt = [25,75]
-initialyt = [75,75]
+initialxt = [35,50,65]
+initialyt = [20+15*np.sqrt(3),50,20+15*np.sqrt(3)]
 
 T = 5000
 periodicflag = 0

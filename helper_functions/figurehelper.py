@@ -73,77 +73,26 @@ def get_heading(act):
     print(f"cx: {cx0}, cy: {cy0}, heading: {heading}")
     return heading
 
-x1 = 50
-y1 = 15
-#x2 = 50
-#y2 = 20
-d1 = np.sqrt(25**2+25**2)
-d2 = np.sqrt(10**2+25**2)
-t1_ang_1 = np.atan2(targ_y[0]-y1,targ_x[0]-x1)
-t2_ang_1 = np.atan2(targ_y[1]-y1,targ_x[1]-x1)
-#t1_ang_2 = np.atan2(targ_y[0]-y2,targ_x[0]-x2)
-#t2_ang_2 = np.atan2(targ_y[1]-y2,targ_x[1]-x2)
 
-extern = get_activity(ampl_ext,s,[t1_ang_1,t2_ang_1],N,0)
-init_large = get_activity(ampl_large,s,[t1_ang_1,t2_ang_1],N,0) - 0.2
-next_step_large = one_step(init_large,extern)
-init_small = get_activity(ampl_small,s,[t1_ang_1,t2_ang_1],N,0) - 0.2
-next_step_small = one_step(init_small,extern)
+plt.figure(1)
+setup_x = [50,50]
+setup_y = [20,50]
+x_120 = [50-15*np.sqrt(3),50+15*np.sqrt(3)]
+y_120 = [5,5]
+x_90 = [20,80]
+y_90 = [20,20]
+x_60 = [50-15*np.sqrt(3),50+15*np.sqrt(3)]
+y_60 = [35,35]
+x_30 = [35,65]
+y_30 = [20+15*np.sqrt(3),20+15*np.sqrt(3)]
 
-init_large_heading = get_heading(init_large)
-il_x2 = x1 + 5*np.cos(init_large_heading)
-il_y2 = y1 + 5*np.sin(init_large_heading)
-
-post_large_heading = get_heading(next_step_large)
-pl_x2 = x1 + 5*np.cos(post_large_heading)
-pl_y2 = y1 + 5*np.sin(post_large_heading)
-
-init_small_heading = get_heading(init_small)
-is_x2 = x1 + 5*np.cos(init_small_heading)
-is_y2 = y1 + 5*np.sin(init_small_heading)
-
-post_small_heading = get_heading(next_step_small)
-ps_x2 = x1 + 5*np.cos(post_small_heading)
-ps_y2 = y1 + 5*np.sin(post_small_heading)
+plt.scatter(setup_x,setup_y,c='black')
+plt.scatter(x_120,y_120,c='red')
+plt.scatter(x_90,y_90,c='green')
+plt.scatter(x_60,y_60,c='blue')
+plt.scatter(x_30,y_30,c='purple')
 
 
-# one plot, 2 subplots
-fig = plt.figure(layout='constrained',figsize=(10,5))
-subfigs = fig.subfigures(2,3, wspace=0.1)
-sf0 = subfigs[0][0]
-ax0 = sf0.subplots(2,1)
-ax0[0].plot(init_large)
-ax0[0].set_title("initial activity, large")
-ax0[1].plot(next_step_large)
-#ax0[2].plot(activity1-activity2)
-sf1 = subfigs[0][1]
-ax1 = sf1.subplots(3,1)
-ax1[0].plot(fAct(init_large,beta))
-ax1[1].plot(fAct(next_step_large,beta))
-ax1[2].plot(fAct(next_step_large,beta)-fAct(init_large,beta))
-
-sf2 = subfigs[1][0]
-ax2 = sf2.subplots(2,1)
-ax2[0].plot(init_small)
-ax2[1].plot(next_step_small)
-#ax2[2].plot(activity_lower1-activity_lower2)
-sf3 = subfigs[1][1]
-ax3 = sf3.subplots(3,1)
-ax3[0].plot(fAct(init_small,beta))
-ax3[1].plot(fAct(next_step_small,beta))
-ax3[2].plot(fAct(next_step_small,beta)-fAct(init_small,beta))
-
-sf4 = subfigs[0][2]
-ax4 = sf4.subplots(1,1)
-ax4.scatter(targ_x,targ_y,c='red')
-ax4.arrow(x1,y1,il_x2-x1,il_y2-y1,width=0.005,head_width=0.4,head_length=0.2,color='blue')
-ax4.arrow(x1,y1,pl_x2-x1,pl_y2-y1,width=0.005,head_width=0.4,head_length=0.2,color='green')
-
-sf5 = subfigs[1][2]
-ax5 = sf5.subplots(1,1)
-ax5.scatter(targ_x,targ_y,c='red')
-ax5.arrow(x1,y1,is_x2-x1,is_y2-y1,width=0.005,head_width=0.4,head_length=0.2,color='blue')
-ax5.arrow(x1,y1,ps_x2-x1,ps_y2-y1,width=0.005,head_width=0.4,head_length=0.2,color='green')
 
 
 plt.show()

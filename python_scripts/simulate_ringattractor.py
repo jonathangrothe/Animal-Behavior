@@ -355,12 +355,12 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
                     x = np.arange(100)
                     t = np.arange(tstep-1) 
                     #fig, axes = plt.subplots(1,2,layout='constrained',figsize=(12,8),num=4)
-                    num = 4
-                    if adistf == 1:
-                        num = 5
-                    if adistf == 10:
-                        num = 6
-                    fig = plt.figure(layout='constrained',figsize=(12,8),num=num)
+                    add = 0
+                    if h0[0] == 0.25:
+                        add = 1
+                    if h0[0] == 0.3:
+                        add = 2
+                    fig = plt.figure(layout='constrained',figsize=(12,8),num=4+add)
                     subfigs = fig.subfigures(1,2, wspace=0.1)
                     sf0 = subfigs[0]
                     sf1 = subfigs[1]
@@ -381,7 +381,7 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
                             ax.set_ylim(arr.min(), arr.max()+0.05)
                         else:
                             ax.set_xlim(x.min(), x.max())
-                            ax.set_ylim(-0.3, 0.3)
+                            ax.set_ylim(-0.1, 0.1)
                         ax.set_title(name)
                     fig.suptitle("t = 0")
                     def update(frame):
@@ -391,7 +391,12 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
                         fig.suptitle(f"t={t[frame]}")
                         return list(lines.values()) + [traj_line]
                     ani = animation.FuncAnimation(fig, update, frames=tstep-1, interval=20, blit=False)
-                    ani.save(f"ego_failure_animation.mp4", writer='ffmpeg', fps=50, dpi=150)
+                    if h0[0] == 0.225:
+                        ani.save(f"threetarg_outer.mp4", writer='ffmpeg', fps=100, dpi=150)
+                    if h0[0] == 0.25:
+                        ani.save(f"threetarg_ellip.mp4", writer='ffmpeg', fps=100, dpi=150)
+                    if h0[0] == 0.3:
+                        ani.save(f"threetarg_str.mp4", writer='ffmpeg', fps=100, dpi=150)
                 return headings, xPos, yPos, targetXPos, targetYPos, uArray, first_heading
             
         if plot == True:
@@ -409,9 +414,9 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
         t = np.arange(tstep-1) 
         #fig, axes = plt.subplots(1,2,layout='constrained',figsize=(12,8),num=4)
         add = 0
-        if adistf == 1:
+        if h0[0] == 0.25:
             add = 1
-        if adistf == 10:
+        if h0[0] == 0.3:
             add = 2
         fig = plt.figure(layout='constrained',figsize=(12,8),num=4+add)
         subfigs = fig.subfigures(1,2, wspace=0.1)
@@ -444,11 +449,11 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
             fig.suptitle(f"t={t[frame]}")
             return list(lines.values()) + [traj_line]
         ani = animation.FuncAnimation(fig, update, frames=tstep-1, interval=10, blit=False)
-        if adistf == 0:
-            ani.save(f"tentarg_nodd_cont.mp4", writer='ffmpeg', fps=100, dpi=150)
-        if adistf == 1:
-            ani.save(f"tentarg_dd_cont.mp4", writer='ffmpeg', fps=100, dpi=150)
-        if adistf == 10:
-            ani.save(f"tentarg_extremedd_cont.mp4", writer='ffmpeg', fps=100, dpi=150)
+        if h0[0] == 0.225:
+            ani.save(f"threetarg_outer.mp4", writer='ffmpeg', fps=100, dpi=150)
+        if h0[0] == 0.25:
+            ani.save(f"threetarg_ellip.mp4", writer='ffmpeg', fps=100, dpi=150)
+        if h0[0] == 0.3:
+            ani.save(f"threetarg_str.mp4", writer='ffmpeg', fps=100, dpi=150)
     return headings, xPos, yPos, targetXPos, targetYPos, uArray, first_heading
 

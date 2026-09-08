@@ -408,7 +408,6 @@ def plot_traj(xPos,yPos,targetsx,targetsy,sample_size,figure,plot_dec_point=Fals
     '''
     if end_ind == 0:
         for sample in range(sample_size):
-            print(f"xpos shape: {np.shape(xPos)}")
             figure.plot(xPos[sample][start_ind:],yPos[sample][start_ind:],color='blue',alpha=0.5/sample_size)
             if plot_dec_point:
                 dec_time = dec_points[sample]

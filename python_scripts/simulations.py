@@ -11,15 +11,15 @@ from matplotlib.ticker import ScalarFormatter
 
 
 L = 100
-ntargets = 2
+ntargets = 3
 nagents = 1
 initialx = np.zeros(nagents)
 initialy = np.zeros(nagents)
 for a in range(nagents):
     initialx[a] = 50
-    initialy[a] = 50
-initialxt = [25,75]
-initialyt = [75,75]
+    initialy[a] = 20
+initialxt = [50-15*np.sqrt(3),50,50+15*np.sqrt(3)]
+initialyt = [35,50,35]
 
 T = 5000
 periodicflag = 0
@@ -28,7 +28,7 @@ rEgoTarget = 0
 Egonumber = 1
 hColl = -10
 rColl = 0
-distf = 1
+distf = 0
 adistf = 1
 dt = 0.1
 v0 = 0.05
@@ -164,13 +164,13 @@ def run_sims(base,change,sample_size,traj,activity,ncol,nrow,fig_num):
     fig = plt.figure(layout='constrained',figsize=(ncol*10,nrow*5),num=fig_num)
     subfigs = fig.subfigures(2,1, wspace=0.1)
     axs0 = subfigs[0].subplots(nrow,ncol)
-    #axs0 = axs0.flatten()
+    axs0 = axs0.flatten()
     axs1 = subfigs[1].subplots(nrow,ncol)
-    #axs1 = axs1.flatten()
+    axs1 = axs1.flatten()
     grey_to_blue = ["#D3D3D3", "#A9A9A9", "#708090", "#4682B4", "#000080"]
     cmap = mcolors.LinearSegmentedColormap.from_list("GreyBlue", grey_to_blue)
     for s in range(n_plots):
-        sim_met.plot_traj(x_list[s*sample_size:(s+1)*sample_size],y_list[s*sample_size:(s+1)*sample_size],initialxt,initialyt,sample_size,axs0,False,[],0,0)
+        sim_met.plot_traj(x_list[s*sample_size:(s+1)*sample_size],y_list[s*sample_size:(s+1)*sample_size],initialxt,initialyt,sample_size,axs0[s],False,[],0,0)
         target_list_sample = target_list[s*sample_size:(s+1)*sample_size]
         n_better = target_list_sample.count(1)
         print(f"probability of reaching right target: {n_better/sample_size}")
@@ -178,7 +178,7 @@ def run_sims(base,change,sample_size,traj,activity,ncol,nrow,fig_num):
         sim_activity = activity_list[ind]
         col_min = np.min(sim_activity[:,-5])
         col_max = np.max(sim_activity[:,-5])
-        axs1.imshow(sim_activity,cmap=cmap,aspect='auto',vmin=col_min,vmax=col_max)
+        axs1[s].imshow(sim_activity,cmap=cmap,aspect='auto',vmin=col_min,vmax=col_max)
 
         
 
@@ -223,8 +223,8 @@ plot_neurons = True
 plot_trajs = True
 sample_size = 1
 #h0_first = np.linspace(0.275,0.371,num=6)
-h0_list = [[0.25,0.255]]
-sigma_list = [0.4]
+h0_list = [[0.225,0.225,0.225],[0.25,0.25,0.25],[0.3,0.3,0.3]]
+sigma_list = [0.2,0.2,0.2]
 #u0_list = [10*u0,2*u0,u0,u0*0.5,u0*0.1]
 #beta_list = [300,100,60,25,10]
 #v0_list = [0.1,0.2,0.3,0.4,0.5,0.6]
@@ -239,9 +239,9 @@ change = {'sigma':sigma_list, 'h0':h0_list}
 
 #run_sims(base,change,'h0',sample_size,plot_trajs,plot_neurons,4,1,1)
 
-#run_sims(base,change,sample_size,plot_trajs,plot_neurons,1,1,1)
+run_sims(base,change,sample_size,plot_trajs,plot_neurons,3,1,1)
 #base['distf'] = 0
-sim_random_points(base,1)
+#sim_random_points(base,1)
 
 
 plt.show()
