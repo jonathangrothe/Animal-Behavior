@@ -17,7 +17,7 @@ initialx = np.zeros(nagents)
 initialy = np.zeros(nagents)
 for a in range(nagents):
     initialx[a] = 50
-    initialy[a] = 50
+    initialy[a] = 0
 initialxt = [50-15*np.sqrt(3),50,50+15*np.sqrt(3)]
 initialyt = [35,50,35]
 
@@ -67,184 +67,103 @@ def sim_random_points(base,sample_size):
     # it would be a lot easier to gaurantee that they're all approximately different angles from the start point
     # eventually we will need to be able to calculate how points are aggregated
     start_time = time.perf_counter()
-    dd_reach = []
-    nodd_reach = []
-    same_t_list = []
-    n_samples = 1000
+    n_samples = 1
     for s in range(n_samples):
         xpoints = []
         ypoints = []
         angles = []
         dists = []
-        rng = np.random.default_rng()
+        rng = np.random.default_rng(seed=66)
         ntarg = 10
         while len(xpoints) < ntarg:
             angle = rng.uniform(0,2*np.pi)
             dist = rng.uniform(5,25)
             cand_x = 50+dist*np.cos(angle)
             cand_y = 50+dist*np.sin(angle)
+            stop = False
             for comp_x,comp_y in zip(xpoints,ypoints):
                 true_dist = np.sqrt((comp_x-cand_x)**2+(comp_y-cand_y)**2)
-                #print(true_dist)
+                print(true_dist)
                 if true_dist < 5:
-                    break
-                
-            angles.append(angle)
-            dists.append(dist)
-            xpoints.append(cand_x)
-            ypoints.append(cand_y)
+                    stop = True
+            if not stop: 
+                angles.append(angle)
+                dists.append(dist)
+                xpoints.append(cand_x)
+                ypoints.append(cand_y)
         furthest = 3
         #print(f"furthest dist: {dists[furthest]}, x:{xpoints[furthest]}, y:{ypoints[furthest]}")
-        h0_list = [0.25]*ntarg
+        h0_list = [0.35]*ntarg
         base['h0'] = h0_list
         base['initialxt'] = xpoints
         base['initialyt'] = ypoints
         base['ntargets'] = ntarg
-        n_trajpoints = 101
+        n_trajpoints = 201
+        n_trajpoints_show = 51
         traj_factor = L/(n_trajpoints-1)
+        traj_factor_show = L/(n_trajpoints_show-1)
         grid_angles = helpers.trajectory_grid(xpoints,ypoints,n_trajpoints,1,0)
-        #subfigs, ax1 = plt.subplots(nrows=2,ncols=2,layout='constrained',figsize=(12,12),num=s*2+1)
-        #ax1 = ax1.flatten()
+        grid_angles_show = helpers.trajectory_grid(xpoints,ypoints,n_trajpoints_show,1,0)
+        fig_init = plt.figure(layout='constrained',figsize = (20,5.5),num=s+1)
+        subfigs_init = fig_init.subfigures(1,3,squeeze=False,width_ratios = [0.3,0.4,0.3])
+        axs1 = subfigs_init[0][0].subplots(1,3)
+        axs2 = subfigs_init[0][1].subplots(3,1)
+        axs3 = subfigs_init[0][2].subplots(1,1)
         #fig2, ax2 = plt.subplots(figsize = (8,8),num=s*2+2)
         #for x,y in zip(xpoints,ypoints):
             #print(f"point: ({x,y})")
         #sigma_list = [0.05,0.1,0.2,0.4]
         #h0_lists = [[0.15]*10,[0.2]*10,[0.25]*10,[0.3]*10]
-        distf_list = [0,1]
-        adistf_list = [0,1]
+        distf_list = [0,1,1]
+        adistf_list = [0,1,3]
         #rEgoTarget_list = [0,0,3.5,3.5]
         change_random = {'distf':distf_list,
                          'adistf':adistf_list}
         target_list, time_list, activity_list, x_list, y_list, headings_list, init_heading  = repeated_sims.sample_sims(base,change_random,sample_size,True,True)
-        ndd_final_x = x_list[0][-1]
-        ndd_final_y = y_list[0][-1]
-        trav_ndd = np.sqrt((50-ndd_final_x)**2+ndd_final_y**2)
-        dd_final_x = x_list[1][-1]
-        dd_final_y = y_list[1][-1]
-        trav_dd = np.sqrt((50-dd_final_x)**2+dd_final_y**2)
-        print(f"total travel ndd: {trav_ndd}, total travel dd: {trav_dd}")
-        reach_nodd = 1 if target_list[0] > 0 else 0
-        reach_dd = 1 if target_list[1] > 0 else 0
-        same_t = -1
-        if reach_nodd == 1 and reach_dd == 1:
-            if target_list[0] == target_list[1]:
-                same_t = 1
-            else:
-                same_t = 0
-        nodd_reach.append(target_list[0]>0)
-        dd_reach.append(target_list[1]>0)
-        same_t_list.append(same_t)
         base['h0'] = h0_list
-        '''
-        for g in range(n_trajpoints**2):
-            base_x = g % n_trajpoints * traj_factor
-            base_y = g // n_trajpoints * traj_factor
-            gr_x2 = base_x + 0.5*np.cos(grid_angles[g]) * traj_factor
-            gr_y2 = base_y + 0.5*np.sin(grid_angles[g]) * traj_factor
-            ax2.arrow(base_x,base_y,gr_x2-base_x,gr_y2-base_y,width=0.005,head_width=0.4,head_length=0.2,color='green')
+
+        for g in range(n_trajpoints_show**2):
+            base_x = g % n_trajpoints_show * traj_factor_show
+            base_y = g // n_trajpoints_show * traj_factor_show
+            gr_x2 = base_x + 0.5*np.cos(grid_angles_show[g]) * traj_factor_show
+            gr_y2 = base_y + 0.5*np.sin(grid_angles_show[g]) * traj_factor_show
+            axs3.arrow(base_x,base_y,gr_x2-base_x,gr_y2-base_y,width=0.005,head_width=0.4,head_length=0.2,color='green')
+            axs3.set_aspect('equal')
+            
         
         # plotting expected (approximate) trajectory on top of the grid
         xs = [initialx[0]]
         ys = [initialy[0]]
         start_x = initialx[0]
         start_y = initialy[0]
-        for p in range(10000):
+        for p in range(20000):
             closest_x = round(start_x/traj_factor)
             closest_y = round(start_y/traj_factor)
             ind = (closest_y+1) * n_trajpoints + closest_x+1
-            next_x = 0.005*np.cos(grid_angles[ind]) + start_x
-            next_y = 0.005*np.sin(grid_angles[ind]) + start_y 
+            next_x = 0.01*np.cos(grid_angles[ind]) + start_x
+            next_y = 0.01*np.sin(grid_angles[ind]) + start_y 
             xs.append(next_x)
             ys.append(next_y)
             start_x = next_x
             start_y = next_y
         #print(f"diffs for combo: {np.array([np.diff(xs_combi),np.diff(ys_combi)])}")
-        ax2.plot(xs,ys,c='red')
+        #ax2.plot(xs,ys,c='red')
         
         for sig in range(len(distf_list)):
             x_settings = x_list[sig*sample_size:(sig+1)*sample_size]
             y_settings = y_list[sig*sample_size:(sig+1)*sample_size]
-            sim_met.plot_traj(x_settings,y_settings,xpoints,ypoints,sample_size,ax1[sig*2])
-            #ax1[sig*2].plot(xs,ys,c='red',linestyle='--')
-            if sig == 0:
-                ax1[sig*2].set_title("No distance dependence")
-            if sig == 1:
-                ax1[sig*2].set_title("Normal distance dependence")
-            if sig == 2:
-                ax1[sig*2].set_title("Extreme distance dependence")
-            if sig == 3:
-                ax1[sig*2].set_title("Distance dependent, ego switch within 3.5 units")
+            axs1[sig].set_aspect('equal')
+            sim_met.plot_traj(x_settings,y_settings,xpoints,ypoints,sample_size,axs1[sig])
+            axs1[sig].plot(xs,ys,c='red')
             ind = sig*sample_size
             sim_activity = activity_list[ind]
-            ax1[sig*2+1].imshow(sim_activity,aspect='auto')
-        '''
-    #subfigs.suptitle("equal targs")
+            axs2[sig].imshow(sim_activity,aspect='auto')
     #plt.show()
-    num_ndd_reach = nodd_reach.count(1)
-    num_dd_reach = dd_reach.count(1)
-    p_ndd_reach = num_ndd_reach/n_samples
-    p_dd_reach = num_dd_reach/n_samples
-    num_same_t = same_t_list.count(1)
-    num_not_same_t = same_t_list.count(0)
-    p_same_t = num_same_t/(num_same_t+num_not_same_t)
-    p_both_reach = (num_same_t+num_not_same_t)/n_samples
-
-    indices_reach_ndd = [i for i, x in enumerate(nodd_reach) if x == 1]
-    indices_noreach_ndd = [i for i, x in enumerate(nodd_reach) if x == 0]
-    indices_reach_dd = [i for i, x in enumerate(dd_reach) if x == 1]
-    indices_noreach_dd = [i for i, x in enumerate(dd_reach) if x == 0]
-
-    dd_givenreach_ndd =  [dd_reach[i] for i in indices_reach_ndd]
-    dd_givennoreach_ndd = [dd_reach[i] for i in indices_noreach_ndd]
-    ndd_givenreach_dd = [nodd_reach[i] for i in indices_reach_dd]
-    ndd_givennoreach_dd = [nodd_reach[i] for i in indices_noreach_dd]
-
-    prob_reachdd_given_reachndd = dd_givenreach_ndd.count(1)/len(dd_givenreach_ndd)
-    prob_reachdd_given_noreachndd = dd_givennoreach_ndd.count(1)/len(dd_givennoreach_ndd)
-    prob_reachnodd_given_reachdd = ndd_givenreach_dd.count(1)/len(ndd_givenreach_dd)
-    prob_reachnodd_given_noreachdd = ndd_givennoreach_dd.count(1)/len(ndd_givennoreach_dd)
-
-    print(f"probability of reaching with no distance dependence: {p_ndd_reach}")
-    print(f"probability of reaching with distance dependence: {p_dd_reach}")
-    print(f"probability of both reaching a target: {p_both_reach}")
-    print(f"probability of both reaching the same target given both reach a target: {p_same_t}")
-
-    print(f"P(reach with dd|reach no dd): {prob_reachdd_given_reachndd}")
-    print(f"P(reach with dd|doesn't reach no dd): {prob_reachdd_given_noreachndd}")
-    print(f"P(reach with no dd|reach dd): {prob_reachnodd_given_reachdd}")
-    print(f"P(reach with no dd|doesn't reach dd): {prob_reachnodd_given_noreachdd }")
-
-
-
-    p_matrix = np.array([[p_ndd_reach,0,0,(p_ndd_reach-p_both_reach)],
-                         [0,p_dd_reach,0,(p_dd_reach-p_both_reach)],
-                         [0,0,p_same_t*p_both_reach,0],
-                         [0,0,(p_both_reach-p_same_t*p_both_reach),0],
-                         [0,0,0,((1-p_both_reach)-(p_ndd_reach-p_both_reach)-(p_dd_reach-p_both_reach))]])
-    x = np.arange(4)
-    width=0.5
-    outcomes = ["reaches w/o dd", "reaches w/ dd", "reaches same target", "reach different targets", "fails both ways"]
-    base_color = ["#c25fc4","#e8f92e","#26da65","#1a5f2c","#ED5252"]
-
-    fig, ax = plt.subplots()
-    bottoms = np.array([[0,0,0,0],[0,0,0,(p_ndd_reach-p_both_reach)],[0,0,0,0],[0,0,p_same_t*p_both_reach,0],[0,0,0,(p_ndd_reach-p_both_reach)+(p_dd_reach-p_both_reach)]])
-    #hatches = ['X','','/','']
-    for i, outcome_probs in enumerate(p_matrix):
-        print(f"outcome_probs: {outcome_probs}")
-        ax.bar(
-            x, 
-            outcome_probs, 
-            width, 
-            bottom=bottoms[i], 
-            label=outcomes[i],
-            color=base_color[i], 
-            edgecolor='black',
-            linewidth=0.8,
-            #hatch = hatches[i]
-        )
-    ax.set_xticks(x)
-    ax.set_xticklabels(["success: no dd","success: dd","both reach","one or both fail"])
-    ax.legend(title='Outcomes')
+        axs1[0].text(-0.1,1.05,'A',transform=axs1[0].transAxes,size=14,weight="bold")
+        axs1[1].text(-0.1,1.05,'B',transform=axs1[1].transAxes,size=14,weight="bold")
+        axs2[0].text(-0.1,1.05,'C',transform=axs2[0].transAxes,size=14,weight="bold")
+        axs2[1].text(-0.1,1.05,'D',transform=axs2[1].transAxes,size=14,weight="bold")
+        axs3.text(-0.1,1.05,'E',transform=axs3.transAxes,size=14,weight="bold")
     plt.show()
     end_time = time.perf_counter()
     print(f"total time: {end_time-start_time}")
@@ -276,9 +195,9 @@ def run_sims(base,change,sample_size,traj,activity,ncol,nrow,fig_num):
 
 # -------- Running the simulation --------
 np.random.seed(24)
-u0_rand = 0.2*np.random.randn(N,1) 
+#u0_rand = 0.2*np.random.randn(N,1) 
 #u0_rand2 = 2*np.random.randn(N,1)
-#u0 = np.zeros((N,1))
+u0_rand = np.zeros((N,1))
 #u0[5:31] = 0.2
 #u0[0:26] = 0.2
 base = {'N':N,
@@ -309,6 +228,7 @@ base = {'N':N,
         'sigma':sigma,
         'beta':beta,
         'u0':u0_rand,
+        'seed':True,
         'factor':0.2}
 
 plot_neurons = True

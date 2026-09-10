@@ -7,7 +7,7 @@ import matplotlib.animation as animation
 # ---------- Simulation code!! ----------
 def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag,rEgo,rEgoTarget,Egonumber,
                             distf,adistf,J,beta,h0,h_b,dt,v0,v0t,sigma,hColl,rColl,
-                            initialx,initialy,initialxt,initialyt,u0,plot,stop,seed=False,factor=0.2,stopping_dist=0.1,video=False):
+                            initialx,initialy,initialxt,initialyt,u0,plot,stop,seed=False,factor=0.2,stopping_dist=0.1,video=True):
     '''
     The code to run a single simulation of the ring attractor model. 
     Designed to work with any number of agents but so far I've only really focused on one agent, which impacts stopping distance and v0 right now. 
@@ -356,8 +356,10 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
                     t = np.arange(tstep-1) 
                     #fig, axes = plt.subplots(1,2,layout='constrained',figsize=(12,8),num=4)
                     add = 0
-                    if distf == 1:
+                    if adistf == 1:
                         add = 1
+                    if adistf > 1:
+                        add = 2
                     fig = plt.figure(layout='constrained',figsize=(12,8),num=4+add)
                     subfigs = fig.subfigures(1,2, wspace=0.1)
                     sf0 = subfigs[0]
@@ -389,10 +391,12 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
                         fig.suptitle(f"t={t[frame]}")
                         return list(lines.values()) + [traj_line]
                     ani = animation.FuncAnimation(fig, update, frames=tstep-1, interval=20, blit=False)
-                    if distf == 0:
-                        ani.save(f"starting_outside_nodd.mp4", writer='ffmpeg', fps=100, dpi=150)
-                    if distf == 1:
-                        ani.save(f"starting_outside_dd.mp4", writer='ffmpeg', fps=100, dpi=150)
+                    if adistf == 0:
+                        ani.save(f"nodd_tent_ex.mp4", writer='ffmpeg', fps=100, dpi=150)
+                    if adistf == 1:
+                        ani.save(f"onedd_tent_ex.mp4", writer='ffmpeg', fps=100, dpi=150)
+                    if adistf > 1:
+                        ani.save(f"threedd_tent_ex.mp4", writer='ffmpeg', fps=100, dpi=150)
                 return headings, xPos, yPos, targetXPos, targetYPos, uArray, first_heading
             
         if plot == True:
@@ -410,9 +414,9 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
         t = np.arange(tstep-1) 
         #fig, axes = plt.subplots(1,2,layout='constrained',figsize=(12,8),num=4)
         add = 0
-        if h0[0] == 0.25:
+        if adistf == 1:
             add = 1
-        if h0[0] == 0.3:
+        if adistf > 1:
             add = 2
         fig = plt.figure(layout='constrained',figsize=(12,8),num=4+add)
         subfigs = fig.subfigures(1,2, wspace=0.1)
@@ -445,11 +449,11 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
             fig.suptitle(f"t={t[frame]}")
             return list(lines.values()) + [traj_line]
         ani = animation.FuncAnimation(fig, update, frames=tstep-1, interval=10, blit=False)
-        if h0[0] == 0.225:
-            ani.save(f"threetarg_outer.mp4", writer='ffmpeg', fps=100, dpi=150)
-        if h0[0] == 0.25:
-            ani.save(f"threetarg_ellip.mp4", writer='ffmpeg', fps=100, dpi=150)
-        if h0[0] == 0.3:
-            ani.save(f"threetarg_str.mp4", writer='ffmpeg', fps=100, dpi=150)
+        if adistf == 0:
+            ani.save(f"nodd_tent_ex.mp4", writer='ffmpeg', fps=100, dpi=150)
+        if adistf == 1:
+            ani.save(f"onedd_tent_ex.mp4", writer='ffmpeg', fps=100, dpi=150)
+        if adistf > 1:
+            ani.save(f"threedd_tent_ex.mp4", writer='ffmpeg', fps=100, dpi=150)
     return headings, xPos, yPos, targetXPos, targetYPos, uArray, first_heading
 
