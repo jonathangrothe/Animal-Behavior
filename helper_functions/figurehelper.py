@@ -74,23 +74,35 @@ def get_heading(act):
     return heading
 
 
-plt.figure(1)
-setup_x = [50,50]
-setup_y = [20,50]
-x_120 = [50-15*np.sqrt(3),50+15*np.sqrt(3)]
-y_120 = [5,5]
-x_90 = [20,80]
-y_90 = [20,20]
-x_60 = [50-15*np.sqrt(3),50+15*np.sqrt(3)]
-y_60 = [35,35]
-x_30 = [35,65]
-y_30 = [20+15*np.sqrt(3),20+15*np.sqrt(3)]
+fig, (axs1,axs2,axs3,axs4) = plt.subplots(1,4,figsize = (16,4), layout = 'constrained')
 
-plt.scatter(setup_x,setup_y,c='black')
-plt.scatter(x_120,y_120,c='red')
-plt.scatter(x_90,y_90,c='green')
-plt.scatter(x_60,y_60,c='blue')
-plt.scatter(x_30,y_30,c='purple')
+start_x = 50
+start_y = 20
+x_120 = [50-15*np.sqrt(3),50,50+15*np.sqrt(3)]
+y_120 = [5,50,5]
+x_90 = [20,50,80]
+y_90 = [20,50,20]
+x_60 = [50-15*np.sqrt(3),50,50+15*np.sqrt(3)]
+y_60 = [35,50,35]
+x_30 = [35,50,65]
+y_30 = [20+15*np.sqrt(3),50,20+15*np.sqrt(3)]
+
+axs1.set_xlim(15,85)
+axs2.set_xlim(15,85)
+axs3.set_xlim(15,85)
+axs4.set_xlim(15,85)
+axs1.set_ylim(-5,55)
+axs2.set_ylim(-5,55)
+axs3.set_ylim(-5,55)
+axs4.set_ylim(-5,55)
+axs1.scatter(start_x,start_y)
+axs1.scatter(x_120,y_120)
+axs2.scatter(start_x,start_y)
+axs2.scatter(x_90,y_90)
+axs3.scatter(start_x,start_y)
+axs3.scatter(x_60,y_60)
+axs4.scatter(start_x,start_y)
+axs4.scatter(x_30,y_30)
 
 
 

@@ -9,15 +9,15 @@ from . import repeated_sims
 start_time = time.perf_counter()
 
 L = 100
-ntargets = 2
+ntargets = 3
 nagents = 1
 initialx = np.zeros(nagents)
 initialy = np.zeros(nagents)
 for a in range(nagents):
     initialx[a] = 50
     initialy[a] = 20
-initialxt = [35,50,65]
-initialyt = [20+15*np.sqrt(3),50,20+15*np.sqrt(3)]
+initialxt = [50-15*np.sqrt(3),50,50+15*np.sqrt(3)]
+initialyt = [35,50,35]
 
 T = 5000
 periodicflag = 0
@@ -82,11 +82,13 @@ base = {'N':N,
         'sigma':sigma,
         'beta':beta,
         'u0':u0,
-        'factor':0.2}
+        'factor':0.2,
+        'seed':False}
 
 include_pos = True
 include_neurons = True
 sample_size = 5
+'''
 h0_start = 0.15
 h0_finish = 0.4
 n_h0 = 100
@@ -101,82 +103,94 @@ for s in range(n_sigma):
     for h in range(n_h0):
         h0_list.append([base_h0[h],base_h0[h]])
         sigma_list.append(base_sigma[s])
-
-h0_diff_start = 0
-h0_diff_finish = 0.000025
+'''
+h0_diff_start = 0.0646
+h0_diff_finish = 0.0648
 num_h0_diff = 50
 h0_diff = np.linspace(h0_diff_start,h0_diff_finish,num=num_h0_diff)
 h0_diff_list = []
-base_h0_val = 0.25
+base_h0_val = 0.21
 for d in h0_diff:
-    h0_diff_list.append([base_h0_val,base_h0_val+d])
+    h0_diff_list.append([base_h0_val,base_h0_val,base_h0_val+d])
 
-fig_init = plt.figure(layout='constrained',figsize = (20,5.5),num=1)
+fig_init = plt.figure(layout='constrained',figsize = (10,5),num=1)
 subfigs_init = fig_init.subfigures(1,1,squeeze=False)
-#axs = subfigs_init[0][0].subplots(4,1)
+axs = subfigs_init[0][0].subplots(3,1)
 
-change= {'h0':h0_list,
-         'sigma':sigma_list}
-factor_list = [0.001,0.2,2,5]
+change= {'h0':h0_diff_list}
+factor_list = [0.001,0.2,2]
 
-sample_time = time.perf_counter()
-target_list, time_list, activity_list, x_list, y_list, headings_list, init_heading  = repeated_sims.sample_sims(base,change,sample_size,include_pos,include_neurons)
-end_sample_time = time.perf_counter()
-sampling_time = end_sample_time - sample_time
-print(f"Sampling time: {sampling_time:.6f} seconds")
+for f in range(1):
+    base['factor'] = factor_list[f]
+    sample_time = time.perf_counter()
+    target_list, time_list, activity_list, x_list, y_list, headings_list, init_heading  = repeated_sims.sample_sims(base,change,sample_size,include_pos,include_neurons)
+    end_sample_time = time.perf_counter()
+    sampling_time = end_sample_time - sample_time
+    print(f"Sampling time: {sampling_time:.6f} seconds")
 
-analysis_time = time.perf_counter()
-'''
-success_rate, success_se = sim_met.get_success_rate(target_list,sample_size,ntargets)
-print(success_rate)
-print(success_se)
-probs = []
-low_se = []
-high_se = []
-for p,se in zip(success_rate,success_se):
-    probs.append(p[1])
-    low_se.append(p[1]-se[1])
-    high_se.append(min(1,p[1]+se[1]))
-'''
-targ_reached = []
-time_reached = []
-for setting in range(n_h0*n_sigma):
-    time_sample = time_list[setting*sample_size:(setting+1)*sample_size]
-    target_sample = target_list[setting*sample_size:(setting+1)*sample_size]
-    n_fail = target_sample.count(-1)
-    n_succ = sample_size - n_fail
-    time_reached.append(np.mean(time_sample))
-    targ_reached.append(n_succ/sample_size)
-targ_grid = np.zeros((n_h0,n_sigma))
-time_grid = np.zeros((n_h0,n_sigma))
-for p in range(n_sigma):
-    targ_row = targ_reached[p*n_sigma:(p+1)*n_sigma]
-    targ_grid[p,:] = targ_row
-    time_row = time_reached[p*n_sigma:(p+1)*n_sigma]
-    time_grid[p,:] = time_row
+    analysis_time = time.perf_counter()
 
-bwr_r = plt.colormaps['bwr_r']
-plasma_r = plt.colormaps['plasma_r']
-axs0 = subfigs_init[0][0].subplots(1,2)
-axs0[0].imshow(targ_grid,cmap=bwr_r,origin='lower',aspect='auto',extent=[base_h0[0], base_h0[-1], base_sigma[0], base_sigma[-1]])
-axs0[0].set_xlabel("h0")
-axs0[0].set_ylabel("sigma")
-axs0[0].text(-0.1,1.05,'A',transform=axs0[0].transAxes,size=14,weight="bold")
+    success_rate, success_se = sim_met.get_success_rate(target_list,sample_size,ntargets)
+    print(success_rate)
+    print(success_se)
+    probs = []
+    low_se = []
+    high_se = []
+    prob_mid = []
+    low_se_mid = []
+    high_se_mid = []
+    for p,se in zip(success_rate,success_se):
+        print(f"p: {p}, se: {se}")
+        probs.append(p[2])
+        low_se.append(p[2]-se[2])
+        high_se.append(min(1,p[2]+se[2]))
+        prob_mid.append(p[1])
+        low_se_mid.append(p[1]-se[1])
+        high_se_mid.append(min(1,p[1]+se[1]))
+    '''
+    targ_reached = []
+    time_reached = []
+    for setting in range(n_h0*n_sigma):
+        time_sample = time_list[setting*sample_size:(setting+1)*sample_size]
+        target_sample = target_list[setting*sample_size:(setting+1)*sample_size]
+        n_fail = target_sample.count(-1)
+        n_succ = sample_size - n_fail
+        time_reached.append(np.mean(time_sample))
+        targ_reached.append(n_succ/sample_size)
+    targ_grid = np.zeros((n_h0,n_sigma))
+    time_grid = np.zeros((n_h0,n_sigma))
+    for p in range(n_sigma):
+        targ_row = targ_reached[p*n_sigma:(p+1)*n_sigma]
+        targ_grid[p,:] = targ_row
+        time_row = time_reached[p*n_sigma:(p+1)*n_sigma]
+        time_grid[p,:] = time_row
 
-axs0[1].imshow(time_grid,cmap=plasma_r,origin='lower',aspect='auto',extent=[base_h0[0], base_h0[-1], base_sigma[0], base_sigma[-1]])
-axs0[1].set_xlabel("h0")
-axs0[1].set_ylabel("sigma")
-axs0[1].text(-0.1,1.05,'B',transform=axs0[1].transAxes,size=14,weight="bold")
-'''
-axs[f].plot(h0_diff,probs)
-axs[f].plot(h0_diff,low_se,c='red',ls='--')
-axs[f].plot(h0_diff,high_se,c='red',ls='--')
-end_analysis_time = time.perf_counter()
-analyzing_time = end_analysis_time - analysis_time
-print(f"Analysis time: {analyzing_time:.6f} seconds")
+    bwr_r = plt.colormaps['bwr_r']
+    plasma_r = plt.colormaps['plasma_r']
+    axs0 = subfigs_init[0][0].subplots(1,2)
+    axs0[0].imshow(targ_grid,cmap=bwr_r,origin='lower',aspect='auto',extent=[base_h0[0], base_h0[-1], base_sigma[0], base_sigma[-1]])
+    axs0[0].set_xlabel("h0")
+    axs0[0].set_ylabel("sigma")
+    axs0[0].text(-0.1,1.05,'A',transform=axs0[0].transAxes,size=14,weight="bold")
+
+    axs0[1].imshow(time_grid,cmap=plasma_r,origin='lower',aspect='auto',extent=[base_h0[0], base_h0[-1], base_sigma[0], base_sigma[-1]])
+    axs0[1].set_xlabel("h0")
+    axs0[1].set_ylabel("sigma")
+    axs0[1].text(-0.1,1.05,'B',transform=axs0[1].transAxes,size=14,weight="bold")
+    '''
+
+    axs[f].plot(h0_diff,probs)
+    axs[f].plot(h0_diff,low_se,c='red',ls='--',alpha=0.4)
+    axs[f].plot(h0_diff,high_se,c='red',ls='--',alpha=0.4)
+    axs[f].plot(h0_diff,prob_mid, c='green')
+    axs[f].plot(h0_diff,low_se_mid,c='red',ls='--',alpha=0.4)
+    axs[f].plot(h0_diff,high_se_mid,c='red',ls='--',alpha=0.4)
+    end_analysis_time = time.perf_counter()
+    analyzing_time = end_analysis_time - analysis_time
+    print(f"Analysis time: {analyzing_time:.6f} seconds")
 axs[0].text(-0.1,1.05,'A',transform=axs[0].transAxes,size=14,weight="bold")
 axs[1].text(-0.1,1.05,'B',transform=axs[1].transAxes,size=14,weight="bold")
 axs[2].text(-0.1,1.05,'C',transform=axs[2].transAxes,size=14,weight="bold")
-axs[3].text(-0.1,1.05,'D',transform=axs[3].transAxes,size=14,weight="bold")
-'''
+#axs[3].text(-0.1,1.05,'D',transform=axs[3].transAxes,size=14,weight="bold")
+
 plt.show()

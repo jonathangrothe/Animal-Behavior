@@ -251,9 +251,9 @@ change = {'sigma':sigma_list, 'h0':h0_list}
 
 #run_sims(base,change,'h0',sample_size,plot_trajs,plot_neurons,4,1,1)
 
-#run_sims(base,change,sample_size,plot_trajs,plot_neurons,3,1,1)
+run_sims(base,change,sample_size,plot_trajs,plot_neurons,3,1,1)
 #base['distf'] = 0
-sim_random_points(base,1)
+#sim_random_points(base,1)
 
 
 plt.show()
