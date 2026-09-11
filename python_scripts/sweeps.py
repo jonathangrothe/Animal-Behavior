@@ -87,7 +87,7 @@ base = {'N':N,
 
 include_pos = True
 include_neurons = True
-sample_size = 5
+sample_size = 30
 '''
 h0_start = 0.15
 h0_finish = 0.4
@@ -104,8 +104,8 @@ for s in range(n_sigma):
         h0_list.append([base_h0[h],base_h0[h]])
         sigma_list.append(base_sigma[s])
 '''
-h0_diff_start = 0.0646
-h0_diff_finish = 0.0648
+h0_diff_start = 0
+h0_diff_finish = 0.07
 num_h0_diff = 50
 h0_diff = np.linspace(h0_diff_start,h0_diff_finish,num=num_h0_diff)
 h0_diff_list = []
@@ -115,10 +115,10 @@ for d in h0_diff:
 
 fig_init = plt.figure(layout='constrained',figsize = (10,5),num=1)
 subfigs_init = fig_init.subfigures(1,1,squeeze=False)
-axs = subfigs_init[0][0].subplots(3,1)
+axs = subfigs_init[0][0].subplots(1,1,squeeze=False)
 
 change= {'h0':h0_diff_list}
-factor_list = [0.001,0.2,2]
+factor_list = [0.2,2]
 
 for f in range(1):
     base['factor'] = factor_list[f]
@@ -139,6 +139,9 @@ for f in range(1):
     prob_mid = []
     low_se_mid = []
     high_se_mid = []
+    prob_wrong = []
+    low_se_wrong = []
+    high_se_wrong = []
     for p,se in zip(success_rate,success_se):
         print(f"p: {p}, se: {se}")
         probs.append(p[2])
@@ -147,6 +150,9 @@ for f in range(1):
         prob_mid.append(p[1])
         low_se_mid.append(p[1]-se[1])
         high_se_mid.append(min(1,p[1]+se[1]))
+        prob_wrong.append(p[0])
+        low_se_wrong.append(p[0]-se[0])
+        high_se_wrong.append(min(1,p[0]+se[0]))
     '''
     targ_reached = []
     time_reached = []
@@ -179,18 +185,21 @@ for f in range(1):
     axs0[1].text(-0.1,1.05,'B',transform=axs0[1].transAxes,size=14,weight="bold")
     '''
 
-    axs[f].plot(h0_diff,probs)
-    axs[f].plot(h0_diff,low_se,c='red',ls='--',alpha=0.4)
-    axs[f].plot(h0_diff,high_se,c='red',ls='--',alpha=0.4)
-    axs[f].plot(h0_diff,prob_mid, c='green')
-    axs[f].plot(h0_diff,low_se_mid,c='red',ls='--',alpha=0.4)
-    axs[f].plot(h0_diff,high_se_mid,c='red',ls='--',alpha=0.4)
+    axs[0][0].plot(h0_diff,probs,c='blue')
+    axs[0][0].plot(h0_diff,low_se,c='red',ls='--',alpha=0.4)
+    axs[0][0].plot(h0_diff,high_se,c='red',ls='--',alpha=0.4)
+    axs[0][0].plot(h0_diff,prob_mid, c='green')
+    axs[0][0].plot(h0_diff,low_se_mid,c='red',ls='--',alpha=0.4)
+    axs[0][0].plot(h0_diff,high_se_mid,c='red',ls='--',alpha=0.4)
+    axs[0][0].plot(h0_diff,prob_wrong, c='yellow')
+    axs[0][0].plot(h0_diff,low_se_wrong,c='red',ls='--',alpha=0.4)
+    axs[0][0].plot(h0_diff,high_se_wrong,c='red',ls='--',alpha=0.4)
     end_analysis_time = time.perf_counter()
     analyzing_time = end_analysis_time - analysis_time
     print(f"Analysis time: {analyzing_time:.6f} seconds")
-axs[0].text(-0.1,1.05,'A',transform=axs[0].transAxes,size=14,weight="bold")
-axs[1].text(-0.1,1.05,'B',transform=axs[1].transAxes,size=14,weight="bold")
-axs[2].text(-0.1,1.05,'C',transform=axs[2].transAxes,size=14,weight="bold")
+#axs[0].text(-0.1,1.05,'A',transform=axs[0].transAxes,size=14,weight="bold")
+#axs[1].text(-0.1,1.05,'B',transform=axs[1].transAxes,size=14,weight="bold")
+#axs[2].text(-0.1,1.05,'C',transform=axs[2].transAxes,size=14,weight="bold")
 #axs[3].text(-0.1,1.05,'D',transform=axs[3].transAxes,size=14,weight="bold")
 
 plt.show()
