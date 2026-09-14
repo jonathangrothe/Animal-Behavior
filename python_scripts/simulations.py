@@ -235,13 +235,14 @@ plot_neurons = True
 plot_trajs = True
 sample_size = 1
 #h0_first = np.linspace(0.275,0.371,num=6)
-h0_list = [[0.25,0.25,0.25],[0.25,0.25,0.25]]
+h0_list = [[0.25,0.25,0.28],[0.23,0.23,0.26]]
 sigma_list = [0.4,0.4]
 #u0_list = [10*u0,2*u0,u0,u0*0.5,u0*0.1]
 #beta_list = [300,100,60,25,10]
 #v0_list = [0.1,0.2,0.3,0.4,0.5,0.6]
 #beta_list = [20]*6
-change = {'sigma':sigma_list, 'h0':h0_list}
+distf_list = [1,0]
+change = {'sigma':sigma_list, 'h0':h0_list,'distf':distf_list}
 
 # current goal: so it seems like given geometry and the two constant h0s, for most h0s we can determine a sigma that will produce trajectories that minimize the in between zone 
 # (ie: we will find the lowest possible sigma that results in the agent reaching the target)
