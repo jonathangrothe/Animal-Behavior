@@ -26,7 +26,7 @@ rEgoTarget = 0
 Egonumber = 1
 hColl = -10
 rColl = 0
-distf = 0
+distf = 1
 adistf = 1
 dt = 0.1
 v0 = 0.05
@@ -105,11 +105,11 @@ for s in range(n_sigma):
         sigma_list.append(base_sigma[s])
 '''
 h0_diff_start = 0
-h0_diff_finish = 0.07
-num_h0_diff = 50
+h0_diff_finish = 0.06
+num_h0_diff = 75
 h0_diff = np.linspace(h0_diff_start,h0_diff_finish,num=num_h0_diff)
 h0_diff_list = []
-base_h0_val = 0.21
+base_h0_val = 0.25
 for d in h0_diff:
     h0_diff_list.append([base_h0_val,base_h0_val,base_h0_val+d])
 
