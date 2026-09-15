@@ -1,3 +1,6 @@
+'''
+Bump type tests, don't really care about bump type anymore so this is not that helpful
+'''
 import unittest
 from pathlib import Path
 import numpy as np

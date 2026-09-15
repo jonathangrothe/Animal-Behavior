@@ -1,5 +1,7 @@
+'''
+Bifurcation angle tests, this was probably a wild goose chase, but here it is
+'''
 import unittest
-from pathlib import Path
 import numpy as np
 import matplotlib.pyplot as plt
 from python_scripts.simulation_metrics import get_bifurcation_angle
