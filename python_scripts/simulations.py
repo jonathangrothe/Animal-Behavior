@@ -1,14 +1,14 @@
+'''
+A function focused on running a handful of simulations and plotting the trajectories, 
+valuable for getting a quick picture of a situation
+'''
 import time
-import math
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 from . import simulation_metrics as sim_met
 from . import repeated_sims
-from . import simulate_ringattractor as sim_ra
 from helper_functions import helpers
-from matplotlib.ticker import ScalarFormatter
-
 
 L = 100
 ntargets = 3
@@ -18,7 +18,7 @@ initialy = np.zeros(nagents)
 for a in range(nagents):
     initialx[a] = 50
     initialy[a] = 20
-initialxt = [50-15*np.sqrt(3),50,50+15*np.sqrt(3)]
+initialxt = [50-(15*np.sqrt(3)),50,50+(15*np.sqrt(3))]
 initialyt = [35,50,35]
 
 T = 5000
@@ -28,7 +28,7 @@ rEgoTarget = 0
 Egonumber = 1
 hColl = -10
 rColl = 0
-distf = 1
+distf = 0
 adistf = 1
 dt = 0.1
 v0 = 0.05
@@ -49,23 +49,22 @@ for i in range(N):
     J = np.squeeze(J)
     
 
-
 allocentricFlag = 1
 h0s = [0.2]*ntargets
 h_b = 0.2
 sigma = 0.2
 beta = 100 
 
-# --- trying out the non stopping situation --- - turn this and the traditional simulations into functions so its easier to keep it organized
 def sim_random_points(base,sample_size): 
-    # From playing around with this I know that it is often possible for the agent to travel between targets, 
-    # it would be nice if it would be possible to get a good guess for sigma/h0 that will allow it to move between targets given the geometry
-    # I hypothesize that this will be the most sensitive 'best' version of the model at detecting small differences
-    # (I will have to test this), because it clearly has the capacity to sustain/shift between bumps for individual points
-    # Q: will this be easier if we increase number of neurons ? (so that we don't aggregate two bumps within 2pi/100 degrees of each other) 
-
-    # it would be a lot easier to gaurantee that they're all approximately different angles from the start point
-    # eventually we will need to be able to calculate how points are aggregated
+    '''
+    A function that generates 10 random points that are at least a certain distance from each other and then runs simulations with that geometry. 
+    Also plots the vector field and approximated trajectory based on the vector field
+    parameters: 
+    base: dictionaries of parameters for simulate_ringattractor
+    sample_size: the number of different geometries to simulate
+    expected behavior: 
+    plot several trajectories and heatmaps as well as the vector field based on that geometry
+    '''
     start_time = time.perf_counter()
     n_samples = 1
     for s in range(n_samples):
@@ -91,9 +90,7 @@ def sim_random_points(base,sample_size):
                 dists.append(dist)
                 xpoints.append(cand_x)
                 ypoints.append(cand_y)
-        furthest = 3
-        #print(f"furthest dist: {dists[furthest]}, x:{xpoints[furthest]}, y:{ypoints[furthest]}")
-        h0_list = [0.35]*ntarg
+        h0_list = [0.25]*ntarg
         base['h0'] = h0_list
         base['initialxt'] = xpoints
         base['initialyt'] = ypoints
@@ -106,17 +103,11 @@ def sim_random_points(base,sample_size):
         grid_angles_show = helpers.trajectory_grid(xpoints,ypoints,n_trajpoints_show,1,0)
         fig_init = plt.figure(layout='constrained',figsize = (20,5.5),num=s+1)
         subfigs_init = fig_init.subfigures(1,3,squeeze=False,width_ratios = [0.3,0.4,0.3])
-        axs1 = subfigs_init[0][0].subplots(1,3)
-        axs2 = subfigs_init[0][1].subplots(3,1)
+        axs1 = subfigs_init[0][0].subplots(1,2)
+        axs2 = subfigs_init[0][1].subplots(2,1)
         axs3 = subfigs_init[0][2].subplots(1,1)
-        #fig2, ax2 = plt.subplots(figsize = (8,8),num=s*2+2)
-        #for x,y in zip(xpoints,ypoints):
-            #print(f"point: ({x,y})")
-        #sigma_list = [0.05,0.1,0.2,0.4]
-        #h0_lists = [[0.15]*10,[0.2]*10,[0.25]*10,[0.3]*10]
-        distf_list = [0,1,1]
-        adistf_list = [0,1,3]
-        #rEgoTarget_list = [0,0,3.5,3.5]
+        distf_list = [0,1]
+        adistf_list = [0,1]
         change_random = {'distf':distf_list,
                          'adistf':adistf_list}
         target_list, time_list, activity_list, x_list, y_list, headings_list, init_heading  = repeated_sims.sample_sims(base,change_random,sample_size,True,True)
@@ -130,7 +121,6 @@ def sim_random_points(base,sample_size):
             axs3.arrow(base_x,base_y,gr_x2-base_x,gr_y2-base_y,width=0.005,head_width=0.4,head_length=0.2,color='green')
             axs3.set_aspect('equal')
             
-        
         # plotting expected (approximate) trajectory on top of the grid
         xs = [initialx[0]]
         ys = [initialy[0]]
@@ -146,8 +136,6 @@ def sim_random_points(base,sample_size):
             ys.append(next_y)
             start_x = next_x
             start_y = next_y
-        #print(f"diffs for combo: {np.array([np.diff(xs_combi),np.diff(ys_combi)])}")
-        #ax2.plot(xs,ys,c='red')
         
         for sig in range(len(distf_list)):
             x_settings = x_list[sig*sample_size:(sig+1)*sample_size]
@@ -158,7 +146,6 @@ def sim_random_points(base,sample_size):
             ind = sig*sample_size
             sim_activity = activity_list[ind]
             axs2[sig].imshow(sim_activity,aspect='auto')
-    #plt.show()
         axs1[0].text(-0.1,1.05,'A',transform=axs1[0].transAxes,size=14,weight="bold")
         axs1[1].text(-0.1,1.05,'B',transform=axs1[1].transAxes,size=14,weight="bold")
         axs2[0].text(-0.1,1.05,'C',transform=axs2[0].transAxes,size=14,weight="bold")
@@ -169,19 +156,31 @@ def sim_random_points(base,sample_size):
     print(f"total time: {end_time-start_time}")
 
 def run_sims(base,change,sample_size,traj,activity,ncol,nrow,fig_num):
+    '''
+    A function to run some simulations and plot the trajectories and heatmaps
+    Parameters:
+    base: dictionary of parameters
+    change: dictionary of parameters to change over the simulation
+    sample_size: the number of samples to take at each unique set of parameters
+    traj: boolean that controls if you plot the trajectory (probably will always be true...)
+    activity: boolean that controls if you plot the neural activity
+    ncol: number of columns to plot
+    nrow: number of rows to plot
+    fig_num: number of the figure that we will plot onto
+    expected behavior: 
+    plot the trajectory and neuron heatmap over a few sets of parameters
+    '''
     target_list, time_list, activity_list, x_list, y_list, headings_list, init_heading  = repeated_sims.sample_sims(base,change,sample_size,traj,activity)
     h0_list = change['h0']
     n_plots = len(h0_list)
-    fig = plt.figure(layout='constrained',figsize=(ncol*10,nrow*5),num=fig_num)
+    fig = plt.figure(layout='constrained',figsize=(4,10),num=fig_num)
     subfigs = fig.subfigures(2,1, wspace=0.1)
-    axs0 = subfigs[0].subplots(nrow,ncol)
-    axs0 = axs0.flatten()
-    axs1 = subfigs[1].subplots(nrow,ncol)
-    axs1 = axs1.flatten()
+    axs0 = subfigs[0].subplots(nrow,ncol,squeeze=False)
+    axs1 = subfigs[1].subplots(nrow,ncol,squeeze=False)
     grey_to_blue = ["#D3D3D3", "#A9A9A9", "#708090", "#4682B4", "#000080"]
     cmap = mcolors.LinearSegmentedColormap.from_list("GreyBlue", grey_to_blue)
     for s in range(n_plots):
-        sim_met.plot_traj(x_list[s*sample_size:(s+1)*sample_size],y_list[s*sample_size:(s+1)*sample_size],initialxt,initialyt,sample_size,axs0[s],False,[],0,0)
+        sim_met.plot_traj(x_list[s*sample_size:(s+1)*sample_size],y_list[s*sample_size:(s+1)*sample_size],initialxt,initialyt,sample_size,axs0[s][0],False,[],0,0)
         target_list_sample = target_list[s*sample_size:(s+1)*sample_size]
         n_better = target_list_sample.count(1)
         print(f"probability of reaching right target: {n_better/sample_size}")
@@ -189,15 +188,15 @@ def run_sims(base,change,sample_size,traj,activity,ncol,nrow,fig_num):
         sim_activity = activity_list[ind]
         col_min = np.min(sim_activity[:,-5])
         col_max = np.max(sim_activity[:,-5])
-        axs1[s].imshow(sim_activity,cmap=cmap,aspect='auto',vmin=col_min,vmax=col_max)
+        axs1[s][0].imshow(sim_activity,cmap=cmap,aspect='auto',vmin=col_min,vmax=col_max)
 
         
 
 # -------- Running the simulation --------
 np.random.seed(24)
-#u0_rand = 0.2*np.random.randn(N,1) 
+u0_rand = 0.2*np.random.randn(N,1) 
 #u0_rand2 = 2*np.random.randn(N,1)
-u0_rand = np.zeros((N,1))
+#u0_rand = np.zeros((N,1))
 #u0[5:31] = 0.2
 #u0[0:26] = 0.2
 base = {'N':N,
@@ -235,26 +234,19 @@ plot_neurons = True
 plot_trajs = True
 sample_size = 1
 #h0_first = np.linspace(0.275,0.371,num=6)
-h0_list = [[0.25,0.25,0.28],[0.23,0.23,0.26]]
-sigma_list = [0.4,0.4]
+h0_list = [[0.25,0.25,0.25]]
+sigma_list = [0.5]
 #u0_list = [10*u0,2*u0,u0,u0*0.5,u0*0.1]
 #beta_list = [300,100,60,25,10]
 #v0_list = [0.1,0.2,0.3,0.4,0.5,0.6]
 #beta_list = [20]*6
-distf_list = [1,0]
-change = {'sigma':sigma_list, 'h0':h0_list,'distf':distf_list}
-
-# current goal: so it seems like given geometry and the two constant h0s, for most h0s we can determine a sigma that will produce trajectories that minimize the in between zone 
-# (ie: we will find the lowest possible sigma that results in the agent reaching the target)
-# from there we know there will be the transition from center target to better target. The current goal is estimating when this will occur
-# my current theory is that close to the decision it uses a straighter trajectory (aggregation phase), and we can estimate that phase with a line based only on parameters
-
+change = {'sigma':sigma_list, 'h0':h0_list}
 
 #run_sims(base,change,'h0',sample_size,plot_trajs,plot_neurons,4,1,1)
 
-run_sims(base,change,sample_size,plot_trajs,plot_neurons,3,1,1)
+#run_sims(base,change,sample_size,plot_trajs,plot_neurons,1,1,1)
 #base['distf'] = 0
-#sim_random_points(base,1)
+sim_random_points(base,1)
 
 
 plt.show()

@@ -1,5 +1,6 @@
-# file which contains a function for running the simulation many times (with the option to alter the settings each time)
-# and returns data on 'success' and trajectories
+'''
+File which contains a few functions for aggregating simulations using a dictionary to in theory make it easier to analyze simulations over changning parameters
+'''
 import time
 import numpy as np
 from . import simulate_ringattractor as sim_ra
@@ -29,8 +30,6 @@ def sample_sims(bp,changing_params,n_samples,include_trajs,include_activity):
         y_list: a list of size (n_samples * len(changing_params)) which contains 1d numpy arrays which contain all the y positions for the agent in each individual simulation
         headings_list: a list of size (n_samples * len(changing_params)) which contains 1d numpy arrays which contain all the headings for the agent in each individual simulation
     '''
-
-    # TO DO: add a random init param (to initialize it randomly each time or not)
     time_list = []
     target_list = []
     activity_list = [] 
@@ -82,6 +81,7 @@ def sample_sims(bp,changing_params,n_samples,include_trajs,include_activity):
 
 
 def boundary_search(bp,base_min,base_max,sample_size,min_search,param,boundary_prob):
+    # I didn't use this so much because it was challenging to define an appropriate range, although with seeded input the idea could be worth another look
     '''
     A function that performs a binary search to find a boundary value for a given parameter. 
     Boundary value is defined as a value in which the agent reaches a target with between boundary_prob and 1-boundary_prob probability
@@ -163,6 +163,7 @@ def boundary_search(bp,base_min,base_max,sample_size,min_search,param,boundary_p
 
 
 def area_helper(area, param, param_list):
+    # This was used when I was focused on total input (area under bump), but I think it makes more sense to consider sigma and h0 seperately? 
     '''
     A function that when given a certain area and either sigma or h0, calculates the value of the other parameter that will give the desired area
     parameters:

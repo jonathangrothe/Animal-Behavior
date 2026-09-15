@@ -1,3 +1,6 @@
+'''
+The code to run the ring attractor. Converted from the matlab scripts.
+'''
 import numpy as np
 import matplotlib.pyplot as plt
 import math
@@ -7,11 +10,13 @@ import matplotlib.animation as animation
 # ---------- Simulation code!! ----------
 def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag,rEgo,rEgoTarget,Egonumber,
                             distf,adistf,J,beta,h0,h_b,dt,v0,v0t,sigma,hColl,rColl,
-                            initialx,initialy,initialxt,initialyt,u0,plot,stop,seed=False,factor=0.2,stopping_dist=0.1,video=True):
+                            initialx,initialy,initialxt,initialyt,u0,plot,stop,seed=False,factor=0.2,stopping_dist=0.1,video=False):
     '''
     The code to run a single simulation of the ring attractor model. 
-    Designed to work with any number of agents but so far I've only really focused on one agent, which impacts stopping distance and v0 right now. 
-    Will need to change the logic of the stopping distance code and expand v0 to a list when changing this code.
+    Designed to work with any number of agents but so far I've only really focused on one agent, so beware of that when adding agents.
+    Code is based on matlab scripts, and shouldn't be functionally any different from it besides the initial heading and plotting/video.
+    If making a video please change the names of the files to avoid confusion. (could be a parameter if you want to add more...)
+    
 
     Parameters:
         N: an integer that is the number of neurons in the ring attractor
@@ -41,8 +46,12 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
         intialxt: a list of floats which contain the starting x positions of the targets
         initialyt: a list of floats which contain the starting y positions of the targets
         plot: a boolean which controls whether or not to plot the trajectory every 100 tsteps
+        u0: the initial state of the ring attractor (if seed is False then it will be overwritten)
         stop: a boolean which controls whether or not to stop the simulation when the agent reaches a target (note: right now should be False if there is more than one agent)
+        seed: a boolean which controls whether or not to seed the simulation with u0 or randomly intialize it from a standard normal multiplied by factor
+        factor: the factor by which to multiply the randomly generated standard normal by if seed is false
         stopping_dist: a float which controls how close to a target the agent has to get to stop the simulation when stop is True
+        video: a boolean which controls whether or not to make an animated video of the layers of the ring attractor. If true, beware that run time will go up a lot and be careful about naming and overwriting videos
 
     Returns: 
         headings: a numpy array of size (nagents x tsteps) which contains each agent's heading in polar coordinates at each point in the simulation 
@@ -54,6 +63,7 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
         targetYPos: if any target has a v0t above 0, a numpy array of size (ntargets x tsteps) which contains each target's y position at each point in the simulation
                     if all targets have v0t = 0, a numpy array of size (ntargets x 1) which contains each targets initial (and constant) y position
         uArray: a numpy array of size (N, nagents, tsteps) which contains the state of each neuron for each agent at each time step in the simulation
+        first_heading: the initial heading (probably don't need to return this, but I did want to at one point...)
     '''
 
     # -------- INITIALIZATIONS --------
@@ -74,7 +84,6 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
         print("entered")
 
     uArray[:,:,0] = u0
-    #uArray[:,:,75:85] = 0.2
 
     xPos = np.zeros((nagents,T+1))
     yPos = np.zeros((nagents,T+1))
@@ -120,8 +129,6 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
     headings[0,0] = first_heading.item()
     if allocentricFlag == 0:
         alpharing[a,:] = np.mod(alpharing[a,:]+headings[a,0], 2*np.pi)
-    #print(f"initial heading: {headings[0,0]}")
-    #print(f"u0: {uArray[:,:,0]}")
     for tstep in range(0,T):
         step_time_start = time.perf_counter()
         # -------- STEP A --------
@@ -231,9 +238,6 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
                     newAngle = newAngle + 2*np.pi
             headings[a,tstep+1] = newAngle
             if (tstep > 100) and (0 < newAngle < np.pi/2 or activated):
-                delta_x = xPos[a,tstep]-xPos[a,tstep-1]
-                delta_y = yPos[a,tstep]-yPos[a,tstep-1]
-                #print(f'tstep: {tstep}, heading: {newAngle}, distance: {targ_differences}, target neurons: {true_neurons[0,tstep]:.4f}, {true_neurons[1,tstep]:.4f}, {true_neurons[2,tstep]:.4f}')
                 if not activated: 
                     activated = True
             if allocentricFlag == 0:
@@ -344,7 +348,6 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
                     targetXPos = targetXPos[:,:tstep]
                     targetYPos = targetYPos[:,:tstep]
                 uArray = uArray[:,:,:tstep]
-                #plt.show()
                 if video:
                     data = {'Previous state': uArray[:,0,:-1],
                             'Activated':fa_data[:,:tstep-1],
@@ -354,7 +357,6 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
                             'uanew':uArray[:,0,1:]}
                     x = np.arange(100)
                     t = np.arange(tstep-1) 
-                    #fig, axes = plt.subplots(1,2,layout='constrained',figsize=(12,8),num=4)
                     add = 0
                     if distf == 1:
                         add = 1
@@ -408,7 +410,6 @@ def simulate_ring_attractor(N,L,T,ntargets,nagents,allocentricFlag,periodic_flag
                 'uanew':uArray[:,0,1:]}
         x = np.arange(100)
         t = np.arange(tstep-1) 
-        #fig, axes = plt.subplots(1,2,layout='constrained',figsize=(12,8),num=4)
         add = 0
         if distf == 1:
             add = 1

@@ -1,8 +1,9 @@
+'''
+A file for running a large number of simulations in a sweep over a parameter space
+'''
 import time
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
-import matplotlib.colors as mcolors
 from . import simulation_metrics as sim_met
 from . import repeated_sims
 
@@ -84,6 +85,8 @@ base = {'N':N,
         'u0':u0,
         'factor':0.2,
         'seed':False}
+
+# defining what we are sweeping over
 
 include_pos = True
 include_neurons = True
@@ -185,6 +188,8 @@ for f in range(1):
     axs0[1].text(-0.1,1.05,'B',transform=axs0[1].transAxes,size=14,weight="bold")
     '''
 
+    # plotting the output
+    
     axs[0][0].plot(h0_diff,probs,c='blue')
     axs[0][0].plot(h0_diff,low_se,c='red',ls='--',alpha=0.4)
     axs[0][0].plot(h0_diff,high_se,c='red',ls='--',alpha=0.4)

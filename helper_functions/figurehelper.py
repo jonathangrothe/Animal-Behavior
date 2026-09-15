@@ -1,3 +1,6 @@
+'''
+A file that I used to create the simple figures of different layouts in the report
+'''
 import matplotlib.pyplot as plt
 import numpy as np
 

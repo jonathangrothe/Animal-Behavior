@@ -1,3 +1,7 @@
+'''
+A file dedicated to taking data from the simulation and returning metrics on that simulation
+Many of these functions did not end up being that helpful
+'''
 import numpy as np
 from scipy.signal import find_peaks
 import matplotlib.pyplot as plt
@@ -76,6 +80,7 @@ def get_success_rate(target_list, sample_size, ntargets):
 
 
 def get_bump_type(activity,maxtime=5000):
+    # This did not end up being that helpful
     '''
     A function that analyses the neural activity of a simulation in small intervals 
     and returns a number corresponding to the number of bumps that best describe the simulation.
@@ -134,6 +139,7 @@ def get_bump_type(activity,maxtime=5000):
     return phase
 
 def get_bifurcation_angle(xPos, yPos, headings, direction_thresh = np.pi/18, delta_thresh = np.pi/720, maxtime=5000,test=False):
+    # Yeah you can probably see why I gave up on this
     '''
     A function that takes the xpositions, ypositions, and headings from a trajectory, to determine the bifurcation points, using a threshold to determine if a turn is too insignificant to be counted. 
     Here a bifurcation is assumed to be a region of indices, from the index where the agent begins to turn to where it stops turning, 
@@ -166,7 +172,7 @@ def get_bifurcation_angle(xPos, yPos, headings, direction_thresh = np.pi/18, del
         yPos = yPos[:total_time]
         headings = headings[:total_time]
     x0, y0 = xPos[0], yPos[0]
-    targetx, targety = xPos[-1], yPos[-1] # this implies we should only call the function if a target was reached...
+    targetx, targety = xPos[-1], yPos[-1]
 
     # FINDING THE START 
     dist_to_targ = np.sqrt((x0-targetx)**2+(y0-targety)**2)
@@ -221,7 +227,6 @@ def get_bifurcation_angle(xPos, yPos, headings, direction_thresh = np.pi/18, del
             jump_ends.append(i + thresh_ind)
             in_jump = False
     jump_starts.append(total_time-1)
-    #print(f"jump starts xpos: {xPos[jump_starts]}")
     # FINDING THE THEORETICAL ANGLES FROM THE BIFURCATION REGIONS
     # THREE STEP PROCESS: first we calculate the direction at the start of the bifurcation region
     # then we iterate through these directions and if there is a bifurcation such that the next direction is close to the current direction, we ignore that bifurcation point
@@ -260,18 +265,12 @@ def get_bifurcation_angle(xPos, yPos, headings, direction_thresh = np.pi/18, del
         theor_start_corners.append(start_corner)
         theor_end_corners.append(end_corner)
         init_angle = next_angle
-        #m1 = m2
         prev_end_x = end_x
         prev_end_y = end_y
-    np.set_printoptions(precision=5)
-    #print(f"function start:      {theor_start_corners}")
-    #print(f"function angles:     {theor_angles}")
-    #print(f"function end:        {theor_end_corners}")
     directions_update = candidate_directions.copy()
     angles_update = theor_angles.copy()
     updated = False
     skips = []
-    #print(f"directions_update: {directions_update}")
     for ind in range(len(directions_update)-1):
         d0 = directions_update[ind]
         d1 = directions_update[ind+1]
@@ -311,7 +310,8 @@ def get_bifurcation_angle(xPos, yPos, headings, direction_thresh = np.pi/18, del
         true_indices.append(int(round(mean_index)))
     return true_indices, true_angles
 
-def find_bumps(activity): # function not currently in use, will keep it for now
+def find_bumps(activity): 
+    # Function not currently in use
     '''
     A function which takes in the activity data for a simulation and returns a list of where indices that are the peak of bumps at each time point in that simulation
     
@@ -332,7 +332,8 @@ def find_bumps(activity): # function not currently in use, will keep it for now
     return bump_list
 
     
-def plot_metric(metrics,x,colors,labels,fig,title,xlabel,ylabel): # Function not currently in use, but I will keep it for now
+def plot_metric(metrics,x,colors,labels,fig,title,xlabel,ylabel): 
+    # Function not currently in use
     '''
     A function which plots an aggregated metric over changing values of a parameter
 
@@ -415,13 +416,6 @@ def plot_traj(xPos,yPos,targetsx,targetsy,sample_size,figure,plot_dec_point=Fals
         figure.scatter(targetsx,targetsy,color='red',s=5)
     else:
         for sample in range(sample_size):
-            deltax = np.diff(xPos[sample][start_ind:end_ind])
-            deltay = np.diff(yPos[sample][start_ind:end_ind])
-            dist = np.zeros(len(xPos[sample][start_ind:end_ind]))
-            #directions = np.atan2(deltay,deltax)
-            #dist[0] =0
-            #dist[1:] = np.sqrt(deltax**2 + deltay**2)
-            #figure.scatter(xPos[sample][start_ind:end_ind],yPos[sample][start_ind:end_ind], alpha=0.5,s=8)
             min_x = min(xPos[sample][start_ind:end_ind+1])
             max_x = max(xPos[sample][start_ind:end_ind+1])
             x_range = max_x - min_x
@@ -459,7 +453,6 @@ def plot_traj(xPos,yPos,targetsx,targetsy,sample_size,figure,plot_dec_point=Fals
                     x_diff = next_x - curr_x
                     y_diff = next_y - curr_y
                     mag = np.sqrt(x_diff**2+y_diff**2)
-                    #print(f"pt: {pt}, magnitude: {mag}")
                     figure.set_xticks([])
                     figure.set_yticks([])
                     figure.annotate("",xytext=(curr_x,curr_y),xy=(next_x,next_y),arrowprops=dict(arrowstyle='->',mutation_scale=10,color=color))
