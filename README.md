@@ -4,7 +4,7 @@ This repository holds the code I used to explore the neural field model for anim
 
 ## Organization
 
-The matlab_scripts folder contains the original files I was given from allocentric flocking, I added a few comments but besides that used these to rewrite the ring attractor model in Python. 
+The matlab_scripts folder contains the original files I was given from allocentric flocking, I added a few comments but besides that used these to rewrite the neural field model in Python. 
 
 The python_scripts folder contains the code I used to perform my analysis.
 
